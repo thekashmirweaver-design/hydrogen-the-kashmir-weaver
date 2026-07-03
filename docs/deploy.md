@@ -139,11 +139,15 @@ Running `npm init @shopify/app@latest` (or `shopify app init`) **in the repo roo
 
 | Approach | When to use | Gets `shpat_` for seed? |
 | --- | --- | --- |
-| **A — Custom Admin app** (below, Option A) | Store is **not** in your Partner org, or you want a simple one-time seed token | **Yes** — permanent `shpat_…` from **Develop apps** |
-| **B — Existing `shopify.app.toml`** (below, Option B) | Store **is** in the same Partner org as the app | **24h token** via client-credentials curl after install (not `shpat_`) |
-| **C — New Partner app in sibling folder** | You need a **second** Partner app, separate from this Hydrogen link | Only after install + token exchange; still not a store `shpat_` |
+| **A — `shopify store auth` (recommended)** | Any store you can log into; works when Partner install fails | **Yes** — 24h `shpat_…` (CLI stores it; copy into `.env`) |
+| **B — Custom Admin app** (Option B below) | You want a **permanent** token without CLI | **Yes** — permanent `shpat_…` from **Develop apps** |
+| **C — Partner app client credentials** | Store is in the **same** Partner org as the app | **24h** token via curl after Partner app install (not permanent `shpat_`) |
 
-**Recommendation for `70yuey-sr.myshopify.com`:** Partner install failed because the store is **not** in the Partner org. Use **Option A (Custom Admin app)** — fastest path to a real `SHOPIFY_ADMIN_ACCESS_TOKEN=shpat_…`. Do not put `SHOPIFY_API_SECRET` (`shpss_…`) in `SHOPIFY_ADMIN_ACCESS_TOKEN`; that field must be an Admin API access token.
+**What worked for `70yuey-sr.myshopify.com` (2026-07-03):** Partner OAuth install for `client_id` `60df4f5…` still returns `app_not_installed` (production store org ≠ Dev Dashboard org `224423153`). **`shopify store auth`** succeeded after a one-time browser OAuth prompt and produced a `shpat_…` token with full seed scopes. Catalog seed completed via `npm run seed:shopify`.
+
+Do **not** put `SHOPIFY_API_SECRET` (`shpss_…`) in `SHOPIFY_ADMIN_ACCESS_TOKEN`; that field must be an Admin API access token.
+
+**Custom apps in Admin (2026):** **Settings → Apps and sales channels → Develop apps** (not a separate “legacy custom app” wizard). There is **no** CLI or Admin GraphQL API to create custom apps programmatically — MCP confirms docs-only for app auth. `shopify app config` validates/links Partner apps only; it does not scaffold store custom apps.
 
 #### Optional: scaffold a **separate** Partner app (only if you need a new app)
 
@@ -186,8 +190,12 @@ Both options below need these scopes:
 
 | Scope | Needed for |
 | --- | --- |
-| `write_products`, `read_products` | Products, collections, variants |
+| `write_products`, `read_products` | Products, collections, variants, metafield definitions |
 | `write_content`, `read_content` | Journal blog and articles |
+| `write_online_store_navigation`, `read_online_store_navigation` | Future: header/footer menus |
+| `write_legal_policies`, `read_legal_policies` | Future: shipping/refund/terms/privacy policies |
+
+`shopify.app.toml` includes all of the above. Metafield definitions use the underlying resource scopes (`write_products` for product/collection/shop metafields) — no separate metafield-definition scopes exist.
 
 Set `PUBLIC_STORE_URL` to the live Oxygen URL (so `/assets/*` image URLs resolve during seed):
 
@@ -195,7 +203,33 @@ Set `PUBLIC_STORE_URL` to the live Oxygen URL (so `/assets/*` image URLs resolve
 PUBLIC_STORE_URL=https://the-kashmir-weaver-4c08a749ba70084fdf74.o2.myshopify.dev
 ```
 
-### Option A — Custom Admin app (store Admin)
+### Option A — `shopify store auth` (CLI, recommended)
+
+Deploys scopes to the Partner app, then authorizes the **CLI store app** on the merchant store (separate from Partner `client_id` install). One browser OAuth prompt; token valid ~24 hours.
+
+```bash
+# 1. Release scopes from shopify.app.toml to Dev Dashboard
+shopify app deploy --allow-updates
+
+# 2. Authorize on the store (opens browser once)
+shopify store auth \
+  --store 70yuey-sr.myshopify.com \
+  --scopes read_products,write_products,read_content,write_content,read_online_store_navigation,write_online_store_navigation,read_legal_policies,write_legal_policies
+
+# 3. Verify scopes
+shopify store execute --store 70yuey-sr.myshopify.com \
+  --query '{ currentAppInstallation { accessScopes { handle } } }' --json
+
+# 4. Copy token into local .env (CLI stores it under ~/Library/Preferences/shopify-cli-store-nodejs/)
+#    Set SHOPIFY_ADMIN_ACCESS_TOKEN=shpat_…  (not shpss_…)
+#    Token expires ~24h — re-run store auth before re-seeding.
+
+npm run seed:shopify
+```
+
+`shopify store execute` uses the same stored token for ad-hoc Admin GraphQL (add `--allow-mutations` for writes).
+
+### Option B — Custom Admin app (store Admin, permanent token)
 
 1. **Settings → Apps and sales channels → Develop apps → Create an app**
 2. **Configuration → Admin API integration → Configure**
@@ -203,39 +237,33 @@ PUBLIC_STORE_URL=https://the-kashmir-weaver-4c08a749ba70084fdf74.o2.myshopify.de
 4. **Install app** → copy **Admin API access token** → `SHOPIFY_ADMIN_ACCESS_TOKEN` in local `.env`
 5. Run `npm run seed:shopify`
 
-### Option B — Partner app (`shopify.app.toml`)
+### Option C — Partner app install + client credentials
 
-This repo includes `shopify.app.toml` linked to the **The Kashmir Weaver** Partner app (`client_id` in the file). Required Admin scopes are already configured:
+This repo includes `shopify.app.toml` linked to **The Kashmir Weaver** (`client_id` `60df4f5aba046f1301c715771ac0c30b`). Scopes:
 
 ```toml
-scopes = "read_products,write_products,read_content,write_content"
+scopes = "read_products,write_products,read_content,write_content,read_online_store_navigation,write_online_store_navigation,read_legal_policies,write_legal_policies"
 ```
-
-Metafield definitions use the underlying resource scopes (`write_products` for product/collection/shop metafields) — no separate metafield-definition scopes exist.
 
 #### 1. Deploy scopes to Partners
 
 From the repo root (logged in via `shopify auth login`):
 
 ```bash
-npx shopify app deploy --allow-updates
+shopify app deploy --allow-updates
 ```
 
-This releases a new app version (e.g. `the-kashmir-weaver-2`) with the scopes above.
+This releases a new app version (e.g. `the-kashmir-weaver-5`) with the scopes above.
 
-#### 2. Install the app on `70yuey-sr.myshopify.com`
+#### 2. Install the Partner app on `70yuey-sr.myshopify.com`
 
 Partner apps no longer expose a permanent `shpat_…` token in Admin. Install the app first, then obtain a short-lived token (step 3).
 
-**Option 2a — CLI (recommended)**
+> **Note:** On production stores outside the Dev Dashboard org, Partner install URLs and client-credentials grant may return `app_not_installed`. Use **Option A (`shopify store auth`)** instead.
 
-```bash
-shopify store auth \
-  --store 70yuey-sr.myshopify.com \
-  --scopes read_products,write_products,read_content,write_content
-```
+**Option 2a — CLI store auth (works on this store)**
 
-Complete the browser OAuth prompt to install/authorize the app. CLI stores an online token for `shopify store execute`; for the seed script, use client credentials (2b) after install.
+Same as Option A above.
 
 **Option 2b — Install URL**
 
@@ -247,7 +275,7 @@ https://70yuey-sr.myshopify.com/admin/oauth/install?client_id=60df4f5aba046f1301
 
 Or **Dev Dashboard → Apps → The Kashmir Weaver → Test on development store** and select the store.
 
-> **Note:** `shopify app dev --store 70yuey-sr.myshopify.com` fails if the store is not a dev store in the same Partner org. Use the install URL or `shopify store auth` instead.
+> **Note:** `shopify app dev --store 70yuey-sr.myshopify.com` fails if the store is not a dev store in the same Partner org. Use `shopify store auth` or the install URL instead.
 
 #### 3. Get an Admin API access token
 
