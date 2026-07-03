@@ -29,6 +29,11 @@ if (!SHOP || !TOKEN || !BASE_URL) {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** Scopes required for each seed phase. Shop metafields need fewer scopes than catalog. */
+const REQUIRED_SCOPES = {
+  catalog: ['write_products', 'read_products', 'write_content', 'read_content'],
+} as const;
+
 async function adminGraphql<T>(
   query: string,
   variables?: Record<string, unknown>,
@@ -59,6 +64,33 @@ async function adminGraphql<T>(
   }
 
   return json.data as T;
+}
+
+async function checkAccessScopes(): Promise<Set<string>> {
+  const data = await adminGraphql<{
+    currentAppInstallation: {accessScopes: Array<{handle: string}>};
+  }>(`query { currentAppInstallation { accessScopes { handle } } }`);
+
+  return new Set(data.currentAppInstallation.accessScopes.map((s) => s.handle));
+}
+
+function warnMissingScopes(scopes: Set<string>) {
+  const missing = REQUIRED_SCOPES.catalog.filter((s) => !scopes.has(s));
+  if (missing.length === 0) return;
+
+  console.warn(
+    `\n⚠ Missing Admin API scopes: ${missing.join(', ')}`,
+  );
+  console.warn(
+    '  Products, collections, and journal articles will be skipped until you:',
+  );
+  console.warn(
+    '  Admin → Settings → Apps → Develop apps → [your app] → Configuration',
+  );
+  console.warn(
+    '  → Admin API access scopes → enable write_products, write_content (and read_*)',
+  );
+  console.warn('  → Install app → copy new token to SHOPIFY_ADMIN_ACCESS_TOKEN\n');
 }
 
 function assetUrl(path: string): string {
@@ -420,8 +452,17 @@ async function seedProducts(collectionIds: Map<string, string>) {
   }
 }
 
+function hasCatalogScopes(scopes: Set<string>): boolean {
+  return REQUIRED_SCOPES.catalog.every((s) => scopes.has(s));
+}
+
 async function main() {
-  console.log(`\nSeeding ${SHOP} from static catalog…\n`);
+  console.log(`\nSeeding ${SHOP} from static catalog…`);
+  console.log(`Asset base URL: ${BASE_URL}\n`);
+
+  const scopes = await checkAccessScopes();
+  warnMissingScopes(scopes);
+  const canSeedCatalog = hasCatalogScopes(scopes);
 
   console.log('1. Metafield definitions');
   await ensureMetafieldDefinitions();
@@ -429,6 +470,14 @@ async function main() {
   console.log('\n2. Shop metafields');
   const shopId = await getShopId();
   await setShopMetafields(shopId);
+
+  if (!canSeedCatalog) {
+    console.log('\n3–5. Journal, collections, products — skipped (missing scopes)');
+    console.log('\nDone (shop metafields only).');
+    console.log('Grant write_products + write_content, re-run npm run seed:shopify.');
+    console.log('Keep USE_STATIC_CATALOG=true on Oxygen until catalog seed completes.\n');
+    return;
+  }
 
   console.log('\n3. Journal blog & articles');
   const blogId = await ensureJournalBlog();
@@ -443,9 +492,6 @@ async function main() {
   console.log('\nDone.');
   console.log(
     'If product/collection metafield definitions failed, create them in Admin → Settings → Custom data (namespace: custom).',
-  );
-  console.log(
-    'If blog/products failed, grant your Admin API app scopes: write_products, write_content, read_content.',
   );
   console.log('Remove USE_STATIC_CATALOG from Oxygen after catalog is live.\n');
 }

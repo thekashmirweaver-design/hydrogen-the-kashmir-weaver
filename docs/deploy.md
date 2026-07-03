@@ -136,7 +136,26 @@ cp .env.example .env
 npm run seed:shopify
 ```
 
-**Admin token:** Settings → Apps and sales channels → Develop apps → Create an app → Configure Admin API scopes (`write_products`, `write_content`, etc.) → Install → copy Admin API access token.
+**Custom Admin app token** (do not commit to git):
+
+1. **Settings → Apps and sales channels → Develop apps → Create an app**
+2. **Configuration → Admin API integration → Configure**
+3. Enable scopes:
+
+   | Scope | Needed for |
+   | --- | --- |
+   | `write_products`, `read_products` | Products, collections, variants |
+   | `write_content`, `read_content` | Journal blog and articles |
+
+4. **Install app** → copy **Admin API access token** → `SHOPIFY_ADMIN_ACCESS_TOKEN` in local `.env`
+5. Set `PUBLIC_STORE_URL` to the live Oxygen URL (so `/assets/*` image URLs resolve during seed)
+
+```bash
+PUBLIC_STORE_URL=https://the-kashmir-weaver-4c08a749ba70084fdf74.o2.myshopify.dev
+npm run seed:shopify
+```
+
+The script checks scopes at startup. Without `write_products` / `write_content` it still seeds shop metafields but skips catalog and journal. Re-run after granting scopes.
 
 Then remove `USE_STATIC_CATALOG` from Oxygen and redeploy.
 
@@ -151,11 +170,17 @@ See [shopify-metafields.md](./shopify-metafields.md).
 
 ## 5. Smoke test
 
-- `/` homepage featured + hero metafield
-- `/collections/all` catalog + sort
-- `/products/:handle` variants, reviews, JSON-LD
-- `/cart` checkout flow
-- `/journal` blog articles
-- `/account/login` → Shopify login (no `redirect_uri mismatch`)
-- `/account` customer area (orders, profile, addresses)
-- `/sitemap/editorial.xml`
+**Note:** The default Oxygen preview URL (`*.o2.myshopify.dev`) may require Shopify staff login before the storefront loads. That is Oxygen preview protection, not a storefront bug. Use a custom domain or disable preview auth in **Hydrogen → Production → Domains** for public smoke tests.
+
+| Check | URL / action | Pass criteria |
+| --- | --- | --- |
+| Homepage | `/` | Hero, featured products/collections render (`USE_STATIC_CATALOG=true` uses static data until seeded) |
+| Catalog | `/collections/all` | Product grid loads; sort works |
+| PDP | `/products/:handle` | Variants, price, JSON-LD, images |
+| Cart | `/cart` | Add to cart; proceed to checkout |
+| Journal | `/journal` | Article list (static or Admin-seeded) |
+| Account login | `/account/login` | Redirects to Shopify login — **no** `redirect_uri mismatch` |
+| Account area | `/account/orders`, `/account/profile` | Loads when signed in |
+| Sign out | Header → Sign out | Returns to storefront |
+| SEO | `/sitemap/editorial.xml` | Valid XML sitemap |
+| Assets | `/assets/hero-portrait.jpg` | 200 (required for seed script image URLs) |
