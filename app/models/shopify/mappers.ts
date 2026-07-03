@@ -60,6 +60,8 @@ export type ShopifyProductNode = {
   variants: {edges: Array<{node: ShopifyVariantNode}>};
   collections: {edges: Array<{node: {handle: string; title: string}}>};
   metafields?: ShopifyMetafield[] | null;
+  reviewRating?: {value?: string | null} | null;
+  reviewCount?: {value?: string | null} | null;
 };
 
 export type ShopifyCollectionNode = {
@@ -185,6 +187,18 @@ const mapOptions = (options: ShopifyOptionNode[]): ProductOption[] =>
     values: option.optionValues.map((value) => value.name),
   }));
 
+const parseReviewRating = (value?: string | null): number | undefined => {
+  if (!value?.trim()) return undefined;
+  try {
+    const parsed = JSON.parse(value) as {value?: string};
+    const n = parseFloat(parsed.value ?? value);
+    return Number.isFinite(n) ? n : undefined;
+  } catch {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : undefined;
+  }
+};
+
 export function mapProduct(node: ShopifyProductNode): Product {
   const fields = metafieldMap(node.metafields);
   const variants = node.variants.edges.map(({node: variant}) =>
@@ -202,6 +216,8 @@ export function mapProduct(node: ShopifyProductNode): Product {
     getMetafield(fields, PRODUCT_METAFIELDS.story) ?? description ?? node.title;
   const limited = parseBoolean(getMetafield(fields, PRODUCT_METAFIELDS.limited));
   const stockQty = parseInteger(getMetafield(fields, PRODUCT_METAFIELDS.stockQty));
+  const reviewRating = parseReviewRating(node.reviewRating?.value);
+  const reviewCount = parseInteger(node.reviewCount?.value ?? undefined);
   const inStock = primaryVariant?.availableForSale ?? false;
   const images = node.images.edges.map(({node: image}) =>
     toImage(image, node.title),
@@ -248,6 +264,10 @@ export function mapProduct(node: ShopifyProductNode): Product {
     publishedAt: node.publishedAt?.slice(0, 10),
     variants: variants.length ? variants : undefined,
     options: mapOptions(node.options),
+    reviews:
+      reviewRating != null && reviewCount != null && reviewCount > 0
+        ? {rating: reviewRating, count: reviewCount}
+        : undefined,
   };
 }
 

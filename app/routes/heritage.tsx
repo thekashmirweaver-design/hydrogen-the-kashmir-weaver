@@ -3,11 +3,12 @@ import type {Route} from './+types/heritage';
 import {getHeritagePage} from '~/controllers';
 import {HeritageView} from '~/views/content/HeritageView';
 
+import {pageMetaWithOg} from '~/lib/seo';
+
 export const meta: Route.MetaFunction = ({data}) => {
-  return [
-    {title: data?.metadata?.title ?? 'Heritage — The Kashmir Weaver'},
-    {name: 'description', content: data?.metadata?.description},
-  ];
+  const title = data?.metadata?.title ?? 'Heritage — The Kashmir Weaver';
+  const description = data?.metadata?.description;
+  return pageMetaWithOg({title, description});
 };
 
 export async function loader({context}: Route.LoaderArgs) {

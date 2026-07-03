@@ -67,11 +67,7 @@ export async function getProductPage(
   const description =
     product.seo?.description ?? product.shortDescription;
 
-  return {
-    product,
-    relatedProducts,
-    metadata: {title, description},
-    productLd: {
+  const productLd: Record<string, unknown> = {
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: product.name,
@@ -90,7 +86,21 @@ export async function getProductPage(
             : 'https://schema.org/OutOfStock',
         url,
       },
-    },
+    };
+
+  if (product.reviews) {
+    productLd.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: product.reviews.rating,
+      reviewCount: product.reviews.count,
+    };
+  }
+
+  return {
+    product,
+    relatedProducts,
+    metadata: {title, description},
+    productLd,
     breadcrumbLd: {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',

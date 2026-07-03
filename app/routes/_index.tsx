@@ -26,7 +26,12 @@ export async function loader({context}: Route.LoaderArgs) {
     getJournalPage(context.storefront),
   ]);
   const home = await getHomePage(catalogOptions, featured);
-  return {...home, journalPosts: journal.posts.slice(0, 3)};
+  return {
+    ...home,
+    journalPosts: journal.posts.slice(0, 3),
+    heroImageUrl: featured.heroImageUrl,
+    heroAlt: featured.heroAlt,
+  };
 }
 
 export default function HomeRoute() {

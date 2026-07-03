@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Search, User, ShoppingBag, Menu, X, ChevronDown, Check, Globe } from "lucide-react";
 import type { CartApiQueryFragment } from "storefrontapi.generated";
 import { useAnalytics } from "@shopify/hydrogen";
-import { CURRENCIES, getCurrency, useCurrency } from "~/lib/currency-store";
+import { CURRENCIES, countryForCurrency, getCurrency, useCurrency, type CurrencyCode } from "~/lib/currency-store";
 import { Marquee } from "~/components/gulriza/Marquee";
 import { SearchModal, lockScroll, unlockScroll } from "~/components/gulriza/SearchModal";
 import { CartDrawer } from "~/components/gulriza/CartDrawer";
@@ -445,6 +445,9 @@ function CurrencyDropdown() {
                     onClick={() => {
                       setCurrency(c.code);
                       setOpen(false);
+                      const url = new URL(window.location.href);
+                      url.searchParams.set("country", countryForCurrency(c.code as CurrencyCode));
+                      window.location.assign(url.toString());
                     }}
                     className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-all duration-200 hover:bg-[var(--surface-2)] focus:bg-[var(--surface-2)] focus:outline-none"
                     style={{

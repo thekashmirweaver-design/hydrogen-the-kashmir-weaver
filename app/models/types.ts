@@ -64,6 +64,7 @@ export type Product = {
   publishedAt?: string;
   variants?: ProductVariant[];
   options?: ProductOption[];
+  reviews?: {rating: number; count: number};
 };
 
 export type CatalogSnapshot = {

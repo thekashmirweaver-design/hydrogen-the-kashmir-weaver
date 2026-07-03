@@ -207,6 +207,12 @@ export function ProductView({
           >
             {product.name}
           </h1>
+          {product.reviews && (
+            <p className="mt-3 text-sm text-muted-foreground">
+              {product.reviews.rating.toFixed(1)} / 5 · {product.reviews.count}{' '}
+              {product.reviews.count === 1 ? 'review' : 'reviews'}
+            </p>
+          )}
           <div className="mt-4 text-lg text-muted-foreground">{formatPrice(displayPrice)}</div>
 
           {product.options && product.options.length > 0 && (

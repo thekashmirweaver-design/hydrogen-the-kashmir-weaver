@@ -9,6 +9,17 @@ export function pageMeta(metadata: PageMetadata) {
   ];
 }
 
+export function pageMetaWithOg(metadata: PageMetadata, image?: string) {
+  return [
+    ...pageMeta(metadata),
+    ...ogMeta({
+      title: metadata.title,
+      description: metadata.description,
+      image,
+    }),
+  ];
+}
+
 export function ogMeta(options: {
   title: string;
   description?: string;

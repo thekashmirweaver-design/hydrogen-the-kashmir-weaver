@@ -128,6 +128,12 @@ export const CATALOG_PRODUCT_FRAGMENT =
     ) {
       ...MetafieldValue
     }
+    reviewRating: metafield(namespace: "reviews", key: "rating") {
+      value
+    }
+    reviewCount: metafield(namespace: "reviews", key: "rating_count") {
+      value
+    }
   }
   ${CATALOG_IMAGE_FRAGMENT}
   ${PRODUCT_OPTION_FRAGMENT}

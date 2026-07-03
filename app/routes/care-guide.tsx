@@ -3,11 +3,12 @@ import type {Route} from './+types/care-guide';
 import {getCareGuidePage} from '~/controllers';
 import {CareGuideView} from '~/views/content/CareGuideView';
 
+import {pageMetaWithOg} from '~/lib/seo';
+
 export const meta: Route.MetaFunction = ({data}) => {
-  return [
-    {title: data?.metadata?.title ?? 'Care Guide — The Kashmir Weaver'},
-    {name: 'description', content: data?.metadata?.description},
-  ];
+  const title = data?.metadata?.title ?? 'Care Guide — The Kashmir Weaver';
+  const description = data?.metadata?.description;
+  return pageMetaWithOg({title, description});
 };
 
 export async function loader({context}: Route.LoaderArgs) {

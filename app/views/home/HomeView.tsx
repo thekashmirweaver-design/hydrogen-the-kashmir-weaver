@@ -21,16 +21,20 @@ export function HomeView({
   featuredProducts,
   featuredCollections,
   journalPosts = [],
+  heroImageUrl,
+  heroAlt,
 }: {
   products: Product[];
   collections: Collection[];
   featuredProducts: Product[];
   featuredCollections: Collection[];
   journalPosts?: JournalPost[];
+  heroImageUrl?: string;
+  heroAlt?: string;
 }) {
   return (
     <div>
-      <Hero />
+      <Hero heroImageUrl={heroImageUrl} heroAlt={heroAlt} />
       <FeaturedProducts products={featuredProducts} />
       <SignatureCollections
         collections={featuredCollections}
@@ -44,13 +48,23 @@ export function HomeView({
   );
 }
 
-function Hero() {
+function Hero({
+  heroImageUrl,
+  heroAlt,
+}: {
+  heroImageUrl?: string;
+  heroAlt?: string;
+}) {
+  const src = heroImageUrl || heroPortrait;
+  const alt =
+    heroAlt ||
+    'A woman wrapped in an emerald pashmina shawl, framed by a stone arch overlooking a Himalayan lake at dusk.';
   return (
     <section className="relative min-h-[100dvh] w-full overflow-hidden">
       <div className="absolute inset-y-0 right-0 w-full md:w-[62%] lg:w-[55%]">
         <img
-          src={heroPortrait}
-          alt="A woman wrapped in an emerald pashmina shawl, framed by a stone arch overlooking a Himalayan lake at dusk."
+          src={src}
+          alt={alt}
           className="absolute inset-0 h-full w-full object-cover edge-fade-left"
           style={{objectPosition: 'center'}}
           loading="eager"

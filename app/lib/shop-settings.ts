@@ -149,8 +149,8 @@ export async function loadShopSettings(
     publicStoreDomain?: string;
   },
 ): Promise<ShopSettings> {
-  const headerMenuHandle = options?.headerMenuHandle ?? 'main-menu';
-  const footerMenuHandle = options?.footerMenuHandle ?? 'footer';
+  const headerMenuHandle = options?.headerMenuHandle ?? 'header-menu';
+  const footerMenuHandle = options?.footerMenuHandle ?? 'footer-menu';
 
   try {
     const data = await storefront.query<ShopSettingsQueryResult>(SHOP_SETTINGS_QUERY, {

@@ -46,11 +46,24 @@ Each definition must have **Storefront API access** enabled so the Storefront AP
 ```json
 {
   "productHandles": ["midnight-emerald-jamawar", "heritage-kani-shawl"],
-  "collectionHandles": ["jamawar-embroidery", "kani-pashmina"]
+  "collectionHandles": ["jamawar-embroidery", "kani-pashmina"],
+  "heroImageUrl": "https://your-store.com/assets/hero-portrait.jpg",
+  "heroAlt": "Hero image alt text"
 }
 ```
 
 When empty, the homepage falls back to the first eight products and all collections in catalog order.
+
+## Product reviews (optional)
+
+When using **Shopify Product Reviews** or a compatible app, the storefront reads standard metafields:
+
+| Namespace | Key | Purpose |
+| --- | --- | --- |
+| `reviews` | `rating` | Average rating (JSON rating type) |
+| `reviews` | `rating_count` | Number of reviews |
+
+These display on the product page and in JSON-LD when present.
 
 ### Marquee messages format
 

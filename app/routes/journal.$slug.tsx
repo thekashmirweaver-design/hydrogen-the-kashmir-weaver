@@ -3,12 +3,14 @@ import type {Route} from './+types/journal.$slug';
 import {getArticlePage} from '~/controllers';
 import {ArticleView} from '~/views/journal/ArticleView';
 
+import {pageMetaWithOg} from '~/lib/seo';
+
 export const meta: Route.MetaFunction = ({data}) => {
   if (!data?.metadata) return [{title: 'Journal — The Kashmir Weaver'}];
-  return [
-    {title: data.metadata.title},
-    {name: 'description', content: data.metadata.description},
-  ];
+  const image = data.article?.img?.startsWith('http')
+    ? data.article.img
+    : undefined;
+  return pageMetaWithOg(data.metadata, image);
 };
 
 export async function loader({params, context}: Route.LoaderArgs) {

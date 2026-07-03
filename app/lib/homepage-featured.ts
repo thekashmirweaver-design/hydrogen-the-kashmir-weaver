@@ -4,6 +4,8 @@ import type {Collection, Product} from '~/models/types';
 export type HomepageFeatured = {
   productHandles: string[];
   collectionHandles: string[];
+  heroImageUrl?: string;
+  heroAlt?: string;
 };
 
 const HOMEPAGE_FEATURED_QUERY = `#graphql
@@ -42,14 +44,21 @@ export async function loadHomepageFeatured(
     const parsed = parseJsonField<{
       productHandles?: string[];
       collectionHandles?: string[];
+      heroImageUrl?: string;
+      heroAlt?: string;
     }>(data.shop?.homepageFeatured?.value ?? undefined);
 
     return {
       productHandles: parsed?.productHandles?.filter(Boolean) ?? [],
       collectionHandles: parsed?.collectionHandles?.filter(Boolean) ?? [],
+      heroImageUrl: parsed?.heroImageUrl,
+      heroAlt: parsed?.heroAlt,
     };
   } catch {
-    return {productHandles: [], collectionHandles: []};
+    return {
+      productHandles: [],
+      collectionHandles: [],
+    };
   }
 }
 

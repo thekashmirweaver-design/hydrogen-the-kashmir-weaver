@@ -24,6 +24,18 @@ export const CURRENCIES: Currency[] = [
 export const getCurrency = (code: CurrencyCode): Currency =>
   CURRENCIES.find((c) => c.code === code) ?? CURRENCIES[0];
 
+export const CURRENCY_COUNTRY: Record<CurrencyCode, string> = {
+  USD: 'US',
+  EUR: 'DE',
+  GBP: 'GB',
+  INR: 'IN',
+  AED: 'AE',
+};
+
+export function countryForCurrency(code: CurrencyCode): string {
+  return CURRENCY_COUNTRY[code] ?? 'US';
+}
+
 type CurrencyState = {
   code: CurrencyCode;
   setCurrency: (code: CurrencyCode) => void;

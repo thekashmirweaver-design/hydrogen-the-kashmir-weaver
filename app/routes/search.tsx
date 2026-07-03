@@ -10,9 +10,12 @@ import {
 } from '~/lib/search';
 import type {RegularSearchQuery, PredictiveSearchQuery} from 'storefrontapi.generated';
 import {SearchView} from '~/views/search/SearchView';
+import {ogMeta} from '~/lib/seo';
+
+const SEARCH_TITLE = 'Search — The Kashmir Weaver';
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: 'Search — The Kashmir Weaver'}];
+  return [{title: SEARCH_TITLE}, ...ogMeta({title: SEARCH_TITLE})];
 };
 
 export async function loader({request, context}: Route.LoaderArgs) {
