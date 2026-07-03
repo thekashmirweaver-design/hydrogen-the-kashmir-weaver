@@ -185,36 +185,45 @@ async function setShopMetafields(shopId: string) {
   console.log('  ✓ shop metafields set');
 }
 
-async function ensureJournalBlog(): Promise<string> {
-  const data = await adminGraphql<{
-    blogs: {edges: Array<{node: {id: string; handle: string}}>};
-  }>(`query { blogs(first: 20) { edges { node { id handle } } } }`);
+async function ensureJournalBlog(): Promise<string | null> {
+  try {
+    const data = await adminGraphql<{
+      blogs: {edges: Array<{node: {id: string; handle: string}}>};
+    }>(`query { blogs(first: 20) { edges { node { id handle } } } }`);
 
-  const existing = data.blogs.edges.find((e) => e.node.handle === 'journal');
-  if (existing) return existing.node.id;
+    const existing = data.blogs.edges.find((e) => e.node.handle === 'journal');
+    if (existing) return existing.node.id;
 
-  const created = await adminGraphql<{
-    blogCreate: {blog: {id: string}; userErrors: Array<{message: string}>};
-  }>(
-    `#graphql
-    mutation CreateBlog($blog: BlogCreateInput!) {
-      blogCreate(blog: $blog) {
-        blog { id handle }
-        userErrors { message }
-      }
-    }`,
-    {blog: {title: 'Journal', handle: 'journal'}},
-  );
+    const created = await adminGraphql<{
+      blogCreate: {blog: {id: string}; userErrors: Array<{message: string}>};
+    }>(
+      `#graphql
+      mutation CreateBlog($blog: BlogCreateInput!) {
+        blogCreate(blog: $blog) {
+          blog { id handle }
+          userErrors { message }
+        }
+      }`,
+      {blog: {title: 'Journal', handle: 'journal'}},
+    );
 
-  if (created.blogCreate.userErrors.length) {
-    throw new Error(created.blogCreate.userErrors[0].message);
+    if (created.blogCreate.userErrors.length) {
+      throw new Error(created.blogCreate.userErrors[0].message);
+    }
+
+    console.log('  ✓ blog "journal" created');
+    return created.blogCreate.blog.id;
+  } catch (err) {
+    console.log(`  · journal blog skipped: ${(err as Error).message}`);
+    return null;
   }
-
-  console.log('  ✓ blog "journal" created');
-  return created.blogCreate.blog.id;
 }
 
-async function seedArticles(blogId: string) {
+async function seedArticles(blogId: string | null) {
+  if (!blogId) {
+    console.log('  · articles skipped (no blog access or blog missing)');
+    return;
+  }
   for (const post of POSTS) {
     const article = ARTICLES[post.slug];
     const bodyHtml = article
@@ -404,7 +413,14 @@ async function main() {
   console.log('\n5. Products');
   await seedProducts(collectionIds);
 
-  console.log('\nDone. Remove USE_STATIC_CATALOG from Oxygen and redeploy.\n');
+  console.log('\nDone.');
+  console.log(
+    'If product/collection metafield definitions failed, create them in Admin → Settings → Custom data (namespace: custom).',
+  );
+  console.log(
+    'If blog/products failed, grant your Admin API app scopes: write_products, write_content, read_content.',
+  );
+  console.log('Remove USE_STATIC_CATALOG from Oxygen after catalog is live.\n');
 }
 
 main().catch((err) => {
