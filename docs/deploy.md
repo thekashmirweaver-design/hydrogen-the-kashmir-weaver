@@ -168,9 +168,118 @@ Then remove `USE_STATIC_CATALOG` from Oxygen and redeploy.
 
 See [shopify-metafields.md](./shopify-metafields.md).
 
+## Making the storefront public
+
+Oxygen environments are **private by default**. A `302` redirect to `accounts.shopify.com` via `cf-auth-worker.myshopify.dev` means **staff preview auth**, not a bug in the Hydrogen app. Pushing env vars (`hydrogen env push`) or deploying code does **not** change URL privacy.
+
+### Verify current status
+
+```bash
+curl -sI "https://the-kashmir-weaver-4c08a749ba70084fdf74.o2.myshopify.dev"
+```
+
+| Response | Meaning |
+| --- | --- |
+| `302` → `accounts.shopify.com` / `cf-auth-worker` | Environment is **Private** (staff login required) |
+| `200` with `powered-by: Shopify, Oxygen` | Environment is **Public** or traffic is on a custom domain |
+
+There is **no Shopify CLI command** to toggle URL privacy or attach custom domains. Use Admin (below) or temporary bypass tokens for CI.
+
+### Option A — Make the Production Oxygen URL public (fastest)
+
+Use this when you want the default `*.o2.myshopify.dev` URL reachable without staff login.
+
+1. **Shopify Admin → Sales channels → Hydrogen → The Kashmir Weaver**
+2. **Storefront settings → Environments and variables**
+3. Click **Production**
+4. Under **URL privacy**, select **Public**
+5. **Save**, then redeploy if prompted (or **… → Redeploy environment** on the production card)
+
+Plan limit: Basic and Shopify plans get **1 public environment** (Production counts). Making Production public uses that slot.
+
+After saving, re-run the `curl` check above — you should get `HTTP/2 200` instead of `302`.
+
+Also disable storefront password protection if customers should browse without a password:
+
+1. **Online Store → Preferences**
+2. Deselect **Restrict access to visitors with the password**
+3. **Save**
+
+(`70yuey-sr.myshopify.com` currently redirects to `/password`.)
+
+### Option B — Custom domain (recommended for launch)
+
+Custom domains attached to the **Production** Hydrogen environment are publicly accessible and are the right long-term setup for SEO and Customer Account OAuth.
+
+**Current domain check (Jul 2026):**
+
+| Domain | Status |
+| --- | --- |
+| `thekashmirweaver.com` / `www.thekashmirweaver.com` | Serves a **Vercel** site (not Oxygen) — DNS must be repointed |
+| `70yuey-sr.myshopify.com` | **Password-protected** Online Store |
+
+**Steps:**
+
+1. **Settings → Domains** — add or connect `thekashmirweaver.com` (and `www` if needed) in Shopify.
+2. Point DNS to Shopify (A/CNAME records shown in Admin). Remove or repoint any Vercel DNS records for that hostname.
+3. **Hydrogen → The Kashmir Weaver → Production → Domains** — connect the domain to the production environment.
+4. Set the Hydrogen domain as **Primary** under **Settings → Domains** (target: production Hydrogen storefront, not Online Store theme).
+5. Register the custom origin in **Customer Account API** setup (see [Custom domain](#custom-domain) above) and run:
+
+   ```bash
+   npx shopify hydrogen customer-account-push \
+     --dev-origin=https://www.thekashmirweaver.com \
+     --storefront-id=gid://shopify/HydrogenStorefront/1000154618
+   ```
+
+6. Disable Online Store password (Option A, last step).
+
+Verify:
+
+```bash
+curl -sI "https://www.thekashmirweaver.com"
+# Expect: HTTP/2 200, powered-by: Shopify, Oxygen
+```
+
+### Option C — Shareable deployment links (preview / stakeholder review)
+
+For individual deployments (not permanent production access):
+
+1. Open the deployment in **Hydrogen → Deployments**
+2. **Share → Anyone with the link**
+
+Shareable links include a token in the URL. They are for trusted reviewers only; Oxygen serves `robots.txt` disallow rules on shared preview URLs.
+
+### Option D — Auth bypass token (CI / E2E only, temporary)
+
+For automated tests against a **private** deployment URL (valid 1–12 hours, not for customers):
+
+```bash
+CI=true npx shopify hydrogen deploy -f \
+  --auth-bypass-token --auth-bypass-token-duration=12 \
+  --token="$SHOPIFY_HYDROGEN_DEPLOYMENT_TOKEN"
+```
+
+Pass the token from `h2_deploy_log.json` as a request header:
+
+```text
+oxygen-auth-bypass-token: <token>
+```
+
+Auth bypass tokens work only on the specific `*.o2.myshopify.dev` deployment URL, not on custom domains.
+
+### CLI reference (what does *not* make the site public)
+
+| Command | Effect |
+| --- | --- |
+| `shopify hydrogen env push --env=production` | Syncs env vars only |
+| `shopify hydrogen deploy` | Deploys code; privacy unchanged |
+| `shopify hydrogen env list` | Shows environment URLs |
+| `shopify store execute` | Admin GraphQL; no Hydrogen domain/privacy mutations via CLI |
+
 ## 5. Smoke test
 
-**Note:** The default Oxygen preview URL (`*.o2.myshopify.dev`) may require Shopify staff login before the storefront loads. That is Oxygen preview protection, not a storefront bug. Use a custom domain or disable preview auth in **Hydrogen → Production → Domains** for public smoke tests.
+**Note:** Until Production URL privacy is **Public** (Option A) or a custom domain is connected (Option B), the default Oxygen URL (`*.o2.myshopify.dev`) returns staff preview auth (`302` → `cf-auth-worker`). That is expected for private environments.
 
 | Check | URL / action | Pass criteria |
 | --- | --- | --- |
