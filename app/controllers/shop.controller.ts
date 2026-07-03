@@ -39,7 +39,20 @@ export async function getCollectionsPage(
 export type CollectionPageViewModel = {
   collection: Collection;
   products: Product[];
+  metadata: PageMetadata;
+  collectionLd: Record<string, unknown>;
+  breadcrumbLd: Record<string, unknown>;
 };
+
+function collectionMetadata(collection: Collection): PageMetadata {
+  return {
+    title: collection.seo?.title ?? `${collection.name} — The Kashmir Weaver`,
+    description:
+      collection.seo?.description ??
+      collection.tagline ??
+      collection.story,
+  };
+}
 
 export async function getCollectionPage(
   handle: string,
@@ -55,9 +68,50 @@ export async function getCollectionPage(
     handle,
     options,
   );
-  return {collection, products};
+
+  const metadata = collectionMetadata(collection);
+  const url = `/collections/${handle}`;
+  const description = metadata.description ?? collection.story;
+
+  return {
+    collection,
+    products,
+    metadata,
+    collectionLd: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: collection.name,
+      description,
+      image: {
+        '@type': 'ImageObject',
+        url: collection.hero.src,
+        caption: collection.hero.alt,
+      },
+      url,
+    },
+    breadcrumbLd: {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {'@type': 'ListItem', position: 1, name: 'Home', item: '/'},
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Collections',
+          item: '/collections',
+        },
+        {
+          '@type': 'ListItem',
+          position: 3,
+          name: collection.name,
+          item: url,
+        },
+      ],
+    },
+  };
 }
 
+/** @deprecated Use getCollectionPage — avoids a duplicate Storefront fetch. */
 export async function getCollectionMetadata(
   handle: string,
   options?: CatalogOptions,
@@ -67,12 +121,7 @@ export async function getCollectionMetadata(
     options,
   );
   if (!collection) return {title: 'Not found — The Kashmir Weaver'};
-
-  const title =
-    collection.seo?.title ?? `${collection.name} — The Kashmir Weaver`;
-  const description = collection.seo?.description ?? collection.story;
-
-  return {title, description};
+  return collectionMetadata(collection);
 }
 
 export async function listCollectionHandles(

@@ -25,7 +25,7 @@ export function CollectionView({
           <div className="absolute inset-0 vignette-overlay" />
           <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1600px] px-6 pb-12 md:px-10 md:pb-20">
             <Reveal>
-              <Eyebrow>The Collection</Eyebrow>
+              <Eyebrow>{collection.tagline}</Eyebrow>
               <h1
                 className="font-display mt-6 text-4xl leading-[1.05] sm:text-5xl md:text-7xl"
                 style={{fontWeight: 300}}
@@ -55,8 +55,8 @@ export function CollectionView({
             Discover every collection
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground">
-            From the poetry of Jamawar to the architecture of Kani — explore every weave our
-            atelier has to offer.
+            From Sozni embroidery to Kani weave — explore every collection our atelier has to
+            offer.
           </p>
           <Link
             to="/collections"

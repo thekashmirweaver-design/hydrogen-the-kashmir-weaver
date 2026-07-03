@@ -22,8 +22,10 @@ Each definition must have **Storefront API access** enabled so the Storefront AP
 
 | Key | Name | Type | Purpose |
 | --- | --- | --- | --- |
-| `tagline` | Tagline | Single line text | Short hero line on collection pages |
+| `tagline` | Tagline | Single line text | Short hero line on collection cards, detail eyebrow, and search |
 | `story` | Story | Multi-line text | Collection narrative; falls back to collection description |
+
+**Search engine listing (Shopify Admin):** Set **Page title** and **Meta description** on each collection (or run `npm run seed:collections` to sync from static `seo` fields). The storefront uses these for `<title>`, meta description, OG tags, and JSON-LD.
 
 **Owner:** Collection
 

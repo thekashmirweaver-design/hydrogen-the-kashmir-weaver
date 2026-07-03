@@ -11,6 +11,7 @@ import {
   PRODUCT_METAFIELDS,
   SHOP_METAFIELDS,
 } from './metafields';
+import {truncateMetaDescription} from '~/lib/meta-description';
 
 type ShopifyMoney = {amount: string; currencyCode: string};
 
@@ -283,6 +284,12 @@ export function mapCollection(node: ShopifyCollectionNode): Collection {
     node.title;
   const story =
     getMetafield(fields, COLLECTION_METAFIELDS.story) ?? description;
+  const seoTitle = node.seo?.title?.trim() || `${node.title} — The Kashmir Weaver`;
+  const seoDescription =
+    node.seo?.description?.trim() ||
+    truncateMetaDescription(tagline) ||
+    truncateMetaDescription(story) ||
+    node.title;
 
   return {
     id: gidToId(node.id),
@@ -292,8 +299,8 @@ export function mapCollection(node: ShopifyCollectionNode): Collection {
     story,
     hero,
     seo: {
-      title: node.seo?.title ?? `${node.title} — The Kashmir Weaver`,
-      description: node.seo?.description ?? story,
+      title: seoTitle,
+      description: seoDescription,
     },
   };
 }

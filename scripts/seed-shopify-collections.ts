@@ -10,6 +10,7 @@ import {existsSync, readFileSync} from 'node:fs';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {collections} from '../app/models/static/repository.ts';
+import type {Collection} from '../app/models/types.ts';
 
 function loadEnvFile() {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -59,6 +60,32 @@ if (!TOKEN.startsWith('shpat_')) {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const assetUrl = (path: string) => `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 
+function collectionShopifyInput(col: Collection, id?: string) {
+  const seoTitle = col.seo?.title ?? `${col.name} — The Kashmir Weaver`;
+  const seoDescription = col.seo?.description ?? col.tagline;
+  return {
+    ...(id ? {id} : {handle: col.handle}),
+    title: col.name,
+    descriptionHtml: `<p>${col.story}</p>`,
+    image: {src: assetUrl(col.hero.src), altText: col.hero.alt},
+    seo: {title: seoTitle, description: seoDescription},
+    metafields: [
+      {
+        namespace: 'custom',
+        key: 'tagline',
+        type: 'single_line_text_field',
+        value: col.tagline,
+      },
+      {
+        namespace: 'custom',
+        key: 'story',
+        type: 'multi_line_text_field',
+        value: col.story,
+      },
+    ],
+  };
+}
+
 async function adminGraphql<T>(
   query: string,
   variables?: Record<string, unknown>,
@@ -102,60 +129,63 @@ async function findCollectionByHandle(handle: string): Promise<string | null> {
   }
 }
 
+async function upsertCollection(col: Collection): Promise<string | null> {
+  const existingId = await findCollectionByHandle(col.handle);
+
+  if (existingId) {
+    const result = await adminGraphql<{
+      collectionUpdate: {
+        collection: {id: string};
+        userErrors: Array<{message: string}>;
+      };
+    }>(
+      `#graphql
+      mutation UpdateCollection($input: CollectionInput!) {
+        collectionUpdate(input: $input) {
+          collection { id }
+          userErrors { message }
+        }
+      }`,
+      {input: collectionShopifyInput(col, existingId)},
+    );
+
+    if (result.collectionUpdate.userErrors.length) {
+      throw new Error(result.collectionUpdate.userErrors[0].message);
+    }
+
+    return existingId;
+  }
+
+  const result = await adminGraphql<{
+    collectionCreate: {
+      collection: {id: string; handle: string};
+      userErrors: Array<{message: string}>;
+    };
+  }>(
+    `#graphql
+    mutation CreateCollection($input: CollectionInput!) {
+      collectionCreate(input: $input) {
+        collection { id handle }
+        userErrors { message }
+      }
+    }`,
+    {input: collectionShopifyInput(col)},
+  );
+
+  if (result.collectionCreate.userErrors.length) {
+    throw new Error(result.collectionCreate.userErrors[0].message);
+  }
+
+  return result.collectionCreate.collection.id;
+}
+
 async function seedCollections(): Promise<Map<string, string>> {
   const handleToId = new Map<string, string>();
 
   for (const col of collections) {
     try {
-      const existingId = await findCollectionByHandle(col.handle);
-      if (existingId) {
-        handleToId.set(col.handle, existingId);
-        console.log(`  · collection ${col.handle} (already exists)`);
-        continue;
-      }
-
-      const result = await adminGraphql<{
-        collectionCreate: {
-          collection: {id: string; handle: string};
-          userErrors: Array<{message: string}>;
-        };
-      }>(
-        `#graphql
-        mutation CreateCollection($input: CollectionInput!) {
-          collectionCreate(input: $input) {
-            collection { id handle }
-            userErrors { message }
-          }
-        }`,
-        {
-          input: {
-            title: col.name,
-            handle: col.handle,
-            descriptionHtml: `<p>${col.story}</p>`,
-            image: {src: assetUrl(col.hero.src), altText: col.hero.alt},
-            metafields: [
-              {
-                namespace: 'custom',
-                key: 'tagline',
-                type: 'single_line_text_field',
-                value: col.tagline,
-              },
-              {
-                namespace: 'custom',
-                key: 'story',
-                type: 'multi_line_text_field',
-                value: col.story,
-              },
-            ],
-          },
-        },
-      );
-
-      if (result.collectionCreate.userErrors.length) {
-        throw new Error(result.collectionCreate.userErrors[0].message);
-      }
-
-      handleToId.set(col.handle, result.collectionCreate.collection.id);
+      const id = await upsertCollection(col);
+      if (id) handleToId.set(col.handle, id);
       console.log(`  ✓ collection ${col.handle}`);
     } catch (err) {
       console.log(`  · collection ${col.handle}: ${(err as Error).message}`);

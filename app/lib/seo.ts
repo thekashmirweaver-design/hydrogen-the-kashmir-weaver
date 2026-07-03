@@ -1,4 +1,8 @@
 import type {PageMetadata} from '~/controllers/catalog.controller';
+export {
+  META_DESCRIPTION_MAX,
+  truncateMetaDescription,
+} from '~/lib/meta-description';
 
 export function pageMeta(metadata: PageMetadata) {
   return [

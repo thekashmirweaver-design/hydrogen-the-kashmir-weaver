@@ -25,8 +25,9 @@ export function CollectionsView({
             <span style={{fontStyle: 'italic'}}>quiet luxury.</span>
           </h1>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-            Three signature collections. Each a different language of the same fibre — hand-woven,
-            hand-finished, never repeated.
+            {collections.length === 1
+              ? 'One signature collection — hand-woven, hand-finished, never repeated.'
+              : `${collections.length} signature collections. Each a different language of the same fibre — hand-woven, hand-finished, never repeated.`}
           </p>
         </Reveal>
       </section>
@@ -61,6 +62,12 @@ export function CollectionsView({
                     >
                       {c.tagline}
                     </div>
+                    {productCountByHandle[c.handle] != null && (
+                      <div className="mt-2 text-[0.65rem] tracking-[0.2em] uppercase text-muted-foreground/80">
+                        {productCountByHandle[c.handle]}{' '}
+                        {productCountByHandle[c.handle] === 1 ? 'piece' : 'pieces'}
+                      </div>
+                    )}
                     <div className="mt-6 flex w-max items-center gap-3 rounded-full border border-accent/40 bg-accent/5 px-5 py-2.5 text-[0.65rem] md:text-xs tracking-widest text-accent uppercase font-medium transition-all duration-300 lg:border-transparent lg:bg-transparent lg:px-0 lg:py-0 lg:opacity-0 lg:transform lg:translate-y-2 lg:group-hover:opacity-100 lg:group-hover:translate-y-0 lg:group-hover:border-transparent lg:group-hover:bg-transparent">
                       Explore Collection <ArrowRight className="h-3.5 w-3.5" />
                     </div>

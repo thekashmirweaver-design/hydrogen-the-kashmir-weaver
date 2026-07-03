@@ -313,7 +313,7 @@ async function ensureMetafieldDefinitions() {
 
 async function setShopMetafields(shopId: string) {
   const featuredHandles = products.slice(0, 8).map((p) => p.handle);
-  const collectionHandles = collections.slice(0, 4).map((c) => c.handle);
+  const collectionHandles = collections.map((c) => c.handle);
 
   const metafields = [
     {
@@ -477,6 +477,10 @@ async function seedCollections(): Promise<Map<string, string>> {
             handle: col.handle,
             descriptionHtml: `<p>${col.story}</p>`,
             image: {src: assetUrl(col.hero.src), altText: col.hero.alt},
+            seo: {
+              title: col.seo?.title ?? `${col.name} — The Kashmir Weaver`,
+              description: col.seo?.description ?? col.tagline,
+            },
             metafields: [
               {namespace: 'custom', key: 'tagline', type: 'single_line_text_field', value: col.tagline},
               {namespace: 'custom', key: 'story', type: 'multi_line_text_field', value: col.story},
