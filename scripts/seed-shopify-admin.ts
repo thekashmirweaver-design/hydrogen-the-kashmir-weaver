@@ -13,6 +13,7 @@ import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {products, collections} from '../app/models/static/repository.ts';
 import {POSTS, ARTICLES} from '../app/models/static/journal.ts';
+import {CONTACT} from '../app/lib/contact.ts';
 import type {Product} from '../app/models/types.ts';
 
 /** Load repo-root .env into process.env (does not override existing vars). */
@@ -61,6 +62,67 @@ if (!SHOP || !TOKEN || !BASE_URL) {
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function adminRest<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  const res = await fetch(`https://${SHOP}/admin/api/${API_VERSION}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': TOKEN,
+      ...(init?.headers ?? {}),
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Admin REST ${res.status}: ${await res.text()}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+/** Products/collections are created unpublished; Storefront API needs published: true. */
+async function publishCatalogToStorefront() {
+  const productsRes = await adminRest<{
+    products: Array<{id: number; handle: string; published_at: string | null}>;
+  }>('/products.json?limit=250&fields=id,handle,published_at');
+
+  let publishedProducts = 0;
+  for (const product of productsRes.products) {
+    if (product.published_at) continue;
+    await adminRest(`/products/${product.id}.json`, {
+      method: 'PUT',
+      body: JSON.stringify({product: {id: product.id, published: true}}),
+    });
+    publishedProducts++;
+    await sleep(200);
+  }
+
+  const collectionsRes = await adminRest<{
+    custom_collections: Array<{
+      id: number;
+      handle: string;
+      published_at: string | null;
+    }>;
+  }>('/custom_collections.json?limit=50');
+
+  let publishedCollections = 0;
+  for (const collection of collectionsRes.custom_collections ?? []) {
+    if (collection.published_at) continue;
+    await adminRest(`/custom_collections/${collection.id}.json`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        custom_collection: {id: collection.id, published: true},
+      }),
+    });
+    publishedCollections++;
+    await sleep(200);
+  }
+
+  console.log(
+    `  ✓ published ${publishedProducts} products, ${publishedCollections} collections`,
+  );
+}
 
 /** Scopes required for each seed phase. Shop metafields need fewer scopes than catalog. */
 const REQUIRED_SCOPES = {
@@ -237,9 +299,9 @@ async function setShopMetafields(shopId: string) {
       key: 'contact',
       type: 'json',
       value: JSON.stringify({
-        email: 'concierge@thekashmirweaver.com',
-        phone: '+1 (212) 555-0198',
-        whatsapp: '+919876543210',
+        email: CONTACT.email,
+        phone: CONTACT.phone,
+        whatsapp: CONTACT.whatsapp,
       }),
     },
     {
@@ -541,6 +603,9 @@ async function main() {
 
   console.log('\n5. Products');
   await seedProducts(collectionIds);
+
+  console.log('\n6. Publish to Online Store (required for Storefront API)');
+  await publishCatalogToStorefront();
 
   console.log('\nDone.');
   console.log(

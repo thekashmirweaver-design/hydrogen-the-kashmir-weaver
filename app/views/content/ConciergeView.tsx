@@ -1,8 +1,33 @@
 import {useEffect, useRef, useState} from 'react';
-import {Link, useFetcher} from 'react-router';
-import {Mail, MessageCircle, Phone, Calendar, ArrowRight, ChevronDown, Check} from 'lucide-react';
+import {Link, useFetcher, useRouteLoaderData} from 'react-router';
+import {
+  Mail,
+  MessageCircle,
+  Phone,
+  Calendar,
+  ArrowRight,
+  ChevronDown,
+  Check,
+  type LucideIcon,
+} from 'lucide-react';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {Reveal} from '~/components/gulriza/Reveal';
+import {
+  contactMailtoHref,
+  contactTelHref,
+  contactWhatsappHref,
+  resolveContact,
+} from '~/lib/contact';
+import type {RootLoader} from '~/root';
+
+type ContactChannel = {
+  icon: LucideIcon;
+  label: string;
+  detail: string;
+  href?: string;
+  cta?: string;
+  external?: boolean;
+};
 
 const INQUIRY_TYPES = [
   {
@@ -36,6 +61,39 @@ const INQUIRY_TYPES = [
 ];
 
 export function ConciergeView() {
+  const rootData = useRouteLoaderData<RootLoader>('root');
+  const contact = resolveContact(rootData?.shopSettings?.contact);
+
+  const contactChannels: ContactChannel[] = [
+    {
+      icon: Mail,
+      label: 'Email',
+      detail: contact.email,
+      href: contactMailtoHref(contact.email),
+      cta: 'Send email',
+    },
+    {
+      icon: MessageCircle,
+      label: 'WhatsApp',
+      detail: contact.whatsapp,
+      href: contactWhatsappHref(contact.whatsapp),
+      cta: 'Message on WhatsApp',
+      external: true,
+    },
+    {
+      icon: Phone,
+      label: 'Phone',
+      detail: contact.phone,
+      href: contactTelHref(contact.phone),
+      cta: 'Call now',
+    },
+    {
+      icon: Calendar,
+      label: 'Private Appointment',
+      detail: 'By invitation',
+    },
+  ];
+
   return (
     <div>
       <section className="mx-auto max-w-[1100px] px-6 pt-40 text-center md:px-10">
@@ -71,12 +129,7 @@ export function ConciergeView() {
           </h2>
         </div>
         <div className="mt-16 grid grid-cols-1 gap-px md:grid-cols-4">
-          {[
-            {icon: Mail, label: 'Email', detail: 'thekashmirweaver@gmail.com'},
-            {icon: MessageCircle, label: 'WhatsApp', detail: '+91 9796105623'},
-            {icon: Phone, label: 'Phone', detail: '+91 9796105623'},
-            {icon: Calendar, label: 'Private Appointment', detail: 'By invitation'},
-          ].map(({icon: Icon, label, detail}) => (
+          {contactChannels.map(({icon: Icon, label, detail, href, cta, external}) => (
             <div
               key={label}
               className="border p-10 text-center"
@@ -87,7 +140,26 @@ export function ConciergeView() {
             >
               <Icon className="mx-auto h-6 w-6 text-accent" strokeWidth={1} />
               <div className="tracked mt-6 text-foreground">{label}</div>
-              <div className="mt-3 text-sm text-muted-foreground">{detail}</div>
+              {href ? (
+                <a
+                  href={href}
+                  className="mt-3 block text-sm text-muted-foreground transition hover:text-accent"
+                  {...(external ? {target: '_blank', rel: 'noreferrer'} : {})}
+                >
+                  {detail}
+                </a>
+              ) : (
+                <div className="mt-3 text-sm text-muted-foreground">{detail}</div>
+              )}
+              {href && cta && (
+                <a
+                  href={href}
+                  className="tracked mt-5 inline-block text-xs uppercase tracking-widest text-accent transition hover:opacity-80"
+                  {...(external ? {target: '_blank', rel: 'noreferrer'} : {})}
+                >
+                  {cta}
+                </a>
+              )}
             </div>
           ))}
         </div>

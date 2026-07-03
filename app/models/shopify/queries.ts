@@ -61,8 +61,6 @@ export const PRODUCT_VARIANT_FRAGMENT = `#graphql
       ...CatalogImage
     }
   }
-  ${CATALOG_MONEY_FRAGMENT}
-  ${CATALOG_IMAGE_FRAGMENT}
 ` as const;
 
 export const PRODUCT_OPTION_FRAGMENT = `#graphql
@@ -135,11 +133,15 @@ export const CATALOG_PRODUCT_FRAGMENT =
       value
     }
   }
-  ${CATALOG_IMAGE_FRAGMENT}
-  ${PRODUCT_OPTION_FRAGMENT}
-  ${PRODUCT_VARIANT_FRAGMENT}
-  ${METAFIELD_FRAGMENT}
 `;
+
+/** Include once per query that uses catalog product/collection fragments. */
+export const CATALOG_QUERY_FRAGMENTS =
+  CATALOG_MONEY_FRAGMENT +
+  CATALOG_IMAGE_FRAGMENT +
+  METAFIELD_FRAGMENT +
+  PRODUCT_OPTION_FRAGMENT +
+  PRODUCT_VARIANT_FRAGMENT;
 
 export const CATALOG_COLLECTION_FRAGMENT =
   `#graphql
@@ -165,8 +167,6 @@ export const CATALOG_COLLECTION_FRAGMENT =
       ...MetafieldValue
     }
   }
-  ${CATALOG_IMAGE_FRAGMENT}
-  ${METAFIELD_FRAGMENT}
 `;
 
 export const MENU_FRAGMENT = `#graphql
@@ -205,6 +205,7 @@ export const ALL_PRODUCTS_QUERY = `#graphql
       }
     }
   }
+  ${CATALOG_QUERY_FRAGMENTS}
   ${CATALOG_PRODUCT_FRAGMENT}
 ` as const;
 
@@ -214,6 +215,7 @@ export const PRODUCT_BY_HANDLE_QUERY = `#graphql
       ...CatalogProduct
     }
   }
+  ${CATALOG_QUERY_FRAGMENTS}
   ${CATALOG_PRODUCT_FRAGMENT}
 ` as const;
 
@@ -227,6 +229,8 @@ export const ALL_COLLECTIONS_QUERY = `#graphql
       }
     }
   }
+  ${CATALOG_IMAGE_FRAGMENT}
+  ${METAFIELD_FRAGMENT}
   ${CATALOG_COLLECTION_FRAGMENT}
 ` as const;
 
@@ -243,6 +247,7 @@ export const COLLECTION_BY_HANDLE_QUERY = `#graphql
       }
     }
   }
+  ${CATALOG_QUERY_FRAGMENTS}
   ${CATALOG_COLLECTION_FRAGMENT}
   ${CATALOG_PRODUCT_FRAGMENT}
 ` as const;

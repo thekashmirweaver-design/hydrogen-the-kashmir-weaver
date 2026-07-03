@@ -16,15 +16,12 @@ const CARE_LINKS = [
 ] as const;
 
 const POLICY_LINKS = [
-  { to: "/policies/shipping-policy", label: "Shipping" },
-  { to: "/policies/refund-policy", label: "Returns" },
   { to: "/terms", label: "Terms" },
   { to: "/privacy", label: "Privacy" },
 ] as const;
 
 export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
   const {collections} = useCatalog();
-  const contactEmail = shopSettings?.contact?.email;
   const social = shopSettings?.social ?? {};
 
   const shopLinks = [
@@ -76,14 +73,6 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
               >
                 Contact Us
               </Link>
-              {contactEmail && (
-                <a
-                  href={`mailto:${contactEmail}`}
-                  className="tracked block transition hover:text-accent"
-                >
-                  {contactEmail}
-                </a>
-              )}
             </div>
           </div>
 

@@ -1,3 +1,5 @@
+import {CONTACT} from '~/lib/contact';
+
 const heritageHero = '/assets/heritage-hero.jpg';
 const himalayas = '/assets/heritage-1.jpg';
 const goat = '/assets/heritage-2.jpg';
@@ -219,7 +221,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
   },
   {
     title: '10. Contact',
-    body: 'For questions about these terms, please reach out to our Concierge team via email at thekashmirweaver@gmail.com or by phone at +91-9682132612.',
+    body: `For questions about these terms, please reach out to our Concierge team via email at ${CONTACT.email} or by phone at ${CONTACT.phone}.`,
   },
 ];
 

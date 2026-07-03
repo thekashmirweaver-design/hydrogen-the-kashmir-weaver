@@ -1,4 +1,5 @@
 import type {Storefront} from '@shopify/hydrogen';
+import {resolveContact} from '~/lib/contact';
 import {HEADER_QUERY, FOOTER_QUERY} from '~/lib/fragments';
 
 export type NavItem = {
@@ -177,7 +178,7 @@ export async function loadShopSettings(
     ) {
       return {
         marquee: marqueeParsed?.length ? marqueeParsed : DEFAULT_MARQUEE,
-        contact: contactParsed ?? {},
+        contact: resolveContact(contactParsed ?? {}),
         social: socialParsed ?? {},
         headerMenu,
         footerMenu,
@@ -203,7 +204,7 @@ export async function loadShopSettings(
     if (headerMenu.length || footerMenu.length) {
       return {
         marquee: DEFAULT_MARQUEE,
-        contact: {},
+        contact: resolveContact(),
         social: {},
         headerMenu,
         footerMenu,
@@ -215,7 +216,7 @@ export async function loadShopSettings(
 
   return {
     marquee: DEFAULT_MARQUEE,
-    contact: {},
+    contact: resolveContact(),
     social: {},
     headerMenu: [],
     footerMenu: [],

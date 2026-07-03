@@ -34,7 +34,8 @@ export function getI18nFromRequest(request: Request): I18nBase {
     const language = parts?.[0]?.toUpperCase();
     const country = parts?.[1]?.toUpperCase();
 
-    if (language) {
+    // curl and some clients send `Accept-Language: *` which is not a valid LanguageCode
+    if (language && language !== '*') {
       return {
         language: language as I18nBase['language'],
         country: (country ?? DEFAULT_I18N.country) as I18nBase['country'],
