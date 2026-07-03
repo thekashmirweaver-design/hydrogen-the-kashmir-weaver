@@ -127,6 +127,50 @@ Or connect the GitHub repo in **Shopify Admin → Hydrogen** for automatic deplo
 
 ## 3. Seed Shopify Admin from static catalog
 
+### Do **not** run `npm init @shopify/app@latest` in this repo
+
+This project is an **existing Hydrogen storefront**, not a greenfield Partner app. The repo root already has:
+
+- `shopify.app.toml` linked to **The Kashmir Weaver** (`client_id` `60df4f5aba046f1301c715771ac0c30b`)
+- `npm run seed:shopify` → `scripts/seed-shopify-admin.ts`
+- Hydrogen/Oxygen scripts (`shopify hydrogen dev`, `build`, `deploy`)
+
+Running `npm init @shopify/app@latest` (or `shopify app init`) **in the repo root** scaffolds a Remix/React Router app layout and can overwrite or conflict with Hydrogen structure. **Skip it here.**
+
+| Approach | When to use | Gets `shpat_` for seed? |
+| --- | --- | --- |
+| **A — Custom Admin app** (below, Option A) | Store is **not** in your Partner org, or you want a simple one-time seed token | **Yes** — permanent `shpat_…` from **Develop apps** |
+| **B — Existing `shopify.app.toml`** (below, Option B) | Store **is** in the same Partner org as the app | **24h token** via client-credentials curl after install (not `shpat_`) |
+| **C — New Partner app in sibling folder** | You need a **second** Partner app, separate from this Hydrogen link | Only after install + token exchange; still not a store `shpat_` |
+
+**Recommendation for `70yuey-sr.myshopify.com`:** Partner install failed because the store is **not** in the Partner org. Use **Option A (Custom Admin app)** — fastest path to a real `SHOPIFY_ADMIN_ACCESS_TOKEN=shpat_…`. Do not put `SHOPIFY_API_SECRET` (`shpss_…`) in `SHOPIFY_ADMIN_ACCESS_TOKEN`; that field must be an Admin API access token.
+
+#### Optional: scaffold a **separate** Partner app (only if you need a new app)
+
+Run in a **sibling directory**, never inside `hydrogen-the-kashmir-weaver/`:
+
+```bash
+mkdir -p /Users/iambqc/Desktop/system/the-kashmir-weaver-admin-app
+cd /Users/iambqc/Desktop/system/the-kashmir-weaver-admin-app
+
+# Non-interactive (CI / scripting) — requires auth first: shopify auth login
+CI=true npx shopify app init \
+  --name "the-kashmir-weaver-seed" \
+  --template none \
+  --path . \
+  --organization-id <your-org-id-from-dev-dashboard-url>
+
+# Or link to an existing Partner app instead of creating one:
+CI=true npx shopify app init \
+  --client-id 60df4f5aba046f1301c715771ac0c30b \
+  --template none \
+  --path .
+```
+
+Useful flags: `--name`, `--path`, `--template none` (minimal), `--client-id` (link existing app), `--organization-id` (create new app in org). That folder is only for `shopify app deploy` / `shopify store auth` — **seed still runs from the Hydrogen repo** with `npm run seed:shopify`.
+
+---
+
 After deploy (so `/assets/*` URLs resolve), run locally:
 
 ```bash
