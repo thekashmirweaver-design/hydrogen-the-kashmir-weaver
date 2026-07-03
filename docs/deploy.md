@@ -147,9 +147,9 @@ Running `npm init @shopify/app@latest` (or `shopify app init`) **in the repo roo
 
 Do **not** put `SHOPIFY_API_SECRET` (`shpss_…`) in `SHOPIFY_ADMIN_ACCESS_TOKEN`; that field must be an Admin API access token.
 
-Do **not** put an Admin `shpat_…` token in `PRIVATE_STOREFRONT_API_TOKEN`; that field must be the **Storefront API** private token from `npx shopify hydrogen env pull` (Headless channel). Using the wrong token type causes empty catalog or 403 errors from `storefront.query`.
+Do **not** put an Admin `shpat_…` token in `PRIVATE_STOREFRONT_API_TOKEN`. Hydrogen sends a `Shopify-Storefront-Id` header with private tokens; an invalid private token returns **401** and the app falls back to static catalog. **Recommended:** leave `PRIVATE_STOREFRONT_API_TOKEN` unset on Oxygen so Hydrogen uses `PUBLIC_STOREFRONT_API_TOKEN` for server-side queries.
 
-`npm run seed:shopify` publishes products and collections to the Online Store after creation (required for Storefront API visibility).
+Products must be published to the **The Kashmir Weaver** headless sales channel (not only Online Store). After `shopify store auth` with `write_publications`, run `npm run publish:headless`.
 
 **Custom apps in Admin (2026):** **Settings → Apps and sales channels → Develop apps** (not a separate “legacy custom app” wizard). There is **no** CLI or Admin GraphQL API to create custom apps programmatically — MCP confirms docs-only for app auth. `shopify app config` validates/links Partner apps only; it does not scaffold store custom apps.
 

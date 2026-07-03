@@ -120,8 +120,53 @@ async function publishCatalogToStorefront() {
   }
 
   console.log(
-    `  ✓ published ${publishedProducts} products, ${publishedCollections} collections`,
+    `  ✓ Online Store: ${publishedProducts} products, ${publishedCollections} collections`,
   );
+
+  try {
+    await publishToHeadlessChannel();
+  } catch (err) {
+    console.log(
+      `  · Headless channel: ${(err as Error).message}`,
+    );
+    console.log(
+      '    Re-run `shopify store auth` (needs write_publications), then `npm run publish:headless`.',
+    );
+  }
+}
+
+/** Publish catalog to Hydrogen headless channel via publishablePublish. */
+async function publishToHeadlessChannel() {
+  const data = await adminGraphql<{
+    catalogs: {nodes: Array<{id: string; title: string}>};
+  }>(`query { catalogs(first: 20) { nodes { id title } } }`);
+
+  const match = data.catalogs.nodes.find((c) =>
+    c.title.includes('The Kashmir Weaver'),
+  );
+  if (!match) throw new Error('Hydrogen AppCatalog not found');
+
+  const publicationId = `gid://shopify/Publication/${match.id.split('/').pop()}`;
+
+  const products = await adminGraphql<{
+    products: {nodes: Array<{id: string; handle: string}>};
+  }>(`query { products(first: 250) { nodes { id handle } } }`);
+
+  let count = 0;
+  for (const product of products.products.nodes) {
+    const result = await adminGraphql<{
+      publishablePublish: {userErrors: Array<{message: string}>};
+    }>(
+      `mutation($id:ID!,$input:[PublicationInput!]!){
+        publishablePublish(id:$id,input:$input){ userErrors { message } }
+      }`,
+      {id: product.id, input: [{publicationId}]},
+    );
+    if (!result.publishablePublish.userErrors.length) count++;
+    await sleep(150);
+  }
+
+  console.log(`  ✓ Headless channel: ${count} products`);
 }
 
 /** Scopes required for each seed phase. Shop metafields need fewer scopes than catalog. */

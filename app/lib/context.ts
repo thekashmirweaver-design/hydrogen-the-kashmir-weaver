@@ -2,6 +2,7 @@ import {createHydrogenContext} from '@shopify/hydrogen';
 import {AppSession} from '~/lib/session';
 import {CART_QUERY_FRAGMENT} from '~/lib/fragments';
 import {getI18nFromRequest} from '~/lib/i18n';
+import {resolveStorefrontEnv} from '~/lib/storefront-env';
 
 // Define the additional context object
 const additionalContext = {
@@ -43,7 +44,7 @@ export async function createHydrogenRouterContext(
 
   const hydrogenContext = createHydrogenContext(
     {
-      env,
+      env: resolveStorefrontEnv(env),
       request,
       cache,
       waitUntil,
