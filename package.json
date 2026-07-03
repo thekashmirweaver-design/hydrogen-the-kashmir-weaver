@@ -12,6 +12,7 @@
     "typecheck": "react-router typegen && tsc --noEmit",
     "codegen": "shopify hydrogen codegen && react-router typegen",
     "seed:shopify": "tsx scripts/seed-shopify-admin.ts",
+    "seed:collections": "tsx scripts/seed-shopify-collections.ts",
     "seed:menus": "tsx scripts/seed-shopify-menus-policies.ts",
     "publish:headless": "tsx scripts/publish-headless-catalog.ts"
   },

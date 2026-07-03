@@ -190,6 +190,8 @@ npm run seed:shopify
 
 The seed script loads `.env` automatically. Do not commit `.env` to git.
 
+**Collections only:** `npm run seed:collections` creates the five static collections and publishes them to Online Store + headless (requires `write_products` and `write_publications` on your Admin token).
+
 Both options below need these scopes:
 
 | Scope | Needed for |
