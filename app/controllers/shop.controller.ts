@@ -1,4 +1,5 @@
 import * as CatalogRepository from '~/models/catalog.repository';
+import type {CatalogOptions} from '~/models/catalog.repository';
 import type {Collection, Product} from '~/models/types';
 import type {PageMetadata} from '~/controllers/catalog.controller';
 
@@ -6,8 +7,10 @@ export type ShopPageViewModel = {
   products: Product[];
 };
 
-export async function getShopPage(): Promise<ShopPageViewModel> {
-  return {products: await CatalogRepository.listProducts()};
+export async function getShopPage(
+  options?: CatalogOptions,
+): Promise<ShopPageViewModel> {
+  return {products: await CatalogRepository.listProducts(options)};
 }
 
 export type CollectionsPageViewModel = {
@@ -15,10 +18,12 @@ export type CollectionsPageViewModel = {
   productCountByHandle: Record<string, number>;
 };
 
-export async function getCollectionsPage(): Promise<CollectionsPageViewModel> {
+export async function getCollectionsPage(
+  options?: CatalogOptions,
+): Promise<CollectionsPageViewModel> {
   const [collections, products] = await Promise.all([
-    CatalogRepository.listCollections(),
-    CatalogRepository.listProducts(),
+    CatalogRepository.listCollections(options),
+    CatalogRepository.listProducts(options),
   ]);
 
   const productCountByHandle = Object.fromEntries(
@@ -38,18 +43,29 @@ export type CollectionPageViewModel = {
 
 export async function getCollectionPage(
   handle: string,
+  options?: CatalogOptions,
 ): Promise<CollectionPageViewModel | null> {
-  const collection = await CatalogRepository.findCollectionByHandle(handle);
+  const collection = await CatalogRepository.findCollectionByHandle(
+    handle,
+    options,
+  );
   if (!collection) return null;
 
-  const products = await CatalogRepository.listProductsByCollection(handle);
+  const products = await CatalogRepository.listProductsByCollection(
+    handle,
+    options,
+  );
   return {collection, products};
 }
 
 export async function getCollectionMetadata(
   handle: string,
+  options?: CatalogOptions,
 ): Promise<PageMetadata> {
-  const collection = await CatalogRepository.findCollectionByHandle(handle);
+  const collection = await CatalogRepository.findCollectionByHandle(
+    handle,
+    options,
+  );
   if (!collection) return {title: 'Not found — The Kashmir Weaver'};
 
   const title =
@@ -59,11 +75,13 @@ export async function getCollectionMetadata(
   return {title, description};
 }
 
-export async function listCollectionHandles(): Promise<string[]> {
-  const collections = await CatalogRepository.listCollections();
+export async function listCollectionHandles(
+  options?: CatalogOptions,
+): Promise<string[]> {
+  const collections = await CatalogRepository.listCollections(options);
   return collections.map((c) => c.handle);
 }
 
-export async function getSearchCatalog() {
-  return CatalogRepository.getCatalogSnapshot();
+export async function getSearchCatalog(options?: CatalogOptions) {
+  return CatalogRepository.getCatalogSnapshot(options);
 }

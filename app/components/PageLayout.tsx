@@ -2,6 +2,7 @@ import {Await, Link, useLocation} from 'react-router';
 import {Suspense} from 'react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CatalogSnapshot} from '~/models/types';
+import type {ShopSettings} from '~/lib/shop-settings';
 import {CatalogProvider} from '~/contexts/catalog-context';
 import {SiteHeader} from '~/components/gulriza/SiteHeader';
 import {SiteFooter} from '~/components/gulriza/SiteFooter';
@@ -11,10 +12,16 @@ import {CartFab} from '~/components/gulriza/CartFab';
 interface PageLayoutProps {
   cart: Promise<CartApiQueryFragment | null>;
   catalog: CatalogSnapshot;
+  shopSettings: ShopSettings;
   children?: React.ReactNode;
 }
 
-export function PageLayout({cart, catalog, children = null}: PageLayoutProps) {
+export function PageLayout({
+  cart,
+  catalog,
+  shopSettings,
+  children = null,
+}: PageLayoutProps) {
   const location = useLocation();
   const isHome = location.pathname === '/';
 
@@ -24,9 +31,14 @@ export function PageLayout({cart, catalog, children = null}: PageLayoutProps) {
       <Suspense
         fallback={
           <>
-            <SiteHeader transparent={isHome} cart={null} cartQuantity={0} />
+            <SiteHeader
+              transparent={isHome}
+              cart={null}
+              cartQuantity={0}
+              shopSettings={shopSettings}
+            />
             <main>{children}</main>
-            <SiteFooter />
+            <SiteFooter shopSettings={shopSettings} />
           </>
         }
       >
@@ -37,10 +49,11 @@ export function PageLayout({cart, catalog, children = null}: PageLayoutProps) {
                 transparent={isHome}
                 cart={resolvedCart}
                 cartQuantity={resolvedCart?.totalQuantity ?? 0}
+                shopSettings={shopSettings}
               />
               <main>{children}</main>
               <CartFab cartQuantity={resolvedCart?.totalQuantity ?? 0} />
-              <SiteFooter />
+              <SiteFooter shopSettings={shopSettings} />
             </>
           )}
         </Await>

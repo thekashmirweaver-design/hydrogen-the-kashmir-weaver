@@ -11,10 +11,10 @@ export const meta: Route.MetaFunction = ({data}) => {
   ];
 };
 
-export async function loader({params}: Route.LoaderArgs) {
+export async function loader({params, context}: Route.LoaderArgs) {
   const slug = params.slug;
   if (!slug) throw new Response('Not found', {status: 404});
-  const page = getArticlePage(slug);
+  const page = await getArticlePage(slug, context.storefront);
   if (!page) throw new Response('Not found', {status: 404});
   return page;
 }

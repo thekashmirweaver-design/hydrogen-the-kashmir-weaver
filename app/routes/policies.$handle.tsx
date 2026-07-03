@@ -1,17 +1,12 @@
-import {
-  Link,
-  useLoaderData,
-} from 'react-router';
+import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/policies.$handle';
-import {type Shop} from '@shopify/hydrogen/storefront-api-types';
-
-type SelectedPolicies = keyof Pick<
-  Shop,
-  'privacyPolicy' | 'shippingPolicy' | 'termsOfService' | 'refundPolicy'
->;
+import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
+import {Reveal} from '~/components/gulriza/Reveal';
 
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.policy.title ?? ''}`}];
+  return [
+    {title: `${data?.policy.title ?? 'Policy'} — The Kashmir Weaver`},
+  ];
 };
 
 export async function loader({params, context}: Route.LoaderArgs) {
@@ -22,7 +17,7 @@ export async function loader({params, context}: Route.LoaderArgs) {
   const policyName = params.handle.replace(
     /-([a-z])/g,
     (_: unknown, m1: string) => m1.toUpperCase(),
-  ) as SelectedPolicies;
+  ) as 'privacyPolicy' | 'shippingPolicy' | 'termsOfService' | 'refundPolicy';
 
   const data = await context.storefront.query(POLICY_CONTENT_QUERY, {
     variables: {
@@ -44,24 +39,34 @@ export async function loader({params, context}: Route.LoaderArgs) {
   return {policy};
 }
 
-export default function Policy() {
+export default function PolicyRoute() {
   const {policy} = useLoaderData<typeof loader>();
 
   return (
-    <div className="policy">
-      <br />
-      <br />
-      <div>
-        <Link to="/policies">← Back to Policies</Link>
+    <section className="mx-auto max-w-[900px] px-6 pt-32 pb-24 md:px-10">
+      <Reveal>
+        <Eyebrow>Legal</Eyebrow>
+        <h1
+          className="font-display mt-8 text-4xl leading-tight md:text-5xl"
+          style={{fontWeight: 400}}
+        >
+          {policy.title}
+        </h1>
+      </Reveal>
+      <Hairline className="my-12" />
+      <div
+        className="prose-invert space-y-6 text-sm leading-relaxed text-muted-foreground [&_a]:text-accent [&_h2]:font-display [&_h2]:text-foreground [&_h3]:font-display [&_h3]:text-foreground"
+        dangerouslySetInnerHTML={{__html: policy.body}}
+      />
+      <div className="mt-16">
+        <Link to="/" className="tracked text-muted-foreground hover:text-accent">
+          ← Return home
+        </Link>
       </div>
-      <br />
-      <h1>{policy.title}</h1>
-      <div dangerouslySetInnerHTML={{__html: policy.body}} />
-    </div>
+    </section>
   );
 }
 
-// NOTE: https://shopify.dev/docs/api/storefront/latest/objects/Shop
 const POLICY_CONTENT_QUERY = `#graphql
   fragment Policy on ShopPolicy {
     body

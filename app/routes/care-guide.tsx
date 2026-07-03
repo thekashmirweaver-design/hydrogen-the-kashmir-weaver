@@ -10,8 +10,8 @@ export const meta: Route.MetaFunction = ({data}) => {
   ];
 };
 
-export async function loader() {
-  return getCareGuidePage();
+export async function loader({context}: Route.LoaderArgs) {
+  return getCareGuidePage(context.storefront);
 }
 
 export default function CareGuideRoute() {

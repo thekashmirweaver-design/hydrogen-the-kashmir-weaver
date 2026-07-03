@@ -3,11 +3,13 @@ import {useLocation} from "react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Search, User, ShoppingBag, Menu, X, ChevronDown, Check, Globe } from "lucide-react";
 import type { CartApiQueryFragment } from "storefrontapi.generated";
+import { useAnalytics } from "@shopify/hydrogen";
 import { CURRENCIES, getCurrency, useCurrency } from "~/lib/currency-store";
 import { Marquee } from "~/components/gulriza/Marquee";
 import { SearchModal, lockScroll, unlockScroll } from "~/components/gulriza/SearchModal";
 import { CartDrawer } from "~/components/gulriza/CartDrawer";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
+import type {ShopSettings, NavItem} from "~/lib/shop-settings";
 
 const NAV = [
   { to: "/collections/all", label: "Shop" },
@@ -40,11 +42,14 @@ export function SiteHeader({
   transparent = false,
   cart = null,
   cartQuantity = 0,
+  shopSettings,
 }: {
   transparent?: boolean;
   cart?: CartApiQueryFragment | null;
   cartQuantity?: number;
+  shopSettings?: ShopSettings;
 }) {
+  const {publish} = useAnalytics();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -110,6 +115,8 @@ export function SiteHeader({
   }, [pathname]);
 
   const solid = !transparent || scrolled;
+  const navItems: NavItem[] =
+    shopSettings?.headerMenu?.length ? shopSettings.headerMenu : [...NAV];
 
   return (
     <>
@@ -117,7 +124,7 @@ export function SiteHeader({
         className="relative z-40 w-full bg-[var(--background)]"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
-        <Marquee />
+        <Marquee messages={shopSettings?.marquee} />
       </div>
       <div className="sticky top-0 z-50 h-0 w-full">
         <header
@@ -141,7 +148,7 @@ export function SiteHeader({
             {/* RIGHT: all nav (desktop) · control clusters */}
             <div className="flex flex-1 items-center justify-end gap-2 lg:gap-4 xl:gap-6">
               <nav className="hidden items-center gap-4 lg:flex xl:gap-7">
-                {NAV.map((n) => {
+                {navItems.map((n) => {
                   const isShop = n.label === "Shop";
                   return (
                     <Link
@@ -171,7 +178,10 @@ export function SiteHeader({
                 <button
                   aria-label="Search"
                   className="flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent"
-                  onClick={() => setSearchOpen(true)}
+                  onClick={() => {
+                    publish('custom_search_opened', {});
+                    setSearchOpen(true);
+                  }}
                 >
                   <Search className="h-[18px] w-[18px]" strokeWidth={1} />
                 </button>
@@ -209,7 +219,10 @@ export function SiteHeader({
                 <button
                   aria-label="Search"
                   className="flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent"
-                  onClick={() => setSearchOpen(true)}
+                  onClick={() => {
+                    publish('custom_search_opened', {});
+                    setSearchOpen(true);
+                  }}
                 >
                   <Search className="h-[18px] w-[18px]" strokeWidth={1} />
                 </button>
@@ -271,6 +284,7 @@ export function SiteHeader({
                 <button
                   onClick={() => {
                     requestMenuClose();
+                    publish('custom_search_opened', {});
                     setSearchOpen(true);
                   }}
                   aria-label="Search"
@@ -280,7 +294,7 @@ export function SiteHeader({
                 </button>
               </div>
               <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-8 pb-12 pt-8">
-                {NAV.map((n) => (
+                {navItems.map((n) => (
                   <Link
                     key={n.to}
                     to={n.to}

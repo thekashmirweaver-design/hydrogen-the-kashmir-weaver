@@ -1,5 +1,11 @@
 import * as CatalogRepository from '~/models/catalog.repository';
+import type {CatalogOptions} from '~/models/catalog.repository';
 import type {Collection, Product} from '~/models/types';
+import {
+  loadHomepageFeatured,
+  pickCollectionsByHandles,
+  pickProductsByHandles,
+} from '~/lib/homepage-featured';
 
 export type PageMetadata = {
   title: string;
@@ -9,14 +15,27 @@ export type PageMetadata = {
 export type HomePageViewModel = {
   products: Product[];
   collections: Collection[];
+  featuredProducts: Product[];
+  featuredCollections: Collection[];
 };
 
-export async function getHomePage(): Promise<HomePageViewModel> {
+export async function getHomePage(
+    options?: CatalogOptions,
+    featured?: Awaited<ReturnType<typeof loadHomepageFeatured>>,
+): Promise<HomePageViewModel> {
   const [products, collections] = await Promise.all([
-    CatalogRepository.listProducts(),
-    CatalogRepository.listCollections(),
+    CatalogRepository.listProducts(options),
+    CatalogRepository.listCollections(options),
   ]);
-  return {products, collections};
+  const featuredProducts = pickProductsByHandles(
+    products,
+    featured?.productHandles ?? [],
+  );
+  const featuredCollections = pickCollectionsByHandles(
+    collections,
+    featured?.collectionHandles ?? [],
+  );
+  return {products, collections, featuredProducts, featuredCollections};
 }
 
 export type ProductPageViewModel = {
@@ -29,11 +48,12 @@ export type ProductPageViewModel = {
 
 export async function getProductPage(
   handle: string,
+  options?: CatalogOptions,
 ): Promise<ProductPageViewModel | null> {
-  const product = await CatalogRepository.findProductByHandle(handle);
+  const product = await CatalogRepository.findProductByHandle(handle, options);
   if (!product) return null;
 
-  const allProducts = await CatalogRepository.listProducts();
+  const allProducts = await CatalogRepository.listProducts(options);
   const relatedProducts = allProducts
     .filter(
       (p) =>
@@ -94,7 +114,9 @@ export async function getProductPage(
   };
 }
 
-export async function listProductHandles(): Promise<string[]> {
-  const products = await CatalogRepository.listProducts();
+export async function listProductHandles(
+  options?: CatalogOptions,
+): Promise<string[]> {
+  const products = await CatalogRepository.listProducts(options);
   return products.map((p) => p.handle);
 }

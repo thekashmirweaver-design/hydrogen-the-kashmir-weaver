@@ -1,7 +1,8 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback} from 'react';
 import {create} from 'zustand';
 import {persist} from 'zustand/middleware';
 import type {Money} from '~/models/types';
+import {formatShopifyMoney} from '~/lib/format-money';
 
 export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'INR' | 'AED';
 
@@ -38,26 +39,10 @@ export const useCurrency = create<CurrencyState>()(
   ),
 );
 
-export const formatInCurrency = (money: Money, currency: Currency) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency.code,
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-  }).format(money.amount * currency.rate);
+/** Format catalog prices in their native currency (Shopify Markets–aware). */
+export const formatInCurrency = (money: Money) =>
+  formatShopifyMoney(money.amount, money.currencyCode);
 
 export function useFormatPrice() {
-  const code = useCurrency((s) => s.code);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    if (useCurrency.persist.hasHydrated()) setHydrated(true);
-    return useCurrency.persist.onFinishHydration(() => setHydrated(true));
-  }, []);
-
-  const currency = getCurrency(hydrated ? code : 'USD');
-  return useCallback(
-    (money: Money) => formatInCurrency(money, currency),
-    [currency],
-  );
+  return useCallback((money: Money) => formatInCurrency(money), []);
 }

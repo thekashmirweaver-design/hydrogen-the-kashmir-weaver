@@ -88,7 +88,12 @@ export function ProductCatalog({
     else if (sort === "newest")
       list.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
     else if (sort === "best-selling")
-      list.sort((a, b) => Number(!!b.limited) - Number(!!a.limited));
+      list.sort((a, b) => {
+        const score = (p: Product) =>
+          (p.tags?.some((t) => /best-?sell/i.test(t)) ? 2 : 0) +
+          (p.limited ? 1 : 0);
+        return score(b) - score(a);
+      });
     return list;
   }, [enabled, filters, sort, products]);
 

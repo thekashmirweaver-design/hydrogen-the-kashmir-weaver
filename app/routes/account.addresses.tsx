@@ -13,6 +13,18 @@ import {
 } from 'react-router';
 import type {Route} from './+types/account.addresses';
 import {
+  accountButtonClass,
+  accountButtonStyle,
+  accountFieldsetClass,
+  accountFieldsetStyle,
+  accountInputClass,
+  accountInputStyle,
+  accountLabelClass,
+  accountLegendClass,
+  accountPrimaryButtonClass,
+  accountPrimaryButtonStyle,
+} from '~/components/gulriza/account-styles';
+import {
   UPDATE_ADDRESS_MUTATION,
   DELETE_ADDRESS_MUTATION,
   CREATE_ADDRESS_MUTATION,
@@ -261,20 +273,21 @@ export default function Addresses() {
   const {defaultAddress, addresses} = customer;
 
   return (
-    <div className="account-addresses">
-      <h2>Addresses</h2>
-      <br />
+    <div className="max-w-2xl">
+      <h2 className="font-display text-2xl" style={{fontWeight: 400}}>
+        Addresses
+      </h2>
       {!addresses.nodes.length ? (
-        <p>You have no addresses saved.</p>
+        <p className="mt-8 text-sm text-muted-foreground">
+          You have no addresses saved.
+        </p>
       ) : (
-        <div>
+        <div className="mt-8 space-y-10">
           <div>
-            <legend>Create address</legend>
+            <p className={accountLegendClass}>Create address</p>
             <NewAddressForm />
           </div>
-          <br />
-          <hr />
-          <br />
+          <hr style={{borderColor: 'var(--border)'}} />
           <ExistingAddresses
             addresses={addresses}
             defaultAddress={defaultAddress}
@@ -312,6 +325,8 @@ function NewAddressForm() {
             disabled={stateForMethod('POST') !== 'idle'}
             formMethod="POST"
             type="submit"
+            className={accountPrimaryButtonClass}
+            style={accountPrimaryButtonStyle}
           >
             {stateForMethod('POST') !== 'idle' ? 'Creating' : 'Create'}
           </button>
@@ -327,7 +342,7 @@ function ExistingAddresses({
 }: Pick<CustomerFragment, 'addresses' | 'defaultAddress'>) {
   return (
     <div>
-      <legend>Existing addresses</legend>
+      <p className={`${accountLegendClass} mb-6`}>Existing addresses</p>
       {addresses.nodes.map((address) => (
         <AddressForm
           key={address.id}
@@ -341,6 +356,8 @@ function ExistingAddresses({
                 disabled={stateForMethod('PUT') !== 'idle'}
                 formMethod="PUT"
                 type="submit"
+                className={accountPrimaryButtonClass}
+                style={accountPrimaryButtonStyle}
               >
                 {stateForMethod('PUT') !== 'idle' ? 'Saving' : 'Save'}
               </button>
@@ -348,6 +365,8 @@ function ExistingAddresses({
                 disabled={stateForMethod('DELETE') !== 'idle'}
                 formMethod="DELETE"
                 type="submit"
+                className={accountButtonClass}
+                style={accountButtonStyle}
               >
                 {stateForMethod('DELETE') !== 'idle' ? 'Deleting' : 'Delete'}
               </button>
@@ -378,135 +397,149 @@ export function AddressForm({
   const isDefaultAddress = defaultAddress?.id === addressId;
   return (
     <Form id={addressId}>
-      <fieldset>
+      <fieldset className={`${accountFieldsetClass} space-y-3`} style={accountFieldsetStyle}>
         <input type="hidden" name="addressId" defaultValue={addressId} />
-        <label htmlFor="firstName">First name*</label>
+        <label htmlFor={`firstName-${addressId}`} className={accountLabelClass}>First name*</label>
         <input
           aria-label="First name"
           autoComplete="given-name"
           defaultValue={address?.firstName ?? ''}
-          id="firstName"
+          id={`firstName-${addressId}`}
           name="firstName"
           placeholder="First name"
           required
           type="text"
+          className={accountInputClass}
+          style={accountInputStyle}
         />
-        <label htmlFor="lastName">Last name*</label>
+        <label htmlFor={`lastName-${addressId}`} className={accountLabelClass}>Last name*</label>
         <input
           aria-label="Last name"
           autoComplete="family-name"
           defaultValue={address?.lastName ?? ''}
-          id="lastName"
+          id={`lastName-${addressId}`}
           name="lastName"
           placeholder="Last name"
           required
           type="text"
+          className={accountInputClass}
+          style={accountInputStyle}
         />
-        <label htmlFor="company">Company</label>
+        <label htmlFor={`company-${addressId}`} className={accountLabelClass}>Company</label>
         <input
           aria-label="Company"
           autoComplete="organization"
           defaultValue={address?.company ?? ''}
-          id="company"
+          id={`company-${addressId}`}
           name="company"
           placeholder="Company"
           type="text"
+          className={accountInputClass}
+          style={accountInputStyle}
         />
-        <label htmlFor="address1">Address line*</label>
+        <label htmlFor={`address1-${addressId}`} className={accountLabelClass}>Address line*</label>
         <input
           aria-label="Address line 1"
           autoComplete="address-line1"
           defaultValue={address?.address1 ?? ''}
-          id="address1"
+          id={`address1-${addressId}`}
           name="address1"
           placeholder="Address line 1*"
           required
           type="text"
+          className={accountInputClass}
+          style={accountInputStyle}
         />
-        <label htmlFor="address2">Address line 2</label>
+        <label htmlFor={`address2-${addressId}`} className={accountLabelClass}>Address line 2</label>
         <input
           aria-label="Address line 2"
           autoComplete="address-line2"
           defaultValue={address?.address2 ?? ''}
-          id="address2"
+          id={`address2-${addressId}`}
           name="address2"
           placeholder="Address line 2"
           type="text"
+          className={accountInputClass}
+          style={accountInputStyle}
         />
-        <label htmlFor="city">City*</label>
+        <label htmlFor={`city-${addressId}`} className={accountLabelClass}>City*</label>
         <input
           aria-label="City"
           autoComplete="address-level2"
           defaultValue={address?.city ?? ''}
-          id="city"
+          id={`city-${addressId}`}
           name="city"
           placeholder="City"
           required
           type="text"
+          className={accountInputClass}
+          style={accountInputStyle}
         />
-        <label htmlFor="zoneCode">State / Province*</label>
+        <label htmlFor={`zoneCode-${addressId}`} className={accountLabelClass}>State / Province*</label>
         <input
           aria-label="State/Province"
           autoComplete="address-level1"
           defaultValue={address?.zoneCode ?? ''}
-          id="zoneCode"
+          id={`zoneCode-${addressId}`}
           name="zoneCode"
           placeholder="State / Province"
           required
           type="text"
+          className={accountInputClass}
+          style={accountInputStyle}
         />
-        <label htmlFor="zip">Zip / Postal Code*</label>
+        <label htmlFor={`zip-${addressId}`} className={accountLabelClass}>Zip / Postal Code*</label>
         <input
           aria-label="Zip"
           autoComplete="postal-code"
           defaultValue={address?.zip ?? ''}
-          id="zip"
+          id={`zip-${addressId}`}
           name="zip"
           placeholder="Zip / Postal Code"
           required
           type="text"
+          className={accountInputClass}
+          style={accountInputStyle}
         />
-        <label htmlFor="territoryCode">Country Code*</label>
+        <label htmlFor={`territoryCode-${addressId}`} className={accountLabelClass}>Country Code*</label>
         <input
           aria-label="territoryCode"
           autoComplete="country"
           defaultValue={address?.territoryCode ?? ''}
-          id="territoryCode"
+          id={`territoryCode-${addressId}`}
           name="territoryCode"
           placeholder="Country"
           required
           type="text"
           maxLength={2}
+          className={accountInputClass}
+          style={accountInputStyle}
         />
-        <label htmlFor="phoneNumber">Phone</label>
+        <label htmlFor={`phoneNumber-${addressId}`} className={accountLabelClass}>Phone</label>
         <input
           aria-label="Phone Number"
           autoComplete="tel"
           defaultValue={address?.phoneNumber ?? ''}
-          id="phoneNumber"
+          id={`phoneNumber-${addressId}`}
           name="phoneNumber"
           placeholder="+16135551111"
           pattern="^\+?[1-9]\d{3,14}$"
           type="tel"
+          className={accountInputClass}
+          style={accountInputStyle}
         />
-        <div>
+        <div className="flex items-center gap-2 pt-2">
           <input
             defaultChecked={isDefaultAddress}
-            id="defaultAddress"
+            id={`defaultAddress-${addressId}`}
             name="defaultAddress"
             type="checkbox"
           />
-          <label htmlFor="defaultAddress">Set as default address</label>
+          <label htmlFor={`defaultAddress-${addressId}`} className="text-sm">
+            Set as default address
+          </label>
         </div>
-        {error ? (
-          <p>
-            <mark>
-              <small>{error}</small>
-            </mark>
-          </p>
-        ) : (
-          <br />
-        )}
+        {error ? <p className="text-sm text-red-400">{error}</p> : null}
         {children({
           stateForMethod: (method) => (formMethod === method ? state : 'idle'),
         })}

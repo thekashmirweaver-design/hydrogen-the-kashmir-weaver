@@ -10,8 +10,8 @@ export const meta: Route.MetaFunction = ({data}) => {
   ];
 };
 
-export async function loader() {
-  return getTermsPage();
+export async function loader({context}: Route.LoaderArgs) {
+  return getTermsPage(context.storefront);
 }
 
 export default function TermsRoute() {

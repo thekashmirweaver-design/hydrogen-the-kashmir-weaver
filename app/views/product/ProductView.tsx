@@ -1,12 +1,13 @@
 import {Link, type FetcherWithComponents} from 'react-router';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {ChevronLeft, ChevronRight, ArrowRight, Expand, X} from 'lucide-react';
 import {CartForm} from '@shopify/hydrogen';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {Accordion} from '~/components/gulriza/Accordion';
 import {ProductTile} from '~/components/gulriza/ProductTile';
+import {CatalogImage} from '~/components/gulriza/CatalogImage';
 import {Reveal} from '~/components/gulriza/Reveal';
-import type {Product} from '~/models/types';
+import type {Product, ProductVariant} from '~/models/types';
 import {useFormatPrice} from '~/lib/currency-store';
 import {useFocusTrap} from '~/hooks/use-focus-trap';
 
@@ -17,16 +18,54 @@ export function ProductView({
   product: Product;
   relatedProducts: Product[];
 }) {
+  const variants = product.variants ?? [];
+  const initialVariant =
+    variants.find((v) => v.id === product.variantId) ??
+    variants.find((v) => v.availableForSale) ??
+    variants[0];
+
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(
+    () =>
+      Object.fromEntries(
+        (initialVariant?.selectedOptions ?? []).map((o) => [o.name, o.value]),
+      ),
+  );
+
+  const selectedVariant = useMemo((): ProductVariant | null => {
+    if (!variants.length) return null;
+    const match = variants.find((v) =>
+      v.selectedOptions.every((o) => selectedOptions[o.name] === o.value),
+    );
+    return match ?? initialVariant ?? null;
+  }, [variants, selectedOptions, initialVariant]);
+
+  const activeVariantId = selectedVariant?.id ?? product.variantId;
+  const displayPrice = selectedVariant?.price ?? product.price;
+  const displayImages = useMemo(() => {
+    if (selectedVariant?.image) {
+      const rest = product.images.filter((i) => i.src !== selectedVariant.image!.src);
+      return [selectedVariant.image, ...rest];
+    }
+    return product.images;
+  }, [product.images, selectedVariant?.image]);
+
   const [imgIdx, setImgIdx] = useState(0);
   const [fullOpen, setFullOpen] = useState(false);
   const lightboxRef = useRef<HTMLDivElement>(null);
   const formatPrice = useFormatPrice();
   useFocusTrap(fullOpen, lightboxRef);
 
-  const soldOut = product.stock === 'out';
-  const isShopifyVariant = product.variantId?.startsWith('gid://') ?? false;
+  useEffect(() => {
+    setImgIdx(0);
+  }, [selectedVariant?.id]);
 
-  const imgCount = product.images.length;
+  const soldOut =
+    selectedVariant != null
+      ? !selectedVariant.availableForSale
+      : product.stock === 'out';
+  const isShopifyVariant = activeVariantId?.startsWith('gid://') ?? false;
+
+  const imgCount = displayImages.length;
   const prevImg = () => setImgIdx((i) => (i - 1 + imgCount) % imgCount);
   const nextImg = () => setImgIdx((i) => (i + 1) % imgCount);
 
@@ -72,9 +111,8 @@ export function ProductView({
             className="relative aspect-[4/5] w-full overflow-hidden"
             style={{background: 'var(--surface)'}}
           >
-            <img
-              src={product.images[imgIdx].src}
-              alt={product.images[imgIdx].alt}
+            <CatalogImage
+              image={displayImages[imgIdx]}
               onClick={() => setFullOpen(true)}
               className="absolute inset-0 h-full w-full cursor-zoom-in object-cover"
               loading="eager"
@@ -115,7 +153,7 @@ export function ProductView({
                 N°1 of 1
               </div>
             )}
-            {product.images.length > 1 && (
+            {displayImages.length > 1 && (
               <>
                 <button
                   onClick={prevImg}
@@ -134,13 +172,13 @@ export function ProductView({
               </>
             )}
             <div className="absolute bottom-5 right-5 text-xs tracking-[0.25em] text-muted-foreground">
-              {imgIdx + 1}/{product.images.length}
+              {imgIdx + 1}/{displayImages.length}
             </div>
           </div>
 
-          {product.images.length > 1 && (
+          {displayImages.length > 1 && (
             <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
-              {product.images.map((img, i) => (
+              {displayImages.map((img, i) => (
                 <button
                   key={img.src}
                   onClick={() => setImgIdx(i)}
@@ -151,11 +189,9 @@ export function ProductView({
                     outline: i === imgIdx ? '1px solid var(--accent)' : '1px solid var(--border)',
                   }}
                 >
-                  <img
-                    src={img.src}
-                    alt=""
+                  <CatalogImage
+                    image={{...img, alt: ''}}
                     className="absolute inset-0 h-full w-full object-cover"
-                    loading="lazy"
                   />
                 </button>
               ))}
@@ -171,7 +207,41 @@ export function ProductView({
           >
             {product.name}
           </h1>
-          <div className="mt-4 text-lg text-muted-foreground">{formatPrice(product.price)}</div>
+          <div className="mt-4 text-lg text-muted-foreground">{formatPrice(displayPrice)}</div>
+
+          {product.options && product.options.length > 0 && (
+            <div className="mt-8 space-y-6">
+              {product.options.map((option) => (
+                <div key={option.name}>
+                  <div className="tracked text-muted-foreground">{option.name}</div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {option.values.map((value) => {
+                      const active = selectedOptions[option.name] === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() =>
+                            setSelectedOptions((prev) => ({
+                              ...prev,
+                              [option.name]: value,
+                            }))
+                          }
+                          className="border px-4 py-2 text-xs uppercase tracking-[0.2em] transition"
+                          style={{
+                            borderColor: active ? 'var(--accent)' : 'var(--border)',
+                            color: active ? 'var(--accent)' : 'var(--foreground)',
+                          }}
+                        >
+                          {value}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {product.limited && (
             <div className="mt-6 flex items-center gap-3 text-[0.65rem] tracking-[0.3em] uppercase text-muted-foreground">
@@ -206,7 +276,7 @@ export function ProductView({
                 <CartForm
                   route="/cart"
                   inputs={{
-                    lines: [{merchandiseId: product.variantId!, quantity: 1}],
+                    lines: [{merchandiseId: activeVariantId!, quantity: 1}],
                   }}
                   action={CartForm.ACTIONS.LinesAdd}
                 >
@@ -400,7 +470,7 @@ export function ProductView({
               className="no-scrollbar flex shrink-0 gap-3 overflow-x-auto border-t p-4 md:max-h-full md:w-28 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:border-t-0 md:border-r md:p-5 order-last md:order-first"
               style={{borderColor: 'var(--border)'}}
             >
-              {product.images.map((img, i) => (
+              {displayImages.map((img, i) => (
                 <button
                   key={img.src}
                   onClick={() => setImgIdx(i)}
@@ -411,11 +481,9 @@ export function ProductView({
                     outline: i === imgIdx ? '1px solid var(--accent)' : '1px solid var(--border)',
                   }}
                 >
-                  <img
-                    src={img.src}
-                    alt=""
+                  <CatalogImage
+                    image={{...img, alt: ''}}
                     className="absolute inset-0 h-full w-full object-cover"
-                    loading="lazy"
                   />
                 </button>
               ))}
@@ -423,12 +491,10 @@ export function ProductView({
           )}
 
           <div className="relative flex min-h-0 flex-1 items-center justify-center p-4 md:p-10">
-            <img
-              src={product.images[imgIdx].src}
-              alt={product.images[imgIdx].alt}
+            <CatalogImage
+              image={displayImages[imgIdx]}
               onClick={(e) => e.stopPropagation()}
               className="absolute inset-0 m-auto max-h-full max-w-full object-contain p-4 md:p-10"
-              loading="lazy"
             />
             {imgCount > 1 && (
               <>

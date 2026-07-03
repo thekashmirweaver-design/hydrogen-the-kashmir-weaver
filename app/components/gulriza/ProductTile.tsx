@@ -2,6 +2,7 @@ import {Link} from "react-router";
 import { useEffect, useState } from "react";
 import type { Product } from "~/models/types";
 import { useFormatPrice } from "~/lib/currency-store";
+import { CatalogImage } from "~/components/gulriza/CatalogImage";
 
 export function ProductTile({ product }: { product: Product }) {
   const [hover, setHover] = useState(false);
@@ -38,11 +39,9 @@ export function ProductTile({ product }: { product: Product }) {
           style={{ background: "var(--surface)" }}
         >
           {product.images.map((img, i) => (
-            <img
+            <CatalogImage
               key={`${img.src}-${i}`}
-              src={img.src}
-              alt={i === 0 ? img.alt : ""}
-              aria-hidden={i === 0 ? undefined : true}
+              image={{...img, alt: i === 0 ? img.alt : ""}}
               className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
               style={{
                 opacity: i === active ? 1 : 0,

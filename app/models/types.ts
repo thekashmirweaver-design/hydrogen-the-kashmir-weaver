@@ -12,6 +12,21 @@ export type Money = {
   currencyCode: string;
 };
 
+export type ProductVariant = {
+  id: string;
+  title: string;
+  availableForSale: boolean;
+  selectedOptions: Array<{name: string; value: string}>;
+  price: Money;
+  compareAtPrice?: Money;
+  image?: ProductImage;
+};
+
+export type ProductOption = {
+  name: string;
+  values: string[];
+};
+
 export type Collection = {
   id: string;
   handle: string;
@@ -47,6 +62,8 @@ export type Product = {
   seo?: { title?: string; description?: string };
   createdAt: string;
   publishedAt?: string;
+  variants?: ProductVariant[];
+  options?: ProductOption[];
 };
 
 export type CatalogSnapshot = {

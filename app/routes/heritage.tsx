@@ -10,8 +10,8 @@ export const meta: Route.MetaFunction = ({data}) => {
   ];
 };
 
-export async function loader() {
-  return getHeritagePage();
+export async function loader({context}: Route.LoaderArgs) {
+  return getHeritagePage(context.storefront);
 }
 
 export default function HeritageRoute() {

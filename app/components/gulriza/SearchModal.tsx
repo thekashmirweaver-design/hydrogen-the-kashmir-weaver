@@ -63,14 +63,47 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
   }, [onClose]);
 
   const trimmed = query.trim().toLowerCase();
+  const [predictiveHandles, setPredictiveHandles] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!trimmed) {
+      setPredictiveHandles([]);
+      return;
+    }
+    const ac = new AbortController();
+    fetch(
+      `/search?q=${encodeURIComponent(trimmed)}&predictive=true&limit=${MAX_RESULTS}`,
+      {signal: ac.signal},
+    )
+      .then((r) => r.json())
+      .then((raw: unknown) => {
+        const data = raw as {
+          result?: {items?: {products?: Array<{handle?: string}>}};
+        };
+        const handles =
+          data.result?.items?.products
+            ?.map((p) => p.handle)
+            .filter((h): h is string => Boolean(h)) ?? [];
+        setPredictiveHandles(handles);
+      })
+      .catch(() => setPredictiveHandles([]));
+    return () => ac.abort();
+  }, [trimmed]);
+
   const results = useMemo(() => {
     if (!trimmed) return [];
+    if (predictiveHandles.length) {
+      const ordered = predictiveHandles
+        .map((handle) => products.find((p) => p.handle === handle))
+        .filter((p): p is Product => Boolean(p));
+      if (ordered.length) return ordered.slice(0, MAX_RESULTS);
+    }
     return products
       .filter((p) =>
         [p.name, p.collectionName, p.shortDescription].join(" ").toLowerCase().includes(trimmed),
       )
       .slice(0, MAX_RESULTS);
-  }, [trimmed]);
+  }, [trimmed, products, predictiveHandles]);
 
   // Matching collections — surfaced alongside product results.
   const collectionResults = useMemo(() => {

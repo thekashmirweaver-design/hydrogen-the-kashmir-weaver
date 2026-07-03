@@ -10,8 +10,8 @@ export const meta: Route.MetaFunction = ({data}) => {
   ];
 };
 
-export async function loader() {
-  return getPrivacyPage();
+export async function loader({context}: Route.LoaderArgs) {
+  return getPrivacyPage(context.storefront);
 }
 
 export default function PrivacyRoute() {

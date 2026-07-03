@@ -1,10 +1,21 @@
+import type {Storefront} from '@shopify/hydrogen';
 import {
   ARTICLES,
   JOURNAL_CATEGORIES,
   POSTS,
   type JournalArticle,
+  type JournalCategory,
   type JournalPost,
 } from '~/models/static/journal';
+import {
+  JOURNAL_ARTICLE_QUERY,
+  JOURNAL_BLOG_HANDLE,
+  JOURNAL_BLOG_QUERY,
+} from '~/models/shopify/journal.queries';
+import {
+  estimateReadMinutes,
+  htmlToParagraphs,
+} from '~/lib/parse-page-content';
 import type {PageMetadata} from '~/controllers/catalog.controller';
 
 export type JournalPageViewModel = {
@@ -13,7 +24,99 @@ export type JournalPageViewModel = {
   metadata: PageMetadata;
 };
 
-export function getJournalPage(): JournalPageViewModel {
+export type ArticlePageViewModel = {
+  slug: string;
+  article: JournalArticle;
+  metadata: PageMetadata;
+};
+
+const VALID_CATEGORIES = new Set<string>(JOURNAL_CATEGORIES);
+
+function mapCategory(tags: string[] | null | undefined): JournalCategory {
+  const match = tags?.find((tag) => VALID_CATEGORIES.has(tag));
+  return (match as JournalCategory | undefined) ?? 'Heritage';
+}
+
+function mapShopifyArticleToPost(article: {
+  handle: string;
+  title: string;
+  excerpt?: string | null;
+  contentHtml?: string | null;
+  publishedAt?: string | null;
+  tags?: string[] | null;
+  image?: {url?: string | null} | null;
+}): JournalPost {
+  const bodyText = article.contentHtml?.replace(/<[^>]+>/g, ' ') ?? '';
+  return {
+    slug: article.handle,
+    cat: mapCategory(article.tags),
+    title: article.title,
+    excerpt: article.excerpt?.trim() || bodyText.slice(0, 160).trim(),
+    img: article.image?.url ?? '/assets/journal-craft.jpg',
+    minutes: estimateReadMinutes(bodyText),
+    date: article.publishedAt?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+  };
+}
+
+function mapShopifyArticleToArticle(article: {
+  handle: string;
+  title: string;
+  contentHtml?: string | null;
+  tags?: string[] | null;
+  image?: {url?: string | null} | null;
+}): JournalArticle {
+  const bodyText = article.contentHtml ?? '';
+  return {
+    title: article.title,
+    cat: mapCategory(article.tags),
+    minutes: estimateReadMinutes(bodyText.replace(/<[^>]+>/g, ' ')),
+    img: article.image?.url ?? '/assets/journal-craft.jpg',
+    body: htmlToParagraphs(bodyText),
+  };
+}
+
+export async function getJournalPage(
+  storefront?: Storefront,
+): Promise<JournalPageViewModel> {
+  if (storefront) {
+    try {
+      const data = await storefront.query<{
+        blog?: {
+          seo?: {title?: string | null; description?: string | null} | null;
+          articles?: {
+            nodes?: Array<{
+              handle: string;
+              title: string;
+              excerpt?: string | null;
+              contentHtml?: string | null;
+              publishedAt?: string | null;
+              tags?: string[] | null;
+              image?: {url?: string | null} | null;
+            }> | null;
+          } | null;
+        } | null;
+      }>(JOURNAL_BLOG_QUERY, {
+        variables: {blogHandle: JOURNAL_BLOG_HANDLE, first: 50},
+      });
+
+      const nodes = data.blog?.articles?.nodes;
+      if (nodes?.length) {
+        return {
+          posts: nodes.map(mapShopifyArticleToPost),
+          categories: JOURNAL_CATEGORIES,
+          metadata: {
+            title: data.blog?.seo?.title ?? 'Journal — The Kashmir Weaver',
+            description:
+              data.blog?.seo?.description ??
+              'Stories from the valley — heritage, craft, care, and the quiet luxury of Kashmiri pashmina.',
+          },
+        };
+      }
+    } catch {
+      // Fall back to static content
+    }
+  }
+
   return {
     posts: POSTS,
     categories: JOURNAL_CATEGORIES,
@@ -25,13 +128,50 @@ export function getJournalPage(): JournalPageViewModel {
   };
 }
 
-export type ArticlePageViewModel = {
-  slug: string;
-  article: JournalArticle;
-  metadata: PageMetadata;
-};
+export async function getArticlePage(
+  slug: string,
+  storefront?: Storefront,
+): Promise<ArticlePageViewModel | null> {
+  if (storefront) {
+    try {
+      const data = await storefront.query<{
+        blog?: {
+          articleByHandle?: {
+            handle: string;
+            title: string;
+            contentHtml?: string | null;
+            tags?: string[] | null;
+            image?: {url?: string | null} | null;
+            seo?: {title?: string | null; description?: string | null} | null;
+          } | null;
+        } | null;
+      }>(JOURNAL_ARTICLE_QUERY, {
+        variables: {
+          blogHandle: JOURNAL_BLOG_HANDLE,
+          articleHandle: slug,
+        },
+      });
 
-export function getArticlePage(slug: string): ArticlePageViewModel | null {
+      const article = data.blog?.articleByHandle;
+      if (article) {
+        const mapped = mapShopifyArticleToArticle(article);
+        return {
+          slug,
+          article: mapped,
+          metadata: {
+            title:
+              article.seo?.title ??
+              `${article.title} — Journal — The Kashmir Weaver`,
+            description:
+              article.seo?.description ?? mapped.body[0] ?? article.title,
+          },
+        };
+      }
+    } catch {
+      // Fall back to static content
+    }
+  }
+
   const article = ARTICLES[slug];
   if (!article) return null;
 
@@ -45,6 +185,23 @@ export function getArticlePage(slug: string): ArticlePageViewModel | null {
   };
 }
 
-export function listArticleSlugs(): string[] {
+export async function listArticleSlugs(storefront?: Storefront): Promise<string[]> {
+  if (storefront) {
+    try {
+      const data = await storefront.query<{
+        blog?: {
+          articles?: {nodes?: Array<{handle: string}> | null} | null;
+        } | null;
+      }>(JOURNAL_BLOG_QUERY, {
+        variables: {blogHandle: JOURNAL_BLOG_HANDLE, first: 100},
+      });
+
+      const handles = data.blog?.articles?.nodes?.map((node) => node.handle);
+      if (handles?.length) return handles;
+    } catch {
+      // Fall back to static slugs
+    }
+  }
+
   return Object.keys(ARTICLES);
 }

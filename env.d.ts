@@ -5,3 +5,10 @@
 
 // Enhance TypeScript's built-in typings.
 import '@total-typescript/ts-reset';
+
+declare global {
+  interface Env {
+    USE_STATIC_CATALOG?: string;
+    CONCIERGE_WEBHOOK_URL?: string;
+  }
+}

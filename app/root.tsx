@@ -15,6 +15,8 @@ import favicon from '~/assets/favicon.svg';
 import '~/styles/globals.css';
 import {PageLayout, NotFoundView} from './components/PageLayout';
 import {getSearchCatalog} from '~/controllers';
+import {getCatalogOptions} from '~/lib/catalog-options';
+import {loadShopSettings} from '~/lib/shop-settings';
 
 export type RootLoader = typeof loader;
 
@@ -67,7 +69,7 @@ export async function loader(args: Route.LoaderArgs) {
     consent: {
       checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
       storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
-      withPrivacyBanner: false,
+      withPrivacyBanner: true,
       country: args.context.storefront.i18n.country,
       language: args.context.storefront.i18n.language,
     },
@@ -75,8 +77,14 @@ export async function loader(args: Route.LoaderArgs) {
 }
 
 async function loadCriticalData({context}: Route.LoaderArgs) {
-  const catalog = await getSearchCatalog();
-  return {catalog};
+  const catalogOptions = getCatalogOptions(context);
+  const [catalog, shopSettings] = await Promise.all([
+    getSearchCatalog(catalogOptions),
+    loadShopSettings(context.storefront, {
+      publicStoreDomain: context.env.PUBLIC_STORE_DOMAIN,
+    }),
+  ]);
+  return {catalog, shopSettings};
 }
 
 function loadDeferredData({context}: Route.LoaderArgs) {
@@ -124,7 +132,7 @@ export default function App() {
       shop={data.shop}
       consent={data.consent}
     >
-      <PageLayout cart={data.cart} catalog={data.catalog}>
+      <PageLayout cart={data.cart} catalog={data.catalog} shopSettings={data.shopSettings}>
         <Outlet />
       </PageLayout>
     </Analytics.Provider>

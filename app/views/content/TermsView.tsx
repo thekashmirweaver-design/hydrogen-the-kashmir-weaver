@@ -4,7 +4,7 @@ import {Eyebrow} from '~/components/gulriza/Eyebrow';
 import {Reveal} from '~/components/gulriza/Reveal';
 import type {TermsPageViewModel} from '~/controllers';
 
-export function TermsView({intro, sections}: TermsPageViewModel) {
+export function TermsView({intro, sections, bodyHtml}: TermsPageViewModel) {
   return (
     <div>
       <section className="mx-auto max-w-[800px] px-6 pt-32 pb-24 md:px-10">
@@ -16,21 +16,30 @@ export function TermsView({intro, sections}: TermsPageViewModel) {
           >
             Terms of Service
           </h1>
-          <p className="mt-8 text-lg leading-relaxed text-muted-foreground">{intro}</p>
+          {!bodyHtml && (
+            <p className="mt-8 text-lg leading-relaxed text-muted-foreground">{intro}</p>
+          )}
         </Reveal>
 
-        <div className="mt-16 space-y-12">
-          {sections.map((section) => (
-            <Reveal key={section.title}>
-              <h2 className="font-display text-2xl" style={{fontWeight: 400}}>
-                {section.title}
-              </h2>
-              <div className="mt-4 text-muted-foreground leading-relaxed">
-                <p>{section.body}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
+        {bodyHtml ? (
+          <div
+            className="prose prose-invert mt-16 max-w-none text-muted-foreground leading-relaxed"
+            dangerouslySetInnerHTML={{__html: bodyHtml}}
+          />
+        ) : (
+          <div className="mt-16 space-y-12">
+            {sections.map((section) => (
+              <Reveal key={section.title}>
+                <h2 className="font-display text-2xl" style={{fontWeight: 400}}>
+                  {section.title}
+                </h2>
+                <div className="mt-4 text-muted-foreground leading-relaxed">
+                  <p>{section.body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        )}
 
         <Reveal className="mt-24 text-center">
           <Link

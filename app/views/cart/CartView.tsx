@@ -5,18 +5,13 @@ import {CartForm} from '@shopify/hydrogen';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {Reveal} from '~/components/gulriza/Reveal';
-import {useFormatPrice} from '~/lib/currency-store';
-import type {Money} from '~/models/types';
-
-function toMoney(m: {amount: string; currencyCode: string}): Money {
-  return {amount: Number(m.amount), currencyCode: m.currencyCode};
-}
+import {formatShopifyMoney} from '~/lib/format-money';
 
 export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
   const lines = cart?.lines?.nodes ?? [];
-  const formatPrice = useFormatPrice();
   const subtotal = cart?.cost?.subtotalAmount;
   const checkoutUrl = cart?.checkoutUrl;
+  const appliedCodes = cart?.discountCodes?.filter((c) => c.applicable) ?? [];
 
   return (
     <div>
@@ -77,7 +72,10 @@ export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
                         </div>
 
                         <div className="mt-2 text-sm">
-                          {formatPrice(toMoney(merchandise.price))}
+                          {formatShopifyMoney(
+                            merchandise.price.amount,
+                            merchandise.price.currencyCode,
+                          )}
                         </div>
                         <div className="mt-5 flex items-center gap-4">
                           <div
@@ -110,7 +108,10 @@ export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
                         </div>
                       </div>
                       <div className="whitespace-nowrap text-sm">
-                        {formatPrice(toMoney(cost.totalAmount))}
+                        {formatShopifyMoney(
+                          cost.totalAmount.amount,
+                          cost.totalAmount.currencyCode,
+                        )}
                       </div>
                     </div>
                     <Hairline />
@@ -124,7 +125,11 @@ export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
               <div className="mt-8 space-y-4 text-sm">
                 <Row
                   k="Subtotal"
-                  v={subtotal ? formatPrice(toMoney(subtotal)) : '—'}
+                  v={
+                    subtotal
+                      ? formatShopifyMoney(subtotal.amount, subtotal.currencyCode)
+                      : '—'
+                  }
                 />
                 <Row k="Shipping" v="Complimentary" />
                 <Row k="Taxes" v="Calculated at checkout" />
@@ -134,10 +139,66 @@ export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
                 k={<span className="tracked text-foreground">Total</span>}
                 v={
                   <span className="font-display text-xl">
-                    {subtotal ? formatPrice(toMoney(subtotal)) : '—'}
+                    {subtotal
+                      ? formatShopifyMoney(subtotal.amount, subtotal.currencyCode)
+                      : '—'}
                   </span>
                 }
               />
+              <CartForm
+                route="/cart"
+                action={CartForm.ACTIONS.DiscountCodesUpdate}
+                inputs={{discountCodes: appliedCodes.map((c) => c.code)}}
+              >
+                {(fetcher) => (
+                  <div className="mt-8 flex gap-2">
+                    <input
+                      name="discountCode"
+                      placeholder="Promo code"
+                      className="flex-1 border bg-transparent px-3 py-2 text-xs uppercase tracking-[0.15em] focus:outline-none"
+                      style={{borderColor: 'var(--border)'}}
+                    />
+                    <button
+                      type="submit"
+                      disabled={fetcher.state !== 'idle'}
+                      className="tracked border px-4 py-2 text-xs transition hover:text-accent disabled:opacity-50"
+                      style={{borderColor: 'var(--border)'}}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                )}
+              </CartForm>
+              {appliedCodes.length > 0 && (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Applied: {appliedCodes.map((c) => c.code).join(', ')}
+                </p>
+              )}
+              <CartForm route="/cart" action={CartForm.ACTIONS.GiftCardCodesAdd}>
+                {(fetcher) => (
+                  <div className="mt-4 flex gap-2">
+                    <input
+                      name="giftCardCode"
+                      placeholder="Gift card"
+                      className="flex-1 border bg-transparent px-3 py-2 text-xs uppercase tracking-[0.15em] focus:outline-none"
+                      style={{borderColor: 'var(--border)'}}
+                    />
+                    <button
+                      type="submit"
+                      disabled={fetcher.state !== 'idle'}
+                      className="tracked border px-4 py-2 text-xs transition hover:text-accent disabled:opacity-50"
+                      style={{borderColor: 'var(--border)'}}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                )}
+              </CartForm>
+              {(cart?.appliedGiftCards?.length ?? 0) > 0 && (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Gift cards applied
+                </p>
+              )}
               {checkoutUrl ? (
                 <a
                   href={checkoutUrl}

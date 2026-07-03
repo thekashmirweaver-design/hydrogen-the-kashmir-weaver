@@ -10,8 +10,8 @@ export const meta: Route.MetaFunction = ({data}) => {
   ];
 };
 
-export async function loader() {
-  return getCraftPage();
+export async function loader({context}: Route.LoaderArgs) {
+  return getCraftPage(context.storefront);
 }
 
 export default function CraftRoute() {

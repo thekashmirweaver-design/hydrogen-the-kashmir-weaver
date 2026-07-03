@@ -1,6 +1,10 @@
-import {redirect, useLoaderData} from 'react-router';
+import {Link, redirect, useLoaderData} from 'react-router';
 import type {Route} from './+types/account.orders.$id';
 import {Money, Image} from '@shopify/hydrogen';
+import {
+  accountFieldsetClass,
+  accountFieldsetStyle,
+} from '~/components/gulriza/account-styles';
 import type {
   OrderLineItemFullFragment,
   OrderQuery,
@@ -82,15 +86,25 @@ export default function OrderRoute() {
     fulfillmentStatus,
   } = useLoaderData<typeof loader>();
   return (
-    <div className="account-order">
-      <h2>Order {order.name}</h2>
-      <p>Placed on {new Date(order.processedAt!).toDateString()}</p>
-      {order.confirmationNumber && (
-        <p>Confirmation: {order.confirmationNumber}</p>
-      )}
-      <br />
+    <div className="max-w-3xl space-y-8">
       <div>
-        <table>
+        <h2 className="font-display text-2xl" style={{fontWeight: 400}}>
+          Order {order.name}
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Placed on {new Date(order.processedAt!).toDateString()}
+        </p>
+        {order.confirmationNumber && (
+          <p className="text-sm text-muted-foreground">
+            Confirmation: {order.confirmationNumber}
+          </p>
+        )}
+      </div>
+      <div
+        className={`${accountFieldsetClass} overflow-x-auto`}
+        style={accountFieldsetStyle}
+      >
+        <table className="w-full text-sm">
           <thead>
             <tr>
               <th scope="col">Product</th>
@@ -159,8 +173,12 @@ export default function OrderRoute() {
             </tr>
           </tfoot>
         </table>
+      </div>
+      <div className="space-y-6 text-sm">
         <div>
-          <h3>Shipping Address</h3>
+          <h3 className="tracked text-xs uppercase tracking-[0.25em] text-accent">
+            Shipping Address
+          </h3>
           {order?.shippingAddress ? (
             <address>
               <p>{order.shippingAddress.name}</p>
@@ -178,15 +196,21 @@ export default function OrderRoute() {
           ) : (
             <p>No shipping address defined</p>
           )}
-          <h3>Status</h3>
-          <div>
-            <p>{fulfillmentStatus}</p>
-          </div>
+        </div>
+        <div>
+          <h3 className="tracked text-xs uppercase tracking-[0.25em] text-accent">
+            Status
+          </h3>
+          <p className="mt-2 text-muted-foreground">{fulfillmentStatus}</p>
         </div>
       </div>
-      <br />
       <p>
-        <a target="_blank" href={order.statusPageUrl} rel="noreferrer">
+        <a
+          target="_blank"
+          href={order.statusPageUrl}
+          rel="noreferrer"
+          className="tracked text-xs uppercase tracking-[0.2em] hover:text-accent"
+        >
           View Order Status →
         </a>
       </p>

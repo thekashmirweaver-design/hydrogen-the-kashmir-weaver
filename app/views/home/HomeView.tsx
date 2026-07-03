@@ -7,6 +7,7 @@ import {ProductTile} from '~/components/gulriza/ProductTile';
 import {ScrollIndicator} from '~/components/gulriza/ScrollIndicator';
 import {ProductCarousel} from '~/components/gulriza/ProductCarousel';
 import type {Collection, Product} from '~/models/types';
+import type {JournalPost} from '~/models/static/journal';
 
 const heroPortrait = '/assets/hero-portrait.jpg';
 const himalayas = '/assets/himalayas.jpg';
@@ -17,17 +18,26 @@ const journalGoat = '/assets/changthangi-goat.jpg';
 export function HomeView({
   products,
   collections,
+  featuredProducts,
+  featuredCollections,
+  journalPosts = [],
 }: {
   products: Product[];
   collections: Collection[];
+  featuredProducts: Product[];
+  featuredCollections: Collection[];
+  journalPosts?: JournalPost[];
 }) {
   return (
     <div>
       <Hero />
-      <FeaturedProducts products={products} />
-      <SignatureCollections collections={collections} products={products} />
+      <FeaturedProducts products={featuredProducts} />
+      <SignatureCollections
+        collections={featuredCollections}
+        products={products}
+      />
       <CraftAndOrigin />
-      <JournalSection />
+      <JournalSection posts={journalPosts} />
       <BespokeSection />
       <ShopCallout />
     </div>
@@ -94,7 +104,7 @@ function Hero() {
 }
 
 function FeaturedProducts({products}: {products: Product[]}) {
-  const featured = products.slice(0, 8);
+  const featured = products.length ? products : [];
   return (
     <section className="relative py-20 md:py-32">
       <div className="mx-auto max-w-[1600px] px-6 md:px-10">
@@ -292,7 +302,40 @@ function CraftAndOrigin() {
   );
 }
 
-function JournalSection() {
+function JournalSection({posts}: {posts: JournalPost[]}) {
+  const [featured, ...rest] = posts.length
+    ? posts
+    : [
+        {
+          slug: 'himalayan-highlands',
+          cat: 'Heritage' as const,
+          title: 'The Himalayan Highlands',
+          excerpt:
+            'Above the tree line, on the Changthang plateau, a single goat produces 80 grams of fleece a year. This is how pashmina begins.',
+          img: himalayas,
+          minutes: 12,
+          date: '2026-01-15',
+        },
+        {
+          slug: 'hands-that-weave-magic',
+          cat: 'Craft' as const,
+          title: 'Hands That Weave Magic',
+          excerpt: 'Meet the artisans who keep the tradition of Kashmiri craft alive.',
+          img: journalCraft,
+          minutes: 8,
+          date: '2026-01-10',
+        },
+        {
+          slug: 'the-art-of-pashmina-care',
+          cat: 'Style' as const,
+          title: 'The Art of Pashmina Care',
+          excerpt: 'Timeless pieces deserve timeless care. A quiet primer.',
+          img: journalGoat,
+          minutes: 5,
+          date: '2026-01-05',
+        },
+      ];
+
   return (
     <section className="relative py-32 md:py-40">
       <div className="mx-auto max-w-[1600px] px-6 md:px-10">
@@ -317,50 +360,37 @@ function JournalSection() {
         </div>
 
         <div className="mt-20 grid grid-cols-1 gap-16 md:grid-cols-12">
-          <Reveal className="md:col-span-7">
-            <Link to="/journal/himalayan-highlands">
-              <div className="relative aspect-[5/4] w-full overflow-hidden">
-                <img
-                  src={himalayas}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
-                  loading="lazy"
-                />
-              </div>
-              <div className="mt-8">
-                <Eyebrow>Heritage · 12 min read</Eyebrow>
-                <h3
-                  className="font-display mt-4 text-3xl leading-tight md:text-4xl"
-                  style={{fontWeight: 400}}
-                >
-                  The Himalayan Highlands —{' '}
-                  <span style={{fontStyle: 'italic'}}>where the fibre is born.</span>
-                </h3>
-                <p className="mt-5 max-w-xl text-base text-muted-foreground">
-                  Above the tree line, on the Changthang plateau, a single goat produces 80 grams of
-                  fleece a year. This is how pashmina begins.
-                </p>
-              </div>
-            </Link>
-          </Reveal>
+          {featured && (
+            <Reveal className="md:col-span-7">
+              <Link to={`/journal/${featured.slug}`}>
+                <div className="relative aspect-[5/4] w-full overflow-hidden">
+                  <img
+                    src={featured.img}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="mt-8">
+                  <Eyebrow>
+                    {featured.cat} · {featured.minutes} min read
+                  </Eyebrow>
+                  <h3
+                    className="font-display mt-4 text-3xl leading-tight md:text-4xl"
+                    style={{fontWeight: 400}}
+                  >
+                    {featured.title}
+                  </h3>
+                  <p className="mt-5 max-w-xl text-base text-muted-foreground">
+                    {featured.excerpt}
+                  </p>
+                </div>
+              </Link>
+            </Reveal>
+          )}
 
           <div className="flex flex-col gap-16 md:col-span-5">
-            {[
-              {
-                slug: 'hands-that-weave-magic',
-                title: 'Hands That Weave Magic',
-                excerpt: 'Meet the artisans who keep the tradition of Kashmiri craft alive.',
-                img: journalCraft,
-                meta: 'Craft · 8 min read',
-              },
-              {
-                slug: 'the-art-of-pashmina-care',
-                title: 'The Art of Pashmina Care',
-                excerpt: 'Timeless pieces deserve timeless care. A quiet primer.',
-                img: journalGoat,
-                meta: 'Style · 5 min read',
-              },
-            ].map((p, i) => (
+            {rest.slice(0, 2).map((p, i) => (
               <Reveal key={p.slug} delay={i * 150}>
                 <Link to={`/journal/${p.slug}`} className="grid grid-cols-5 gap-6">
                   <div className="relative col-span-2 aspect-[4/5] overflow-hidden">
@@ -372,7 +402,9 @@ function JournalSection() {
                     />
                   </div>
                   <div className="col-span-3">
-                    <Eyebrow>{p.meta}</Eyebrow>
+                    <Eyebrow>
+                      {p.cat} · {p.minutes} min read
+                    </Eyebrow>
                     <h4
                       className="font-display mt-3 text-xl leading-snug"
                       style={{fontWeight: 400}}

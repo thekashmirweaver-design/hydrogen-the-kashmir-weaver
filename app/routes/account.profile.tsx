@@ -9,6 +9,16 @@ import {
   useOutletContext,
 } from 'react-router';
 import type {Route} from './+types/account.profile';
+import {
+  accountFieldsetClass,
+  accountFieldsetStyle,
+  accountInputClass,
+  accountInputStyle,
+  accountLabelClass,
+  accountLegendClass,
+  accountPrimaryButtonClass,
+  accountPrimaryButtonStyle,
+} from '~/components/gulriza/account-styles';
 
 export type ActionResponse = {
   error: string | null;
@@ -86,13 +96,16 @@ export default function AccountProfile() {
   const customer = action?.customer ?? account?.customer;
 
   return (
-    <div className="account-profile">
-      <h2>My profile</h2>
-      <br />
-      <Form method="PUT">
-        <legend>Personal information</legend>
-        <fieldset>
-          <label htmlFor="firstName">First name</label>
+    <div className="max-w-lg">
+      <h2 className="font-display text-2xl" style={{fontWeight: 400}}>
+        My profile
+      </h2>
+      <Form method="PUT" className="mt-8">
+        <fieldset className={accountFieldsetClass} style={accountFieldsetStyle}>
+          <legend className={accountLegendClass}>Personal information</legend>
+          <label htmlFor="firstName" className={`${accountLabelClass} mt-4`}>
+            First name
+          </label>
           <input
             id="firstName"
             name="firstName"
@@ -102,8 +115,12 @@ export default function AccountProfile() {
             aria-label="First name"
             defaultValue={customer.firstName ?? ''}
             minLength={2}
+            className={accountInputClass}
+            style={accountInputStyle}
           />
-          <label htmlFor="lastName">Last name</label>
+          <label htmlFor="lastName" className={`${accountLabelClass} mt-4`}>
+            Last name
+          </label>
           <input
             id="lastName"
             name="lastName"
@@ -113,18 +130,19 @@ export default function AccountProfile() {
             aria-label="Last name"
             defaultValue={customer.lastName ?? ''}
             minLength={2}
+            className={accountInputClass}
+            style={accountInputStyle}
           />
         </fieldset>
         {action?.error ? (
-          <p>
-            <mark>
-              <small>{action.error}</small>
-            </mark>
-          </p>
-        ) : (
-          <br />
-        )}
-        <button type="submit" disabled={state !== 'idle'}>
+          <p className="mt-4 text-sm text-red-400">{action.error}</p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={state !== 'idle'}
+          className={accountPrimaryButtonClass}
+          style={accountPrimaryButtonStyle}
+        >
           {state !== 'idle' ? 'Updating' : 'Update'}
         </button>
       </Form>

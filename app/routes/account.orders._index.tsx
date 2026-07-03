@@ -23,6 +23,17 @@ import type {
   OrderItemFragment,
 } from 'customer-accountapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import {
+  accountButtonClass,
+  accountButtonStyle,
+  accountFieldsetClass,
+  accountFieldsetStyle,
+  accountInputClass,
+  accountInputStyle,
+  accountLegendClass,
+  accountPrimaryButtonClass,
+  accountPrimaryButtonStyle,
+} from '~/components/gulriza/account-styles';
 
 type OrdersLoaderData = {
   customer: CustomerOrdersFragment;
@@ -63,7 +74,7 @@ export default function Orders() {
   const {orders} = customer;
 
   return (
-    <div className="orders">
+    <div className="space-y-8">
       <OrderSearchForm currentFilters={filters} />
       <OrdersTable orders={orders} filters={filters} />
     </div>
@@ -80,7 +91,7 @@ function OrdersTable({
   const hasFilters = !!(filters.name || filters.confirmationNumber);
 
   return (
-    <div className="acccount-orders" aria-live="polite">
+    <div aria-live="polite" className="space-y-6">
       {orders?.nodes.length ? (
         <PaginatedResourceSection connection={orders}>
           {({node: order}) => <OrderItem key={order.id} order={order} />}
@@ -94,7 +105,7 @@ function OrdersTable({
 
 function EmptyOrders({hasFilters = false}: {hasFilters?: boolean}) {
   return (
-    <div>
+    <div className="space-y-4 text-sm text-muted-foreground">
       {hasFilters ? (
         <>
           <p>No orders found matching your search.</p>
@@ -152,20 +163,21 @@ function OrderSearchForm({
     <form
       ref={formRef}
       onSubmit={handleSubmit}
-      className="order-search-form"
+      className="space-y-4"
       aria-label="Search orders"
     >
-      <fieldset className="order-search-fieldset">
-        <legend className="order-search-legend">Filter Orders</legend>
+      <fieldset className={accountFieldsetClass} style={accountFieldsetStyle}>
+        <legend className={accountLegendClass}>Filter Orders</legend>
 
-        <div className="order-search-inputs">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <input
             type="search"
             name={ORDER_FILTER_FIELDS.NAME}
             placeholder="Order #"
             aria-label="Order number"
             defaultValue={currentFilters.name || ''}
-            className="order-search-input"
+            className={accountInputClass}
+            style={accountInputStyle}
           />
           <input
             type="search"
@@ -173,12 +185,18 @@ function OrderSearchForm({
             placeholder="Confirmation #"
             aria-label="Confirmation number"
             defaultValue={currentFilters.confirmationNumber || ''}
-            className="order-search-input"
+            className={accountInputClass}
+            style={accountInputStyle}
           />
         </div>
 
-        <div className="order-search-buttons">
-          <button type="submit" disabled={isSearching}>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            type="submit"
+            disabled={isSearching}
+            className={accountPrimaryButtonClass}
+            style={accountPrimaryButtonStyle}
+          >
             {isSearching ? 'Searching' : 'Search'}
           </button>
           {hasFilters && (
@@ -189,6 +207,8 @@ function OrderSearchForm({
                 setSearchParams(new URLSearchParams());
                 formRef.current?.reset();
               }}
+              className={accountButtonClass}
+              style={accountButtonStyle}
             >
               Clear
             </button>
@@ -202,21 +222,35 @@ function OrderSearchForm({
 function OrderItem({order}: {order: OrderItemFragment}) {
   const fulfillmentStatus = flattenConnection(order.fulfillments)[0]?.status;
   return (
-    <>
-      <fieldset>
-        <Link to={`/account/orders/${btoa(order.id)}`}>
-          <strong>#{order.number}</strong>
-        </Link>
-        <p>{new Date(order.processedAt).toDateString()}</p>
-        {order.confirmationNumber && (
-          <p>Confirmation: {order.confirmationNumber}</p>
-        )}
-        <p>{order.financialStatus}</p>
-        {fulfillmentStatus && <p>{fulfillmentStatus}</p>}
-        <Money data={order.totalPrice} />
-        <Link to={`/account/orders/${btoa(order.id)}`}>View Order →</Link>
-      </fieldset>
-      <br />
-    </>
+    <fieldset
+      className={`${accountFieldsetClass} space-y-3`}
+      style={accountFieldsetStyle}
+    >
+      <Link
+        to={`/account/orders/${btoa(order.id)}`}
+        className="font-display text-lg hover:text-accent"
+      >
+        #{order.number}
+      </Link>
+      <p className="text-sm text-muted-foreground">
+        {new Date(order.processedAt).toDateString()}
+      </p>
+      {order.confirmationNumber && (
+        <p className="text-sm text-muted-foreground">
+          Confirmation: {order.confirmationNumber}
+        </p>
+      )}
+      <p className="text-sm">{order.financialStatus}</p>
+      {fulfillmentStatus && (
+        <p className="text-sm text-muted-foreground">{fulfillmentStatus}</p>
+      )}
+      <Money data={order.totalPrice} />
+      <Link
+        to={`/account/orders/${btoa(order.id)}`}
+        className="tracked inline-block text-xs uppercase tracking-[0.2em] hover:text-accent"
+      >
+        View Order →
+      </Link>
+    </fieldset>
   );
 }

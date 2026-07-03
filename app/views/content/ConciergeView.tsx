@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {Link} from 'react-router';
+import {Link, useFetcher} from 'react-router';
 import {Mail, MessageCircle, Phone, Calendar, ArrowRight, ChevronDown, Check} from 'lucide-react';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {Reveal} from '~/components/gulriza/Reveal';
@@ -120,7 +120,10 @@ export function ConciergeView() {
 
 function InquiryForm() {
   const [type, setType] = useState(INQUIRY_TYPES[0].label);
-  const [sent, setSent] = useState(false);
+  const fetcher = useFetcher<{success?: boolean; errors?: Record<string, string>}>();
+  const sent = fetcher.data?.success === true;
+  const errors = fetcher.data?.errors ?? {};
+  const isSubmitting = fetcher.state !== 'idle';
 
   if (sent)
     return (
@@ -130,35 +133,44 @@ function InquiryForm() {
     );
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        setSent(true);
-      }}
+    <fetcher.Form
+      method="post"
+      action="/api/concierge"
       className="grid grid-cols-1 gap-6 md:grid-cols-2"
     >
+      <input type="hidden" name="inquiryType" value={type} />
       <div className="md:col-span-2">
         <TypeDropdown value={type} onChange={setType} />
+        {errors.inquiryType && (
+          <p className="mt-2 text-xs text-accent">{errors.inquiryType}</p>
+        )}
       </div>
-      <Field label="Your name" />
-      <Field label="Email" type="email" />
-      <Field label="Country / City" />
-      <Field label="Phone (optional)" type="tel" />
+      <Field label="Your name" name="name" error={errors.name} />
+      <Field label="Email" name="email" type="email" error={errors.email} />
+      <Field label="Country / City" name="location" error={errors.location} />
+      <Field label="Phone (optional)" name="phone" type="tel" />
       <div className="md:col-span-2">
-        <Field label="How may we assist you?" textarea />
+        <Field
+          label="How may we assist you?"
+          name="message"
+          textarea
+          error={errors.message}
+        />
       </div>
       <div className="md:col-span-2">
         <button
-          className="w-full py-4 tracked"
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full py-4 tracked disabled:opacity-60"
           style={{
             background: 'var(--accent)',
             color: 'var(--background)',
           }}
         >
-          Send Inquiry
+          {isSubmitting ? 'Sending…' : 'Send Inquiry'}
         </button>
       </div>
-    </form>
+    </fetcher.Form>
   );
 }
 
@@ -255,29 +267,38 @@ function TypeDropdown({value, onChange}: {value: string; onChange: (value: strin
 
 function Field({
   label,
+  name,
   type = 'text',
   textarea = false,
+  error,
 }: {
   label: string;
+  name: string;
   type?: string;
   textarea?: boolean;
+  error?: string;
 }) {
   return (
     <label className="block">
       <span className="tracked text-muted-foreground">{label}</span>
       {textarea ? (
         <textarea
+          name={name}
+          required
           rows={4}
           className="mt-3 block w-full border-0 border-b bg-transparent py-3 text-sm text-foreground outline-none transition focus:border-accent"
           style={{borderBottom: '1px solid var(--border)'}}
         />
       ) : (
         <input
+          name={name}
           type={type}
+          required={name !== 'phone'}
           className="mt-3 block w-full border-0 border-b bg-transparent py-3 text-sm text-foreground outline-none transition focus:border-accent"
           style={{borderBottom: '1px solid var(--border)'}}
         />
       )}
+      {error && <p className="mt-2 text-xs text-accent">{error}</p>}
     </label>
   );
 }
