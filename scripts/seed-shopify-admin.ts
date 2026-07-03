@@ -1,16 +1,49 @@
 /**
  * Seeds Shopify Admin from the static catalog in app/models/static/.
  *
- * Requires:
+ * Requires (from .env or shell env):
  *   PUBLIC_STORE_DOMAIN or SHOPIFY_STORE_DOMAIN  (e.g. your-store.myshopify.com)
  *   SHOPIFY_ADMIN_ACCESS_TOKEN                   (Admin API access token)
  *   PUBLIC_STORE_URL                               (deployed URL for /assets images)
  *
  * Run: npm run seed:shopify
  */
+import {existsSync, readFileSync} from 'node:fs';
+import {dirname, resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {products, collections} from '../app/models/static/repository.ts';
 import {POSTS, ARTICLES} from '../app/models/static/journal.ts';
 import type {Product} from '../app/models/types.ts';
+
+/** Load repo-root .env into process.env (does not override existing vars). */
+function loadEnvFile() {
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+  const envPath = resolve(root, '.env');
+  if (!existsSync(envPath)) return;
+
+  for (const line of readFileSync(envPath, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) continue;
+
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    if (process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
+}
+
+loadEnvFile();
 
 const SHOP =
   process.env.PUBLIC_STORE_DOMAIN ??
@@ -67,11 +100,28 @@ async function adminGraphql<T>(
 }
 
 async function checkAccessScopes(): Promise<Set<string>> {
-  const data = await adminGraphql<{
-    currentAppInstallation: {accessScopes: Array<{handle: string}>};
-  }>(`query { currentAppInstallation { accessScopes { handle } } }`);
+  try {
+    const data = await adminGraphql<{
+      currentAppInstallation: {accessScopes: Array<{handle: string}>};
+    }>(`query { currentAppInstallation { accessScopes { handle } } }`);
 
-  return new Set(data.currentAppInstallation.accessScopes.map((s) => s.handle));
+    return new Set(data.currentAppInstallation.accessScopes.map((s) => s.handle));
+  } catch (err) {
+    const message = (err as Error).message;
+    if (/access.?denied/i.test(message)) {
+      console.warn(
+        '\n⚠ Cannot read app scopes (ACCESS_DENIED on currentAppInstallation).',
+      );
+      console.warn(
+        '  Custom Admin app tokens often lack this query; assuming catalog scopes are missing.',
+      );
+      console.warn(
+        '  Continuing with shop metafields. Grant write_products + write_content, then re-run.\n',
+      );
+      return new Set<string>();
+    }
+    throw err;
+  }
 }
 
 function warnMissingScopes(scopes: Set<string>) {
@@ -82,15 +132,18 @@ function warnMissingScopes(scopes: Set<string>) {
     `\n⚠ Missing Admin API scopes: ${missing.join(', ')}`,
   );
   console.warn(
-    '  Products, collections, and journal articles will be skipped until you:',
+    '  Products, collections, and journal articles will be skipped until you grant scopes.',
+  );
+  console.warn('  Option A — Custom Admin app:');
+  console.warn(
+    '    Admin → Settings → Apps → Develop apps → [your app] → Configuration',
   );
   console.warn(
-    '  Admin → Settings → Apps → Develop apps → [your app] → Configuration',
+    '    → enable write_products, write_content (and read_*) → Install → copy token',
   );
-  console.warn(
-    '  → Admin API access scopes → enable write_products, write_content (and read_*)',
-  );
-  console.warn('  → Install app → copy new token to SHOPIFY_ADMIN_ACCESS_TOKEN\n');
+  console.warn('  Option B — Partner app (shopify.app.toml in this repo):');
+  console.warn('    npx shopify app deploy → install on store → copy Admin API token');
+  console.warn('  Set SHOPIFY_ADMIN_ACCESS_TOKEN in .env and re-run npm run seed:shopify\n');
 }
 
 function assetUrl(path: string): string {

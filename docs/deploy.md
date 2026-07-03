@@ -136,26 +136,59 @@ cp .env.example .env
 npm run seed:shopify
 ```
 
-**Custom Admin app token** (do not commit to git):
+The seed script loads `.env` automatically. Do not commit `.env` to git.
 
-1. **Settings → Apps and sales channels → Develop apps → Create an app**
-2. **Configuration → Admin API integration → Configure**
-3. Enable scopes:
+Both options below need these scopes:
 
-   | Scope | Needed for |
-   | --- | --- |
-   | `write_products`, `read_products` | Products, collections, variants |
-   | `write_content`, `read_content` | Journal blog and articles |
+| Scope | Needed for |
+| --- | --- |
+| `write_products`, `read_products` | Products, collections, variants |
+| `write_content`, `read_content` | Journal blog and articles |
 
-4. **Install app** → copy **Admin API access token** → `SHOPIFY_ADMIN_ACCESS_TOKEN` in local `.env`
-5. Set `PUBLIC_STORE_URL` to the live Oxygen URL (so `/assets/*` image URLs resolve during seed)
+Set `PUBLIC_STORE_URL` to the live Oxygen URL (so `/assets/*` image URLs resolve during seed):
 
 ```bash
 PUBLIC_STORE_URL=https://the-kashmir-weaver-4c08a749ba70084fdf74.o2.myshopify.dev
-npm run seed:shopify
 ```
 
-The script checks scopes at startup. Without `write_products` / `write_content` it still seeds shop metafields but skips catalog and journal. Re-run after granting scopes.
+### Option A — Custom Admin app (store Admin)
+
+1. **Settings → Apps and sales channels → Develop apps → Create an app**
+2. **Configuration → Admin API integration → Configure**
+3. Enable the scopes in the table above
+4. **Install app** → copy **Admin API access token** → `SHOPIFY_ADMIN_ACCESS_TOKEN` in local `.env`
+5. Run `npm run seed:shopify`
+
+### Option B — Partner app (`shopify.app.toml`)
+
+This repo includes `shopify.app.toml` with the required Admin scopes already configured:
+
+```toml
+scopes = "read_products,write_products,read_content,write_content"
+```
+
+From the repo root:
+
+```bash
+npx shopify app deploy
+```
+
+Then install the app on the dev store and copy the token:
+
+1. **Shopify Partners → Apps → The Kashmir Weaver**
+2. Open the app → **Test on development store** (or select `70yuey-sr.myshopify.com`)
+3. **Install app** on the store
+4. Copy the **Admin API access token** from the install flow or **Partners → App → API credentials**
+5. Add to local `.env`:
+
+   ```bash
+   SHOPIFY_ADMIN_ACCESS_TOKEN=shpat_...
+   PUBLIC_STORE_URL=https://the-kashmir-weaver-4c08a749ba70084fdf74.o2.myshopify.dev
+   ```
+
+6. Run `npm run seed:shopify`
+
+The script checks scopes at startup when the token supports `currentAppInstallation`. Custom Admin tokens may return `ACCESS_DENIED` for that query — the script warns and continues with shop metafields only. Without `write_products` / `write_content` it skips catalog and journal. Re-run after granting scopes and installing with a token that includes them.
 
 Then remove `USE_STATIC_CATALOG` from Oxygen and redeploy.
 
