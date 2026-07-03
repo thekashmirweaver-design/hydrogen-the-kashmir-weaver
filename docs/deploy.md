@@ -317,12 +317,37 @@ npm run seed:shopify
 
 The script checks scopes at startup via `currentAppInstallation`. Custom Admin tokens (Option A) may return `ACCESS_DENIED` for that query — the script warns and continues with shop metafields only. Without `write_products` / `write_content` it skips catalog and journal. Re-run after granting scopes and installing with a token that includes them.
 
-Then remove `USE_STATIC_CATALOG` from Oxygen and redeploy.
+Then set `USE_STATIC_CATALOG=false` locally and push env vars to Oxygen (step 5 below).
 
-## 4. Manual Admin items (seed script skips)
+#### 5. Push env vars to Oxygen (interactive)
 
-- Navigation menus: `header-menu`, `footer-menu`
-- Shop policies (shipping, refund, terms, privacy)
+`hydrogen env push` has no `--force` flag — run this in your **local terminal** (not CI):
+
+```bash
+# In .env: USE_STATIC_CATALOG=false  (or remove the line)
+npx shopify hydrogen env push --env=production
+# Confirm when prompted
+```
+
+Pushing sets `USE_STATIC_CATALOG=false` on Production. Redeploy if Oxygen does not pick up the change automatically.
+
+#### 6. Menus and shop policies
+
+```bash
+npm run seed:menus
+```
+
+Requires Admin scopes `write_online_store_navigation` and `write_legal_policies`. Creates:
+
+| Handle | Links |
+| --- | --- |
+| `header-menu` | Shop, Collections, Heritage, Craft, Journal, Concierge |
+| `footer-menu` | Same + FAQ, Care Guide, Terms, Privacy, Shipping/Refund policies |
+
+Updates shipping, refund, and terms-of-service policies. Privacy policy is skipped when Admin auto-manages it (Settings → Policies → disable automatic management to customize).
+
+## 4. Remaining manual Admin items
+
 - Markets / currencies
 - Product reviews app (`reviews.rating`, `reviews.rating_count`)
 

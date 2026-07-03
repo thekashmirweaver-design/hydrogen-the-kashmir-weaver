@@ -11,7 +11,8 @@
     "lint": "eslint --no-error-on-unmatched-pattern .",
     "typecheck": "react-router typegen && tsc --noEmit",
     "codegen": "shopify hydrogen codegen && react-router typegen",
-    "seed:shopify": "tsx scripts/seed-shopify-admin.ts"
+    "seed:shopify": "tsx scripts/seed-shopify-admin.ts",
+    "seed:menus": "tsx scripts/seed-shopify-menus-policies.ts"
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {
