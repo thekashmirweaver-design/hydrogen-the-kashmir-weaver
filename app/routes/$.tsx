@@ -1,11 +1,9 @@
-import type {Route} from './+types/$';
+import {NotFoundView} from '~/components/PageLayout';
 
-export async function loader({request}: Route.LoaderArgs) {
-  throw new Response(`${new URL(request.url).pathname} not found`, {
-    status: 404,
-  });
-}
+export const meta = () => {
+  return [{title: 'Not Found — The Kashmir Weaver'}];
+};
 
-export default function CatchAllPage() {
-  return null;
+export default function NotFoundRoute() {
+  return <NotFoundView />;
 }

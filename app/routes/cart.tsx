@@ -6,19 +6,17 @@ import {
 import type {Route} from './+types/cart';
 import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartForm} from '@shopify/hydrogen';
-import {CartMain} from '~/components/CartMain';
+import {CartView} from '~/views/cart/CartView';
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Cart`}];
+  return [{title: 'My Bag — The Kashmir Weaver'}];
 };
 
 export const headers: HeadersFunction = ({actionHeaders}) => actionHeaders;
 
 export async function action({request, context}: Route.ActionArgs) {
   const {cart} = context;
-
   const formData = await request.formData();
-
   const {action, inputs} = CartForm.getFormInput(formData);
 
   if (!action) {
@@ -40,25 +38,18 @@ export async function action({request, context}: Route.ActionArgs) {
       break;
     case CartForm.ACTIONS.DiscountCodesUpdate: {
       const formDiscountCode = inputs.discountCode;
-
-      // User inputted discount code
       const discountCodes = (
         formDiscountCode ? [formDiscountCode] : []
       ) as string[];
-
-      // Combine discount codes already applied on cart
       discountCodes.push(...inputs.discountCodes);
-
       result = await cart.updateDiscountCodes(discountCodes);
       break;
     }
     case CartForm.ACTIONS.GiftCardCodesAdd: {
       const formGiftCardCode = inputs.giftCardCode;
-
       const giftCardCodes = (
         formGiftCardCode ? [formGiftCardCode] : []
       ) as string[];
-
       result = await cart.addGiftCardCodes(giftCardCodes);
       break;
     }
@@ -92,9 +83,7 @@ export async function action({request, context}: Route.ActionArgs) {
       cart: cartResult,
       errors,
       warnings,
-      analytics: {
-        cartId,
-      },
+      analytics: {cartId},
     },
     {status, headers},
   );
@@ -105,13 +94,7 @@ export async function loader({context}: Route.LoaderArgs) {
   return await cart.get();
 }
 
-export default function Cart() {
+export default function CartRoute() {
   const cart = useLoaderData<typeof loader>();
-
-  return (
-    <div className="cart">
-      <h1>Cart</h1>
-      <CartMain layout="page" cart={cart} />
-    </div>
-  );
+  return <CartView cart={cart} />;
 }
