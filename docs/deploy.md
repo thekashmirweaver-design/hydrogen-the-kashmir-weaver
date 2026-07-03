@@ -161,34 +161,89 @@ PUBLIC_STORE_URL=https://the-kashmir-weaver-4c08a749ba70084fdf74.o2.myshopify.de
 
 ### Option B — Partner app (`shopify.app.toml`)
 
-This repo includes `shopify.app.toml` with the required Admin scopes already configured:
+This repo includes `shopify.app.toml` linked to the **The Kashmir Weaver** Partner app (`client_id` in the file). Required Admin scopes are already configured:
 
 ```toml
 scopes = "read_products,write_products,read_content,write_content"
 ```
 
-From the repo root:
+Metafield definitions use the underlying resource scopes (`write_products` for product/collection/shop metafields) — no separate metafield-definition scopes exist.
+
+#### 1. Deploy scopes to Partners
+
+From the repo root (logged in via `shopify auth login`):
 
 ```bash
-npx shopify app deploy
+npx shopify app deploy --allow-updates
 ```
 
-Then install the app on the dev store and copy the token:
+This releases a new app version (e.g. `the-kashmir-weaver-2`) with the scopes above.
 
-1. **Shopify Partners → Apps → The Kashmir Weaver**
-2. Open the app → **Test on development store** (or select `70yuey-sr.myshopify.com`)
-3. **Install app** on the store
-4. Copy the **Admin API access token** from the install flow or **Partners → App → API credentials**
-5. Add to local `.env`:
+#### 2. Install the app on `70yuey-sr.myshopify.com`
 
-   ```bash
-   SHOPIFY_ADMIN_ACCESS_TOKEN=shpat_...
-   PUBLIC_STORE_URL=https://the-kashmir-weaver-4c08a749ba70084fdf74.o2.myshopify.dev
-   ```
+Partner apps no longer expose a permanent `shpat_…` token in Admin. Install the app first, then obtain a short-lived token (step 3).
 
-6. Run `npm run seed:shopify`
+**Option 2a — CLI (recommended)**
 
-The script checks scopes at startup when the token supports `currentAppInstallation`. Custom Admin tokens may return `ACCESS_DENIED` for that query — the script warns and continues with shop metafields only. Without `write_products` / `write_content` it skips catalog and journal. Re-run after granting scopes and installing with a token that includes them.
+```bash
+shopify store auth \
+  --store 70yuey-sr.myshopify.com \
+  --scopes read_products,write_products,read_content,write_content
+```
+
+Complete the browser OAuth prompt to install/authorize the app. CLI stores an online token for `shopify store execute`; for the seed script, use client credentials (2b) after install.
+
+**Option 2b — Install URL**
+
+Open while logged into the store Admin:
+
+```text
+https://70yuey-sr.myshopify.com/admin/oauth/install?client_id=60df4f5aba046f1301c715771ac0c30b
+```
+
+Or **Dev Dashboard → Apps → The Kashmir Weaver → Test on development store** and select the store.
+
+> **Note:** `shopify app dev --store 70yuey-sr.myshopify.com` fails if the store is not a dev store in the same Partner org. Use the install URL or `shopify store auth` instead.
+
+#### 3. Get an Admin API access token
+
+`shopify app env show` exposes **client credentials only** (not an access token):
+
+```bash
+npx shopify app env show
+# SHOPIFY_API_KEY=…
+# SHOPIFY_API_SECRET=shpss_…
+# SCOPES=read_content,read_products,write_content,write_products
+```
+
+After the app is installed on the store, exchange credentials for a **24-hour** token via the [client credentials grant](https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/client-credentials-grant) (same org as the store):
+
+```bash
+eval "$(npx shopify app env show | sed 's/^[[:space:]]*//')"
+curl -s -X POST "https://70yuey-sr.myshopify.com/admin/oauth/access_token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=${SHOPIFY_API_KEY}" \
+  -d "client_secret=${SHOPIFY_API_SECRET}" \
+  | jq -r '.access_token'
+```
+
+Add the token and storefront URL to local `.env` (do not commit):
+
+```bash
+SHOPIFY_ADMIN_ACCESS_TOKEN=<token from curl>
+PUBLIC_STORE_URL=https://the-kashmir-weaver-4c08a749ba70084fdf74.o2.myshopify.dev
+```
+
+If client credentials returns `app_not_installed`, complete step 2 first. Tokens expire after ~24h — re-run the curl command before seeding.
+
+#### 4. Run the seed script
+
+```bash
+npm run seed:shopify
+```
+
+The script checks scopes at startup via `currentAppInstallation`. Custom Admin tokens (Option A) may return `ACCESS_DENIED` for that query — the script warns and continues with shop metafields only. Without `write_products` / `write_content` it skips catalog and journal. Re-run after granting scopes and installing with a token that includes them.
 
 Then remove `USE_STATIC_CATALOG` from Oxygen and redeploy.
 
