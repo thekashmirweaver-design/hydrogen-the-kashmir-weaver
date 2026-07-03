@@ -352,16 +352,8 @@ async function seedProducts(collectionIds: Map<string, string>) {
             descriptionHtml: `<p>${product.description}</p>`,
             productType: product.productType ?? 'Pashmina',
             vendor: product.vendor ?? 'The Kashmir Weaver',
-            tags: product.tags?.join(', '),
+            tags: product.tags,
             metafields: productMetafields(product),
-            variants: [
-              {
-                price: String(product.price.amount),
-                compareAtPrice: product.compareAtPrice
-                  ? String(product.compareAtPrice.amount)
-                  : undefined,
-              },
-            ],
           },
           media,
         },
@@ -372,6 +364,41 @@ async function seedProducts(collectionIds: Map<string, string>) {
       }
 
       const productId = result.productCreate.product.id;
+
+      const variantData = await adminGraphql<{
+        product: {variants: {edges: Array<{node: {id: string}}>}} | null;
+      }>(
+        `query ProductVariant($id: ID!) {
+          product(id: $id) {
+            variants(first: 1) { edges { node { id } } }
+          }
+        }`,
+        {id: productId},
+      );
+
+      const variantId = variantData.product?.variants.edges[0]?.node.id;
+      if (variantId) {
+        await adminGraphql(
+          `#graphql
+          mutation UpdateVariant($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+            productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+              userErrors { message }
+            }
+          }`,
+          {
+            productId,
+            variants: [
+              {
+                id: variantId,
+                price: String(product.price.amount),
+                compareAtPrice: product.compareAtPrice
+                  ? String(product.compareAtPrice.amount)
+                  : undefined,
+              },
+            ],
+          },
+        );
+      }
       const collectionId = collectionIds.get(product.collectionSlug);
       if (collectionId) {
         await adminGraphql(
