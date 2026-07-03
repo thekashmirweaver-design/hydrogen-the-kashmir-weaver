@@ -14,7 +14,11 @@
     "seed:shopify": "tsx scripts/seed-shopify-admin.ts",
     "seed:collections": "tsx scripts/seed-shopify-collections.ts",
     "seed:menus": "tsx scripts/seed-shopify-menus-policies.ts",
-    "publish:headless": "tsx scripts/publish-headless-catalog.ts"
+    "publish:headless": "tsx scripts/publish-headless-catalog.ts",
+    "auth:deploy-scopes": "shopify app deploy --force --no-build",
+    "auth:store": "npx @shopify/cli@latest store auth -s 70yuey-sr.myshopify.com --scopes read_products,write_products,read_content,write_content,read_online_store_navigation,write_online_store_navigation,read_legal_policies,write_legal_policies,read_publications,write_publications",
+    "auth:verify-scopes": "npx @shopify/cli@latest store execute -s 70yuey-sr.myshopify.com --query '{ currentAppInstallation { accessScopes { handle } } }' --json",
+    "auth:sync-env": "tsx scripts/sync-admin-token-from-cli.ts"
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {

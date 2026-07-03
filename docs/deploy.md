@@ -198,10 +198,17 @@ Both options below need these scopes:
 | --- | --- |
 | `write_products`, `read_products` | Products, collections, variants, metafield definitions |
 | `write_content`, `read_content` | Journal blog and articles |
-| `write_online_store_navigation`, `read_online_store_navigation` | Future: header/footer menus |
-| `write_legal_policies`, `read_legal_policies` | Future: shipping/refund/terms/privacy policies |
+| `write_online_store_navigation`, `read_online_store_navigation` | Header/footer menus |
+| `write_legal_policies`, `read_legal_policies` | Shipping/refund/terms/privacy policies |
+| `read_publications`, `write_publications` | Publish products/collections to Online Store + headless channel |
 
 `shopify.app.toml` includes all of the above. Metafield definitions use the underlying resource scopes (`write_products` for product/collection/shop metafields) — no separate metafield-definition scopes exist.
+
+**Full scope string** (copy for `shopify store auth --scopes`):
+
+```text
+read_products,write_products,read_content,write_content,read_online_store_navigation,write_online_store_navigation,read_legal_policies,write_legal_policies,read_publications,write_publications
+```
 
 Set `PUBLIC_STORE_URL` to the live Oxygen URL (so `/assets/*` image URLs resolve during seed):
 
@@ -213,24 +220,23 @@ PUBLIC_STORE_URL=https://the-kashmir-weaver-4c08a749ba70084fdf74.o2.myshopify.de
 
 Deploys scopes to the Partner app, then authorizes the **CLI store app** on the merchant store (separate from Partner `client_id` install). One browser OAuth prompt; token valid ~24 hours.
 
+> **CLI note:** `shopify store auth` requires **Shopify CLI 4+** (`npx @shopify/cli@latest`). The repo’s `@shopify/cli@3.85.4` does not include `store auth`. Use the npm scripts below.
+
 ```bash
 # 1. Release scopes from shopify.app.toml to Dev Dashboard
-shopify app deploy --allow-updates
+npm run auth:deploy-scopes
 
-# 2. Authorize on the store (opens browser once)
-shopify store auth \
-  --store 70yuey-sr.myshopify.com \
-  --scopes read_products,write_products,read_content,write_content,read_online_store_navigation,write_online_store_navigation,read_legal_policies,write_legal_policies
+# 2. Authorize on the store (opens browser once; requires Shopify CLI 4+)
+npm run auth:store
 
-# 3. Verify scopes
-shopify store execute --store 70yuey-sr.myshopify.com \
-  --query '{ currentAppInstallation { accessScopes { handle } } }' --json
+# 3. Verify scopes include write_publications
+npm run auth:verify-scopes
 
-# 4. Copy token into local .env (CLI stores it under ~/Library/Preferences/shopify-cli-store-nodejs/)
-#    Set SHOPIFY_ADMIN_ACCESS_TOKEN=shpat_…  (not shpss_…)
-#    Token expires ~24h — re-run store auth before re-seeding.
+# 4. Copy token into local .env (CLI stores it; seed scripts read .env)
+npm run auth:sync-env
 
-npm run seed:shopify
+# 5. Re-publish collections (already created; publish step only)
+npm run seed:collections
 ```
 
 `shopify store execute` uses the same stored token for ad-hoc Admin GraphQL (add `--allow-mutations` for writes).
@@ -239,7 +245,7 @@ npm run seed:shopify
 
 1. **Settings → Apps and sales channels → Develop apps → Create an app**
 2. **Configuration → Admin API integration → Configure**
-3. Enable the scopes in the table above
+3. Enable **all scopes in the table above**, including `read_publications` and `write_publications`
 4. **Install app** → copy **Admin API access token** → `SHOPIFY_ADMIN_ACCESS_TOKEN` in local `.env`
 5. Run `npm run seed:shopify`
 
@@ -248,7 +254,7 @@ npm run seed:shopify
 This repo includes `shopify.app.toml` linked to **The Kashmir Weaver** (`client_id` `60df4f5aba046f1301c715771ac0c30b`). Scopes:
 
 ```toml
-scopes = "read_products,write_products,read_content,write_content,read_online_store_navigation,write_online_store_navigation,read_legal_policies,write_legal_policies"
+scopes = "read_products,write_products,read_content,write_content,read_online_store_navigation,write_online_store_navigation,read_legal_policies,write_legal_policies,read_publications,write_publications"
 ```
 
 #### 1. Deploy scopes to Partners
@@ -256,7 +262,7 @@ scopes = "read_products,write_products,read_content,write_content,read_online_st
 From the repo root (logged in via `shopify auth login`):
 
 ```bash
-shopify app deploy --allow-updates
+shopify app deploy --force --no-build
 ```
 
 This releases a new app version (e.g. `the-kashmir-weaver-5`) with the scopes above.

@@ -248,7 +248,7 @@ async function main() {
   } catch (err) {
     console.log(`  · publish skipped: ${(err as Error).message}`);
     console.log(
-      '    Re-run `shopify store auth` (needs write_publications), then npm run seed:collections again.',
+      '    Run `npm run auth:deploy-scopes` then `npm run auth:store` (needs write_publications), update SHOPIFY_ADMIN_ACCESS_TOKEN in .env, then npm run seed:collections again.',
     );
   }
 

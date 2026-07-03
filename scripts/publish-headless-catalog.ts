@@ -166,8 +166,8 @@ async function main() {
 main().catch((err) => {
   console.error(err);
   console.error(
-    '\nIf you see write_publications denied, run: shopify store auth\n' +
-      'Then update SHOPIFY_ADMIN_ACCESS_TOKEN in .env and re-run npm run publish:headless',
+      '\nIf you see write_publications denied, run: npm run auth:deploy-scopes && npm run auth:store\n' +
+      'Then npm run auth:sync-env and re-run npm run publish:headless',
   );
   process.exit(1);
 });
