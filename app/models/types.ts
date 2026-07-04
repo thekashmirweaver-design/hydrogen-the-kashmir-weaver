@@ -12,10 +12,24 @@ export type Money = {
   currencyCode: string;
 };
 
+export type ProductAccordionItem = {
+  title: string;
+  body: string;
+};
+
+export type ProductBulletItem = {
+  text: string;
+  href?: string;
+};
+
 export type ProductVariant = {
   id: string;
   title: string;
   availableForSale: boolean;
+  /** Shopify sellable qty when inventory is tracked; null when untracked. */
+  quantityAvailable?: number | null;
+  sku?: string;
+  weightLabel?: string;
   selectedOptions: Array<{name: string; value: string}>;
   price: Money;
   compareAtPrice?: Money;
@@ -25,6 +39,11 @@ export type ProductVariant = {
 export type ProductOption = {
   name: string;
   values: string[];
+};
+
+export type ProductCollectionRef = {
+  handle: string;
+  name: string;
 };
 
 export type Collection = {
@@ -44,6 +63,8 @@ export type Product = {
   name: string;
   collectionSlug: string;
   collectionName: string;
+  /** All linked Shopify collections (first is primary for breadcrumbs). */
+  allCollections?: ProductCollectionRef[];
   price: Money;
   compareAtPrice?: Money;
   shortDescription: string;
@@ -53,6 +74,9 @@ export type Product = {
   material: string;
   origin: string;
   weave: string;
+  care?: string;
+  guaranteesDelivery?: ProductAccordionItem[];
+  returnsCare?: ProductBulletItem[];
   stock: "in" | "out";
   limited?: boolean;
   stockQty?: number;

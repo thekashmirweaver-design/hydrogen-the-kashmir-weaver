@@ -11,6 +11,16 @@ import {
   DUMMY_TEST_HANDLE,
   DUMMY_TEST_PRODUCT,
 } from '../app/models/static/dummy-product.ts';
+import {
+  TEST_PRODUCT_CARE,
+  TEST_PRODUCT_GUARANTEES,
+  TEST_PRODUCT_RETURNS_CARE,
+  weightGramsForSizeLabel,
+} from '../app/models/product-accordion-content.ts';
+import {
+  buildSizeOnlyVariants,
+  shopifySizeProductOptions,
+} from '../app/models/store-sizes.ts';
 import type {Product} from '../app/models/types.ts';
 
 function loadEnvFile() {
@@ -137,7 +147,166 @@ function productMetafields(product: Product) {
       type: 'number_integer',
       value: String(product.stockQty ?? 1),
     },
+    {
+      namespace: 'custom',
+      key: 'care',
+      type: 'single_line_text_field',
+      value: product.care ?? TEST_PRODUCT_CARE,
+    },
+    {
+      namespace: 'custom',
+      key: 'guarantees_delivery',
+      type: 'json',
+      value: JSON.stringify(
+        product.guaranteesDelivery ?? TEST_PRODUCT_GUARANTEES,
+      ),
+    },
+    {
+      namespace: 'custom',
+      key: 'returns_care',
+      type: 'json',
+      value: JSON.stringify(product.returnsCare ?? TEST_PRODUCT_RETURNS_CARE),
+    },
   ];
+}
+
+async function ensureAccordionMetafieldDefinitions() {
+  const definitions = [
+    {
+      key: 'care',
+      name: 'Care instructions',
+      type: 'single_line_text_field',
+      owner: 'PRODUCT',
+    },
+    {
+      key: 'guarantees_delivery',
+      name: 'Guarantees and delivery',
+      type: 'json',
+      owner: 'PRODUCT',
+    },
+    {
+      key: 'returns_care',
+      name: 'Returns and care',
+      type: 'json',
+      owner: 'PRODUCT',
+    },
+  ] as const;
+
+  for (const def of definitions) {
+    try {
+      await adminGraphql(
+        `#graphql
+        mutation CreateMetafieldDefinition($definition: MetafieldDefinitionInput!) {
+          metafieldDefinitionCreate(definition: $definition) {
+            createdDefinition { id }
+            userErrors { message field }
+          }
+        }`,
+        {
+          definition: {
+            namespace: 'custom',
+            key: def.key,
+            name: def.name,
+            type: def.type,
+            ownerType: def.owner,
+            access: {storefront: 'PUBLIC_READ'},
+          },
+        },
+      );
+      console.log(`  ✓ metafield definition custom.${def.key}`);
+    } catch (err) {
+      console.log(`  · custom.${def.key}: ${(err as Error).message}`);
+    }
+    await sleep(300);
+  }
+}
+
+async function setProductMetafields(productId: string, product: Product) {
+  const result = await adminGraphql<{
+    metafieldsSet: {userErrors: Array<{message: string}>};
+  }>(
+    `#graphql
+    mutation SetProductMetafields($metafields: [MetafieldsSetInput!]!) {
+      metafieldsSet(metafields: $metafields) {
+        userErrors { message field }
+      }
+    }`,
+    {
+      metafields: productMetafields(product).map((field) => ({
+        ...field,
+        ownerId: productId,
+      })),
+    },
+  );
+
+  if (result.metafieldsSet.userErrors.length) {
+    throw new Error(result.metafieldsSet.userErrors[0].message);
+  }
+}
+
+async function syncVariantWeights(productId: string) {
+  const data = await adminGraphql<{
+    product: {
+      variants: {
+        nodes: Array<{
+          id: string;
+          title: string;
+          selectedOptions: Array<{name: string; value: string}>;
+          inventoryItem: {id: string};
+        }>;
+      };
+    } | null;
+  }>(
+    `#graphql
+    query ProductVariants($id: ID!) {
+      product(id: $id) {
+        variants(first: 20) {
+          nodes {
+            id
+            title
+            selectedOptions { name value }
+            inventoryItem { id }
+          }
+        }
+      }
+    }`,
+    {id: productId},
+  );
+
+  const variants = data.product?.variants.nodes ?? [];
+  for (const variant of variants) {
+    const sizeValue =
+      variant.selectedOptions.find((o) => /size/i.test(o.name))?.value ??
+      variant.title;
+    const grams = weightGramsForSizeLabel(sizeValue);
+    if (grams == null) continue;
+
+    try {
+      await adminGraphql(
+        `#graphql
+        mutation UpdateVariantWeight($id: ID!, $input: InventoryItemInput!) {
+          inventoryItemUpdate(id: $id, input: $input) {
+            inventoryItem { id }
+            userErrors { message }
+          }
+        }`,
+        {
+          id: variant.inventoryItem.id,
+          input: {
+            measurement: {
+              weight: {value: grams, unit: 'GRAMS'},
+            },
+          },
+        },
+      );
+      console.log(`  ✓ weight ${grams}g → ${variant.title}`);
+    } catch (err) {
+      console.log(
+        `  · weight ${variant.title}: ${(err as Error).message} (set in Admin or grant write_inventory)`,
+      );
+    }
+    await sleep(200);
+  }
 }
 
 async function findProductByHandle(handle: string) {
@@ -177,7 +346,7 @@ async function createProduct(product: Product): Promise<string> {
     product.options?.map((option) => ({
       name: option.name,
       values: option.values.map((name) => ({name})),
-    })) ?? [];
+    })) ?? shopifySizeProductOptions();
 
   const result = await adminGraphql<{
     productCreate: {
@@ -214,25 +383,7 @@ async function createProduct(product: Product): Promise<string> {
   return result.productCreate.product.id;
 }
 
-async function syncFullProduct(productId: string, product: Product) {
-  const productOptions =
-    product.options?.map((option) => ({
-      name: option.name,
-      values: option.values.map((name) => ({name})),
-    })) ?? [];
-
-  const variants =
-    product.variants?.map((variant) => ({
-      optionValues: variant.selectedOptions.map((o) => ({
-        optionName: o.name,
-        name: o.value,
-      })),
-      price: String(variant.price.amount),
-      compareAtPrice: variant.compareAtPrice
-        ? String(variant.compareAtPrice.amount)
-        : undefined,
-    })) ?? [];
-
+async function syncSizeVariants(productId: string, product: Product) {
   const result = await adminGraphql<{
     productSet: {
       product: {id: string; handle: string};
@@ -249,8 +400,11 @@ async function syncFullProduct(productId: string, product: Product) {
     {
       input: {
         id: productId,
-        productOptions,
-        variants,
+        productOptions: shopifySizeProductOptions(),
+        variants: buildSizeOnlyVariants(
+          product.price.amount,
+          product.compareAtPrice?.amount,
+        ),
       },
     },
   );
@@ -348,17 +502,24 @@ async function main() {
   let productId: string;
   const existing = await findProductByHandle(DUMMY_TEST_HANDLE);
 
+  await ensureAccordionMetafieldDefinitions();
+
   if (existing) {
     productId = existing.id;
     console.log(`  · product already exists (${existing.handle})`);
+    await setProductMetafields(productId, DUMMY_TEST_PRODUCT);
+    console.log(`  ✓ set accordion metafields`);
+    await syncVariantWeights(productId);
   } else {
     productId = await createProduct(DUMMY_TEST_PRODUCT);
     console.log(`  ✓ created product ${DUMMY_TEST_HANDLE}`);
     await sleep(1500);
+    await syncSizeVariants(productId, DUMMY_TEST_PRODUCT);
+    console.log(`  ✓ synced size variants`);
+    await setProductMetafields(productId, DUMMY_TEST_PRODUCT);
+    console.log(`  ✓ set metafields`);
+    await syncVariantWeights(productId);
   }
-
-  await syncFullProduct(productId, DUMMY_TEST_PRODUCT);
-  console.log(`  ✓ synced ${DUMMY_TEST_PRODUCT.variants?.length ?? 0} variants`);
 
   await addToCollection(collection.id, productId);
   console.log(`  ✓ added to collection ${COLLECTION_HANDLE}`);

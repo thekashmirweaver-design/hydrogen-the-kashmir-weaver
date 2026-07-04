@@ -2,6 +2,8 @@ import type {
   Collection,
   Money,
   Product,
+  ProductAccordionItem,
+  ProductBulletItem,
   ProductImage,
   ProductOption,
   ProductVariant,
@@ -11,6 +13,7 @@ import {
   PRODUCT_METAFIELDS,
   SHOP_METAFIELDS,
 } from './metafields';
+import {formatVariantWeight} from '~/lib/format-variant-weight';
 import {truncateMetaDescription} from '~/lib/meta-description';
 
 type ShopifyMoney = {amount: string; currencyCode: string};
@@ -33,6 +36,10 @@ type ShopifyVariantNode = {
   id: string;
   title: string;
   availableForSale: boolean;
+  quantityAvailable?: number | null;
+  sku?: string | null;
+  weight?: number | null;
+  weightUnit?: string | null;
   selectedOptions: Array<{name: string; value: string}>;
   price: ShopifyMoney;
   compareAtPrice?: ShopifyMoney | null;
@@ -131,7 +138,14 @@ const toImage = (image: ShopifyImage, fallbackAlt: string): ProductImage => ({
 });
 
 const metafieldMap = (metafields?: ShopifyMetafield[] | null) =>
-  new Map((metafields ?? []).map((field) => [field.key, field.value]));
+  new Map(
+    (metafields ?? [])
+      .filter(
+        (field): field is ShopifyMetafield =>
+          field != null && typeof field.key === 'string',
+      )
+      .map((field) => [field.key, field.value]),
+  );
 
 const getMetafield = (
   fields: Map<string, string>,
@@ -172,10 +186,61 @@ const parseStringList = (value: string | undefined): string[] | undefined => {
   return lines.length ? lines : undefined;
 };
 
+const parseAccordionItems = (
+  value: string | undefined,
+): ProductAccordionItem[] | undefined => {
+  if (!value?.trim()) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) return undefined;
+    const items = parsed
+      .map((entry) => {
+        if (!entry || typeof entry !== 'object') return null;
+        const {title, body} = entry as {title?: unknown; body?: unknown};
+        if (typeof title !== 'string' || typeof body !== 'string') return null;
+        const trimmedTitle = title.trim();
+        const trimmedBody = body.trim();
+        if (!trimmedTitle || !trimmedBody) return null;
+        return {title: trimmedTitle, body: trimmedBody};
+      })
+      .filter((item): item is ProductAccordionItem => item != null);
+    return items.length ? items : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const parseBulletItems = (
+  value: string | undefined,
+): ProductBulletItem[] | undefined => {
+  if (!value?.trim()) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) return undefined;
+    const items = parsed
+      .map((entry) => {
+        if (!entry || typeof entry !== 'object') return null;
+        const {text, href} = entry as {text?: unknown; href?: unknown};
+        if (typeof text !== 'string' || !text.trim()) return null;
+        return {
+          text: text.trim(),
+          href: typeof href === 'string' && href.trim() ? href.trim() : undefined,
+        };
+      })
+      .filter((item): item is ProductBulletItem => item != null);
+    return items.length ? items : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 const mapVariant = (node: ShopifyVariantNode): ProductVariant => ({
   id: gidToId(node.id),
   title: node.title,
   availableForSale: node.availableForSale,
+  quantityAvailable: node.quantityAvailable,
+  sku: node.sku?.trim() || undefined,
+  weightLabel: formatVariantWeight(node.weight, node.weightUnit),
   selectedOptions: node.selectedOptions,
   price: toMoney(node.price),
   compareAtPrice: node.compareAtPrice ? toMoney(node.compareAtPrice) : undefined,
@@ -206,7 +271,11 @@ export function mapProduct(node: ShopifyProductNode): Product {
     mapVariant(variant),
   );
   const primaryVariant = variants[0];
-  const collection = node.collections.edges[0]?.node;
+  const allCollections = node.collections.edges.map(({node: collectionNode}) => ({
+    handle: collectionNode.handle,
+    name: collectionNode.title,
+  }));
+  const collection = allCollections[0];
   const description = node.description.trim();
   const shortDescription =
     getMetafield(fields, PRODUCT_METAFIELDS.shortDescription) ??
@@ -234,7 +303,8 @@ export function mapProduct(node: ShopifyProductNode): Product {
     handle: node.handle,
     name: node.title,
     collectionSlug: collection?.handle ?? 'shop',
-    collectionName: collection?.title ?? 'Shop',
+    collectionName: collection?.name ?? 'Shop',
+    allCollections: allCollections.length ? allCollections : undefined,
     price: primaryVariant?.price ?? {amount: 0, currencyCode: 'USD'},
     compareAtPrice: primaryVariant?.compareAtPrice,
     shortDescription: shortDescription || node.title,
@@ -251,9 +321,16 @@ export function mapProduct(node: ShopifyProductNode): Product {
       getMetafield(fields, PRODUCT_METAFIELDS.weave) ??
       node.productType ??
       'Hand-woven',
+    care: getMetafield(fields, PRODUCT_METAFIELDS.care),
+    guaranteesDelivery: parseAccordionItems(
+      getMetafield(fields, PRODUCT_METAFIELDS.guaranteesDelivery),
+    ),
+    returnsCare: parseBulletItems(
+      getMetafield(fields, PRODUCT_METAFIELDS.returnsCare),
+    ),
     stock: inStock ? 'in' : 'out',
-    limited: limited ?? stockQty === 1,
-    stockQty: stockQty ?? (inStock ? 1 : 0),
+    limited: limited ?? (stockQty === 1),
+    stockQty,
     productType: node.productType ?? undefined,
     vendor: node.vendor ?? undefined,
     tags: node.tags,

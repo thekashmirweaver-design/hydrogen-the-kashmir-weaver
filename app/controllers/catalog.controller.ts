@@ -67,6 +67,9 @@ export async function getProductPage(
   const description =
     product.seo?.description ?? product.shortDescription;
 
+  const inStock =
+    product.variants?.some((v) => v.availableForSale) ?? product.stock === 'in';
+
   const productLd: Record<string, unknown> = {
       '@context': 'https://schema.org',
       '@type': 'Product',
@@ -80,10 +83,9 @@ export async function getProductPage(
         '@type': 'Offer',
         price: product.price.amount,
         priceCurrency: product.price.currencyCode,
-        availability:
-          product.stock === 'in'
-            ? 'https://schema.org/InStock'
-            : 'https://schema.org/OutOfStock',
+        availability: inStock
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
         url,
       },
     };

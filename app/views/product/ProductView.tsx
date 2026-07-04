@@ -1,6 +1,14 @@
 import {Link, type FetcherWithComponents} from 'react-router';
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {ChevronLeft, ChevronRight, ArrowRight, Expand, X} from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
+  Expand,
+  X,
+  Minus,
+  Plus,
+} from 'lucide-react';
 import {CartForm} from '@shopify/hydrogen';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {Accordion} from '~/components/gulriza/Accordion';
@@ -9,7 +17,22 @@ import {CatalogImage} from '~/components/gulriza/CatalogImage';
 import {Reveal} from '~/components/gulriza/Reveal';
 import type {Product, ProductVariant} from '~/models/types';
 import {useFormatPrice} from '~/lib/currency-store';
+import {
+  maxCartQuantity,
+  showQuantitySelector,
+} from '~/lib/product-inventory';
 import {useFocusTrap} from '~/hooks/use-focus-trap';
+
+function isShopifyMerchandiseId(id?: string): boolean {
+  if (!id) return false;
+  if (id.startsWith('gid://shopify/ProductVariant/')) return true;
+  return /^\d+$/.test(id);
+}
+
+function toMerchandiseGid(id: string): string {
+  if (id.startsWith('gid://shopify/ProductVariant/')) return id;
+  return `gid://shopify/ProductVariant/${id}`;
+}
 
 export function ProductView({
   product,
@@ -41,6 +64,15 @@ export function ProductView({
 
   const activeVariantId = selectedVariant?.id ?? product.variantId;
   const displayPrice = selectedVariant?.price ?? product.price;
+  const displayCompareAtPrice = selectedVariant?.compareAtPrice ?? product.compareAtPrice;
+  const onSale =
+    displayCompareAtPrice != null &&
+    displayCompareAtPrice.amount > displayPrice.amount;
+  const selectedSize = selectedVariant?.selectedOptions.find((o) =>
+    /size/i.test(o.name),
+  )?.value;
+  const selectedWeight = selectedVariant?.weightLabel;
+  const selectedSku = selectedVariant?.sku;
   const displayImages = useMemo(() => {
     if (selectedVariant?.image) {
       const rest = product.images.filter((i) => i.src !== selectedVariant.image!.src);
@@ -50,6 +82,7 @@ export function ProductView({
   }, [product.images, selectedVariant?.image]);
 
   const [imgIdx, setImgIdx] = useState(0);
+  const [quantity, setQuantity] = useState(1);
   const [fullOpen, setFullOpen] = useState(false);
   const lightboxRef = useRef<HTMLDivElement>(null);
   const formatPrice = useFormatPrice();
@@ -57,19 +90,31 @@ export function ProductView({
 
   useEffect(() => {
     setImgIdx(0);
+    setQuantity(1);
   }, [selectedVariant?.id]);
+
+  const canChooseQuantity = showQuantitySelector(selectedVariant);
+  const maxQuantity = maxCartQuantity(selectedVariant);
 
   const soldOut =
     selectedVariant != null
       ? !selectedVariant.availableForSale
       : product.stock === 'out';
-  const isShopifyVariant = activeVariantId?.startsWith('gid://') ?? false;
+  const isShopifyVariant = isShopifyMerchandiseId(activeVariantId);
+  const merchandiseGid = activeVariantId
+    ? toMerchandiseGid(activeVariantId)
+    : undefined;
 
   const imgCount = displayImages.length;
   const prevImg = () => setImgIdx((i) => (i - 1 + imgCount) % imgCount);
   const nextImg = () => setImgIdx((i) => (i + 1) % imgCount);
 
   const related = relatedProducts;
+  const buyNowQuantity = canChooseQuantity ? quantity : 1;
+  const buyNowVariantId = activeVariantId?.replace(
+    /^gid:\/\/shopify\/ProductVariant\//,
+    '',
+  );
 
   useEffect(() => {
     if (!fullOpen) return;
@@ -142,17 +187,6 @@ export function ProductView({
                 Sold Out
               </div>
             )}
-            {product.limited && !soldOut && (
-              <div
-                className="absolute left-5 top-5 px-3 py-1 text-[0.65rem] tracking-[0.3em] uppercase"
-                style={{
-                  background: 'rgba(8,16,15,0.55)',
-                  color: 'var(--accent)',
-                }}
-              >
-                N°1 of 1
-              </div>
-            )}
             {displayImages.length > 1 && (
               <>
                 <button
@@ -213,7 +247,14 @@ export function ProductView({
               {product.reviews.count === 1 ? 'review' : 'reviews'}
             </p>
           )}
-          <div className="mt-4 text-lg text-muted-foreground">{formatPrice(displayPrice)}</div>
+          <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            {onSale && (
+              <span className="text-lg text-muted-foreground line-through">
+                {formatPrice(displayCompareAtPrice!)}
+              </span>
+            )}
+            <span className="text-lg text-muted-foreground">{formatPrice(displayPrice)}</span>
+          </div>
 
           {product.options && product.options.length > 0 && (
             <div className="mt-8 space-y-6">
@@ -249,12 +290,6 @@ export function ProductView({
             </div>
           )}
 
-          {product.limited && (
-            <div className="mt-6 flex items-center gap-3 text-[0.65rem] tracking-[0.3em] uppercase text-muted-foreground">
-              <span style={{color: 'var(--accent)'}}>Limited Edition</span>
-            </div>
-          )}
-
           <div className="mt-12 space-y-3">
             {soldOut ? (
               <>
@@ -279,10 +314,46 @@ export function ProductView({
               </>
             ) : isShopifyVariant ? (
               <>
+                {canChooseQuantity ? (
+                  <div className="mb-3">
+                    <div className="tracked text-muted-foreground">Quantity</div>
+                    <div
+                      className="mt-3 inline-flex items-center gap-2 border px-2 py-2"
+                      style={{borderColor: 'var(--border)'}}
+                    >
+                      <button
+                        type="button"
+                        aria-label="Decrease quantity"
+                        disabled={quantity <= 1}
+                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                        className="text-muted-foreground transition hover:text-accent disabled:pointer-events-none disabled:opacity-30"
+                      >
+                        <Minus className="h-3 w-3" strokeWidth={1} />
+                      </button>
+                      <span className="w-6 text-center text-sm">{quantity}</span>
+                      <button
+                        type="button"
+                        aria-label="Increase quantity"
+                        disabled={quantity >= maxQuantity}
+                        onClick={() =>
+                          setQuantity((q) => Math.min(maxQuantity, q + 1))
+                        }
+                        className="text-muted-foreground transition hover:text-accent disabled:pointer-events-none disabled:opacity-30"
+                      >
+                        <Plus className="h-3 w-3" strokeWidth={1} />
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
                 <CartForm
                   route="/cart"
                   inputs={{
-                    lines: [{merchandiseId: activeVariantId!, quantity: 1}],
+                    lines: [
+                      {
+                        merchandiseId: merchandiseGid!,
+                        quantity: canChooseQuantity ? quantity : 1,
+                      },
+                    ],
                   }}
                   action={CartForm.ACTIONS.LinesAdd}
                 >
@@ -301,7 +372,11 @@ export function ProductView({
                   )}
                 </CartForm>
                 <Link
-                  to="/cart"
+                  to={
+                    buyNowVariantId
+                      ? `/cart/${buyNowVariantId}:${buyNowQuantity}`
+                      : '/cart'
+                  }
                   className="block w-full border py-4 text-center tracked transition hover:text-accent"
                   style={{borderColor: 'var(--border)'}}
                 >
@@ -328,83 +403,117 @@ export function ProductView({
             </Accordion>
             <Accordion title="Product Details">
               <dl className="space-y-4 text-sm leading-relaxed">
-                <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
-                  <dt className="text-muted-foreground">Size</dt>
-                  <dd>100 × 200 cm / 40 × 79 inches</dd>
-                </div>
-                <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
-                  <dt className="text-muted-foreground">Weight</dt>
-                  <dd>220 gms / 7.8 oz</dd>
-                </div>
-                <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
-                  <dt className="text-muted-foreground">Composition</dt>
-                  <dd>100% Kashmir Pashmina Cashmere*</dd>
-                </div>
-                <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
-                  <dt className="text-muted-foreground">Weaving</dt>
-                  <dd>Handloom · 4 to 7 days</dd>
-                </div>
-                <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
-                  <dt className="text-muted-foreground">Embroidery</dt>
-                  <dd>Sozni Hand Embroidery · 4 to 5 months</dd>
-                </div>
-                <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
-                  <dt className="text-muted-foreground">Origin</dt>
-                  <dd>Made in Kashmir, India</dd>
-                </div>
-                <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
-                  <dt className="text-muted-foreground">Product Code</dt>
-                  <dd>MK-03-26-SP</dd>
-                </div>
-                <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
-                  <dt className="text-muted-foreground">Care</dt>
-                  <dd>
-                    Dry Clean Only
-                    <div className="mt-3">
-                      <Link
-                        to="/care-guide"
-                        className="tracked inline-flex items-center gap-2 text-[0.65rem] uppercase text-accent hover:opacity-80 transition"
-                      >
-                        Care Guide for each material{' '}
-                        <ArrowRight className="h-3 w-3" strokeWidth={1.5} />
-                      </Link>
-                    </div>
-                  </dd>
-                </div>
+                {selectedSize ? (
+                  <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
+                    <dt className="text-muted-foreground">Size</dt>
+                    <dd>{selectedSize}</dd>
+                  </div>
+                ) : null}
+                {product.material ? (
+                  <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
+                    <dt className="text-muted-foreground">Composition</dt>
+                    <dd>{product.material}</dd>
+                  </div>
+                ) : null}
+                {product.weave ? (
+                  <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
+                    <dt className="text-muted-foreground">Weaving</dt>
+                    <dd>{product.weave}</dd>
+                  </div>
+                ) : null}
+                {product.origin ? (
+                  <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
+                    <dt className="text-muted-foreground">Origin</dt>
+                    <dd>{product.origin}</dd>
+                  </div>
+                ) : null}
+                {selectedWeight ? (
+                  <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
+                    <dt className="text-muted-foreground">Weight</dt>
+                    <dd>{selectedWeight}</dd>
+                  </div>
+                ) : null}
+                {selectedSku ? (
+                  <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
+                    <dt className="text-muted-foreground">Product Code</dt>
+                    <dd>{selectedSku}</dd>
+                  </div>
+                ) : null}
+                {product.allCollections && product.allCollections.length > 1 ? (
+                  <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
+                    <dt className="text-muted-foreground">Collections</dt>
+                    <dd className="flex flex-wrap gap-x-3 gap-y-1">
+                      {product.allCollections.map((c) => (
+                        <Link
+                          key={c.handle}
+                          to={`/collections/${c.handle}`}
+                          className="text-accent transition hover:opacity-80"
+                        >
+                          {c.name}
+                        </Link>
+                      ))}
+                    </dd>
+                  </div>
+                ) : null}
+                {product.care ? (
+                  <div className="grid grid-cols-1 gap-1 sm:grid-cols-[120px_1fr] sm:gap-4">
+                    <dt className="text-muted-foreground">Care</dt>
+                    <dd>
+                      {product.care}
+                      <div className="mt-3">
+                        <Link
+                          to="/care-guide"
+                          className="tracked inline-flex items-center gap-2 text-[0.65rem] uppercase text-accent hover:opacity-80 transition"
+                        >
+                          Care Guide for each material{' '}
+                          <ArrowRight className="h-3 w-3" strokeWidth={1.5} />
+                        </Link>
+                      </div>
+                    </dd>
+                  </div>
+                ) : null}
               </dl>
             </Accordion>
 
-            <Accordion title="Guarantees & Delivery">
-              <div className="space-y-6 py-2">
-                <div className="flex gap-4">
-                  <div className="mt-0.5 text-accent">✦</div>
-                  <div>
-                    <div className="text-sm font-medium">Authenticity Guaranteed</div>
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      No questions asked money back guarantee on all products.
+            {product.guaranteesDelivery && product.guaranteesDelivery.length > 0 ? (
+              <Accordion title="Guarantees & Delivery">
+                <div className="space-y-6 py-2">
+                  {product.guaranteesDelivery.map((item) => (
+                    <div key={item.title} className="flex gap-4">
+                      <div className="mt-0.5 text-accent">✦</div>
+                      <div>
+                        <div className="text-sm font-medium">{item.title}</div>
+                        <div className="mt-1 text-sm text-muted-foreground">
+                          {item.body}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-                <div className="flex gap-4">
-                  <div className="mt-0.5 text-accent">✦</div>
-                  <div>
-                    <div className="text-sm font-medium">Ships in 24 Hours</div>
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      International 5–10 days · India 2–5 working days.
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <div className="mt-0.5 text-accent">✦</div>
-                  <div>
-                    <div className="text-sm font-medium">Free International Shipping</div>
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      On all orders over $200, ships direct from Kashmir.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Accordion>
+              </Accordion>
+            ) : null}
+
+            {product.returnsCare && product.returnsCare.length > 0 ? (
+              <Accordion title="Returns & Care">
+                <ul className="space-y-4 py-2 text-sm leading-relaxed">
+                  {product.returnsCare.map((item) => (
+                    <li key={item.text} className="flex gap-3">
+                      <span className="mt-0.5 text-accent">✦</span>
+                      {item.href ? (
+                        <Link
+                          to={item.href}
+                          className="text-accent transition hover:opacity-80"
+                        >
+                          {item.text}
+                        </Link>
+                      ) : (
+                        <span>{item.text}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </Accordion>
+            ) : null}
             <Hairline />
           </div>
         </div>

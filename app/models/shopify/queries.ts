@@ -47,6 +47,10 @@ export const PRODUCT_VARIANT_FRAGMENT = `#graphql
     id
     title
     availableForSale
+    quantityAvailable
+    sku
+    weight
+    weightUnit
     selectedOptions {
       name
       value

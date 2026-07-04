@@ -24,10 +24,11 @@ async function withCatalog<T>(
     try {
       return await fetchFromShopify(options.storefront);
     } catch (error) {
-      console.warn(
-        '[catalog] Shopify fetch failed, falling back to static data',
-        error,
-      );
+      console.warn('[catalog] Shopify fetch failed', error);
+      if (options.useStatic) {
+        return staticFallback();
+      }
+      throw error;
     }
   }
 

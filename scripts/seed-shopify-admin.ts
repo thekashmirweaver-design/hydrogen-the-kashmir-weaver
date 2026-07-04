@@ -14,6 +14,10 @@ import {fileURLToPath} from 'node:url';
 import {products, collections} from '../app/models/static/repository.ts';
 import {POSTS, ARTICLES} from '../app/models/static/journal.ts';
 import {CONTACT} from '../app/lib/contact.ts';
+import {
+  buildSizeOnlyVariants,
+  shopifySizeProductOptions,
+} from '../app/models/store-sizes.ts';
 import type {Product} from '../app/models/types.ts';
 
 /** Load repo-root .env into process.env (does not override existing vars). */
@@ -274,6 +278,9 @@ async function ensureMetafieldDefinitions() {
     {key: 'weave', name: 'Weave', type: 'single_line_text_field', owner: 'PRODUCT'},
     {key: 'limited', name: 'Limited edition', type: 'boolean', owner: 'PRODUCT'},
     {key: 'stock_qty', name: 'Stock quantity', type: 'number_integer', owner: 'PRODUCT'},
+    {key: 'care', name: 'Care instructions', type: 'single_line_text_field', owner: 'PRODUCT'},
+    {key: 'guarantees_delivery', name: 'Guarantees and delivery', type: 'json', owner: 'PRODUCT'},
+    {key: 'returns_care', name: 'Returns and care', type: 'json', owner: 'PRODUCT'},
     {key: 'tagline', name: 'Tagline', type: 'single_line_text_field', owner: 'COLLECTION'},
     {key: 'story', name: 'Story', type: 'multi_line_text_field', owner: 'COLLECTION'},
     {key: 'marquee_messages', name: 'Marquee messages', type: 'json', owner: 'SHOP'},
@@ -519,6 +526,37 @@ function productMetafields(product: Product) {
   ];
 }
 
+async function syncProductSizes(productId: string, product: Product) {
+  const result = await adminGraphql<{
+    productSet: {
+      product: {id: string; handle: string};
+      userErrors: Array<{field: string[]; message: string}>;
+    };
+  }>(
+    `#graphql
+    mutation SyncProductSizes($input: ProductSetInput!) {
+      productSet(synchronous: true, input: $input) {
+        product { id handle }
+        userErrors { field message }
+      }
+    }`,
+    {
+      input: {
+        id: productId,
+        productOptions: shopifySizeProductOptions(),
+        variants: buildSizeOnlyVariants(
+          product.price.amount,
+          product.compareAtPrice?.amount,
+        ),
+      },
+    },
+  );
+
+  if (result.productSet.userErrors.length) {
+    throw new Error(result.productSet.userErrors[0].message);
+  }
+}
+
 async function seedProducts(collectionIds: Map<string, string>) {
   for (const product of products) {
     const media = product.images.map((img) => ({
@@ -549,6 +587,7 @@ async function seedProducts(collectionIds: Map<string, string>) {
             productType: product.productType ?? 'Pashmina',
             vendor: product.vendor ?? 'The Kashmir Weaver',
             tags: product.tags,
+            productOptions: shopifySizeProductOptions(),
             metafields: productMetafields(product),
           },
           media,
@@ -560,41 +599,8 @@ async function seedProducts(collectionIds: Map<string, string>) {
       }
 
       const productId = result.productCreate.product.id;
+      await syncProductSizes(productId, product);
 
-      const variantData = await adminGraphql<{
-        product: {variants: {edges: Array<{node: {id: string}}>}} | null;
-      }>(
-        `query ProductVariant($id: ID!) {
-          product(id: $id) {
-            variants(first: 1) { edges { node { id } } }
-          }
-        }`,
-        {id: productId},
-      );
-
-      const variantId = variantData.product?.variants.edges[0]?.node.id;
-      if (variantId) {
-        await adminGraphql(
-          `#graphql
-          mutation UpdateVariant($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
-            productVariantsBulkUpdate(productId: $productId, variants: $variants) {
-              userErrors { message }
-            }
-          }`,
-          {
-            productId,
-            variants: [
-              {
-                id: variantId,
-                price: String(product.price.amount),
-                compareAtPrice: product.compareAtPrice
-                  ? String(product.compareAtPrice.amount)
-                  : undefined,
-              },
-            ],
-          },
-        );
-      }
       const collectionId = collectionIds.get(product.collectionSlug);
       if (collectionId) {
         await adminGraphql(

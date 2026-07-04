@@ -8,6 +8,9 @@ export const PRODUCT_METAFIELDS = {
   weave: 'weave',
   limited: 'limited',
   stockQty: 'stock_qty',
+  care: 'care',
+  guaranteesDelivery: 'guarantees_delivery',
+  returnsCare: 'returns_care',
 } as const;
 
 export const COLLECTION_METAFIELDS = {
