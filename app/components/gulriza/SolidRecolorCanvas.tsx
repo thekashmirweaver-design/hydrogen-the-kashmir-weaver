@@ -1,6 +1,6 @@
 import {useEffect, useRef} from 'react';
 import {
-  drawCoverImage,
+  drawFitImage,
   renderRecolorPreviewCanvas,
 } from '~/lib/shade-recolor/engine';
 import {useRecolorAssets} from '~/hooks/use-recolor-assets';
@@ -8,6 +8,7 @@ import {useRecolorAssets} from '~/hooks/use-recolor-assets';
 export function SolidRecolorCanvas({
   hex,
   imageSetId = '0',
+  fit = 'cover',
   className,
   style,
   alt = 'Solid pashmina',
@@ -15,6 +16,8 @@ export function SolidRecolorCanvas({
 }: {
   hex?: string | null;
   imageSetId?: string;
+  /** cover fills the frame (thumbnails); contain shows the full product (PDP hero). */
+  fit?: 'cover' | 'contain';
   className?: string;
   style?: React.CSSProperties;
   alt?: string;
@@ -48,14 +51,14 @@ export function SolidRecolorCanvas({
         hex,
         productOnly: imageSet.productOnly,
       });
-      drawCoverImage(ctx, preview, assets.width, assets.height, width, height);
+      drawFitImage(ctx, preview, assets.width, assets.height, width, height, fit);
     };
 
     render();
     const observer = new ResizeObserver(render);
     observer.observe(wrapper);
     return () => observer.disconnect();
-  }, [assets, hex, imageSet.productOnly]);
+  }, [assets, hex, imageSet.productOnly, fit]);
 
   if (error) {
     return (

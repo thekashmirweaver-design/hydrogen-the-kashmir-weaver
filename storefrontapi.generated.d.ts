@@ -391,6 +391,7 @@ export type HomepageFeaturedQuery = {
 };
 
 export type LocalizationQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
 }>;
 
@@ -852,7 +853,7 @@ interface GeneratedQueryTypes {
     return: HomepageFeaturedQuery;
     variables: HomepageFeaturedQueryVariables;
   };
-  '#graphql\n  query Localization($language: LanguageCode)\n  @inContext(language: $language) {\n    localization {\n      availableCountries {\n        isoCode\n        name\n        currency {\n          isoCode\n          name\n          symbol\n        }\n      }\n      country {\n        isoCode\n        currency {\n          isoCode\n          name\n          symbol\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  query Localization($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    localization {\n      availableCountries {\n        isoCode\n        name\n        currency {\n          isoCode\n          name\n          symbol\n        }\n      }\n      country {\n        isoCode\n        currency {\n          isoCode\n          name\n          symbol\n        }\n      }\n    }\n  }\n': {
     return: LocalizationQuery;
     variables: LocalizationQueryVariables;
   };

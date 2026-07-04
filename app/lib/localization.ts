@@ -16,8 +16,8 @@ export type LocalizationSnapshot = {
 };
 
 const LOCALIZATION_QUERY = `#graphql
-  query Localization($language: LanguageCode)
-  @inContext(language: $language) {
+  query Localization($country: CountryCode, $language: LanguageCode)
+  @inContext(country: $country, language: $language) {
     localization {
       availableCountries {
         isoCode
@@ -119,17 +119,18 @@ export async function loadLocalization(
   try {
     const data = await storefront.query<LocalizationQueryResult>(
       LOCALIZATION_QUERY,
-      {
-        cache: storefront.CacheLong(),
-      },
     );
 
     const currencies = buildCurrencyOptions(data.localization?.availableCountries);
+    const marketCountry =
+      (data.localization?.country?.isoCode?.trim() as CountryCode | undefined) ??
+      selectedCountry;
+
     if (currencies.length) {
       return {
         currencies,
-        selectedCountry,
-        selectedCurrency: resolveSelectedCurrency(currencies, selectedCountry),
+        selectedCountry: marketCountry,
+        selectedCurrency: resolveSelectedCurrency(currencies, marketCountry),
       };
     }
   } catch {

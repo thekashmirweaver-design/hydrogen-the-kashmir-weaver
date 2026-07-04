@@ -200,7 +200,11 @@ export const MENU_FRAGMENT = `#graphql
 ` as const;
 
 export const ALL_PRODUCTS_QUERY = `#graphql
-  query CatalogAllProducts($first: Int!) {
+  query CatalogAllProducts(
+    $country: CountryCode
+    $language: LanguageCode
+    $first: Int!
+  ) @inContext(country: $country, language: $language) {
     products(first: $first, sortKey: CREATED_AT, reverse: true) {
       edges {
         node {
@@ -214,7 +218,11 @@ export const ALL_PRODUCTS_QUERY = `#graphql
 ` as const;
 
 export const PRODUCT_BY_HANDLE_QUERY = `#graphql
-  query CatalogProductByHandle($handle: String!) {
+  query CatalogProductByHandle(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+  ) @inContext(country: $country, language: $language) {
     product(handle: $handle) {
       ...CatalogProduct
     }
@@ -224,7 +232,11 @@ export const PRODUCT_BY_HANDLE_QUERY = `#graphql
 ` as const;
 
 export const ALL_COLLECTIONS_QUERY = `#graphql
-  query CatalogAllCollections($first: Int!) {
+  query CatalogAllCollections(
+    $country: CountryCode
+    $language: LanguageCode
+    $first: Int!
+  ) @inContext(country: $country, language: $language) {
     collections(first: $first, sortKey: TITLE) {
       edges {
         node {
@@ -239,7 +251,12 @@ export const ALL_COLLECTIONS_QUERY = `#graphql
 ` as const;
 
 export const COLLECTION_BY_HANDLE_QUERY = `#graphql
-  query CatalogCollectionByHandle($handle: String!, $productFirst: Int!) {
+  query CatalogCollectionByHandle(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+    $productFirst: Int!
+  ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       ...CatalogCollection
       products(first: $productFirst, sortKey: CREATED, reverse: true) {

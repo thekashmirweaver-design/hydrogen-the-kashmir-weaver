@@ -217,13 +217,14 @@ export function ProductView({
           <div className="mx-auto w-full max-w-sm min-w-0 lg:mx-0 lg:h-full lg:max-w-none lg:self-stretch">
             <div className="flex h-full min-h-0 flex-col gap-2 md:grid md:grid-cols-[auto_1fr] md:gap-2">
               <div
-                className="relative aspect-[4/5] min-h-0 min-w-0 overflow-hidden md:col-start-2 md:row-start-1 lg:aspect-auto lg:h-full"
+                className={`relative aspect-[4/5] min-h-0 min-w-0 overflow-hidden md:col-start-2 md:row-start-1${solidRecolor ? '' : ' lg:aspect-auto lg:h-full'}`}
                 style={{background: 'var(--surface)'}}
               >
                 {solidRecolor ? (
                   <SolidRecolorCanvas
                     hex={selectedShade?.hex}
                     imageSetId={activeSolidImageSet.id}
+                    fit="contain"
                     alt={`${product.name} — ${activeSolidImageSet.label}`}
                     onClick={() => setFullOpen(true)}
                     className="absolute inset-0 h-full w-full cursor-zoom-in"
@@ -798,6 +799,7 @@ export function ProductView({
               <SolidRecolorCanvas
                 hex={selectedShade?.hex}
                 imageSetId={activeSolidImageSet.id}
+                fit="contain"
                 alt={`${product.name} — ${activeSolidImageSet.label}`}
                 onClick={(e) => e.stopPropagation()}
                 className="absolute inset-0 m-auto max-h-full max-w-full p-4 md:p-10"

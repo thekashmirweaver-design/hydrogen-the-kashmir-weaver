@@ -1,5 +1,5 @@
-import {Await, Link, useLocation} from 'react-router';
-import {Suspense} from 'react';
+import {Await, Link, useLocation, useNavigation} from 'react-router';
+import {Suspense, type ReactNode} from 'react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CatalogSnapshot} from '~/models/types';
 import type {ShopSettings} from '~/lib/shop-settings';
@@ -20,6 +20,23 @@ interface PageLayoutProps {
   publicAccessToken: string;
   customerAccessToken: Promise<string | null>;
   children?: React.ReactNode;
+}
+
+function MarketAwareMain({children}: {children: ReactNode}) {
+  const navigation = useNavigation();
+  const location = useLocation();
+  const isMarketReload =
+    navigation.state !== 'idle' &&
+    navigation.location?.search !== location.search;
+
+  return (
+    <main
+      className="transition-opacity duration-150 ease-out"
+      style={{opacity: isMarketReload ? 0.55 : 1}}
+    >
+      {children}
+    </main>
+  );
 }
 
 export function PageLayout({
@@ -69,7 +86,7 @@ export function PageLayout({
                 publicAccessToken={publicAccessToken}
                 customerAccessToken={resolvedCustomerAccessToken}
               />
-              <main>{children}</main>
+              <MarketAwareMain>{children}</MarketAwareMain>
               <CartFab cartQuantity={resolvedCart?.totalQuantity ?? 0} />
               <SiteFooter shopSettings={shopSettings} />
             </>

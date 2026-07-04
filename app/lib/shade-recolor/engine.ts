@@ -166,7 +166,29 @@ export function renderRecolorPreviewCanvas(
   return canvas;
 }
 
-/** Draw source into destination using object-cover scaling. */
+/** Draw source into destination using object-cover or object-contain scaling. */
+export function drawFitImage(
+  ctx: CanvasRenderingContext2D,
+  source: CanvasImageSource,
+  sourceWidth: number,
+  sourceHeight: number,
+  destWidth: number,
+  destHeight: number,
+  fit: 'cover' | 'contain' = 'cover',
+): void {
+  const scale =
+    fit === 'cover'
+      ? Math.max(destWidth / sourceWidth, destHeight / sourceHeight)
+      : Math.min(destWidth / sourceWidth, destHeight / sourceHeight);
+  const width = sourceWidth * scale;
+  const height = sourceHeight * scale;
+  const x = (destWidth - width) / 2;
+  const y = (destHeight - height) / 2;
+  ctx.clearRect(0, 0, destWidth, destHeight);
+  ctx.drawImage(source, x, y, width, height);
+}
+
+/** @deprecated Use drawFitImage with fit="cover" */
 export function drawCoverImage(
   ctx: CanvasRenderingContext2D,
   source: CanvasImageSource,
@@ -175,11 +197,5 @@ export function drawCoverImage(
   destWidth: number,
   destHeight: number,
 ): void {
-  const scale = Math.max(destWidth / sourceWidth, destHeight / sourceHeight);
-  const width = sourceWidth * scale;
-  const height = sourceHeight * scale;
-  const x = (destWidth - width) / 2;
-  const y = (destHeight - height) / 2;
-  ctx.clearRect(0, 0, destWidth, destHeight);
-  ctx.drawImage(source, x, y, width, height);
+  drawFitImage(ctx, source, sourceWidth, sourceHeight, destWidth, destHeight, 'cover');
 }

@@ -16,9 +16,11 @@
     "seed:dummy-product": "tsx scripts/seed-dummy-test-product.ts",
     "seed:collections": "tsx scripts/seed-shopify-collections.ts",
     "seed:menus": "tsx scripts/seed-shopify-menus-policies.ts",
+    "fix:currency": "tsx scripts/fix-store-currency.ts",
     "publish:headless": "tsx scripts/publish-headless-catalog.ts",
     "auth:deploy-scopes": "shopify app deploy --force --no-build",
-    "auth:store": "npx @shopify/cli@latest store auth -s 70yuey-sr.myshopify.com --scopes read_products,write_products,read_content,write_content,read_online_store_navigation,write_online_store_navigation,read_legal_policies,write_legal_policies,read_publications,write_publications",
+    "storefront:push-scopes": "tsx scripts/push-storefront-scopes-from-toml.ts",
+    "auth:store": "npx @shopify/cli@latest store auth -s 70yuey-sr.myshopify.com --scopes read_products,write_products,read_content,write_content,read_online_store_navigation,write_online_store_navigation,read_legal_policies,write_legal_policies,read_publications,write_publications,read_markets,write_markets",
     "auth:verify-scopes": "npx @shopify/cli@latest store execute -s 70yuey-sr.myshopify.com --query '{ currentAppInstallation { accessScopes { handle } } }' --json",
     "auth:sync-env": "tsx scripts/sync-admin-token-from-cli.ts"
   },

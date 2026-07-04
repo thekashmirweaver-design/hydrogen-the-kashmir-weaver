@@ -49,7 +49,7 @@ export async function createHydrogenRouterContext(
       cache,
       waitUntil,
       session,
-      i18n: getI18nFromRequest(request),
+      i18n: getI18nFromRequest(request, session),
       cart: {
         queryFragment: CART_QUERY_FRAGMENT,
       },

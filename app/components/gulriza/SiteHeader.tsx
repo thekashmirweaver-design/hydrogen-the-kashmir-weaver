@@ -1,4 +1,4 @@
-import {Link, useLocation} from "react-router";
+import {Link, useLocation, useNavigate, useNavigation} from "react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Search, ShoppingBag, Menu, X, ChevronDown, Check, Globe } from "lucide-react";
 import type { CartApiQueryFragment } from "storefrontapi.generated";
@@ -333,11 +333,21 @@ export function SiteHeader({
 function CurrencyDropdown() {
   const {currencies, selectedCurrency} = useLocalization();
   const {pathname, search} = useLocation();
+  const navigation = useNavigation();
   const [open, setOpen] = useState(false);
+  const [pendingCode, setPendingCode] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const displayCode = pendingCode ?? selectedCurrency.code;
+  const isUpdating = pendingCode != null || navigation.state !== "idle";
+
+  useEffect(() => {
+    if (navigation.state === "idle") {
+      setPendingCode(null);
+    }
+  }, [navigation.state, selectedCurrency.code]);
 
   useEffect(() => {
     if (!open) return;
@@ -380,12 +390,13 @@ function CurrencyDropdown() {
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={`Select currency, current ${selectedCurrency.code}`}
+        aria-label={`Select currency, current ${displayCode}`}
         onClick={() => setOpen((o) => !o)}
         className="flex h-11 w-auto min-w-11 items-center justify-center gap-1.5 px-1.5 text-xs uppercase tracking-[0.25em] text-foreground/90 transition hover:text-accent focus:outline-none lg:justify-start"
+        style={{opacity: isUpdating ? 0.65 : 1}}
       >
         <Globe className="h-3.5 w-3.5 shrink-0" strokeWidth={1} aria-hidden />
-        <span>{selectedCurrency.code}</span>
+        <span>{displayCode}</span>
         <ChevronDown
           className="hidden h-3.5 w-3.5 shrink-0 transition-transform lg:block"
           strokeWidth={1}
@@ -445,10 +456,13 @@ function CurrencyDropdown() {
               <CurrencyOption
                 key={c.code}
                 option={c}
-                active={c.code === selectedCurrency.code}
+                active={c.code === displayCode}
                 pathname={pathname}
                 search={search}
-                onSelect={() => setOpen(false)}
+                onSelect={() => {
+                  setPendingCode(c.code);
+                  setOpen(false);
+                }}
               />
             ))}
           </ul>
@@ -471,11 +485,13 @@ function CurrencyOption({
   search: string;
   onSelect: () => void;
 }) {
+  const navigate = useNavigate();
   const redirectTo = buildMarketRedirect(pathname, search, option.countryCode);
 
   return (
     <li role="option" aria-selected={active}>
       <CartForm
+        fetcherKey={`market-${option.countryCode}`}
         route="/cart"
         action={CartForm.ACTIONS.BuyerIdentityUpdate}
         inputs={{
@@ -484,36 +500,41 @@ function CurrencyOption({
           },
         }}
       >
-        <input type="hidden" name="redirectTo" value={redirectTo} />
-        <button
-          type="submit"
-          onClick={onSelect}
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-all duration-200 hover:bg-[var(--surface-2)] focus:bg-[var(--surface-2)] focus:outline-none"
-          style={{
-            color: active ? "var(--accent)" : "var(--foreground)",
-            backgroundColor: active ? "var(--surface-2)" : "transparent",
-          }}
-        >
-          <span className="w-5 shrink-0 text-center text-sm font-light">{option.symbol}</span>
-          <span className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span
-              className="text-xs font-medium tracking-[0.1em]"
-              style={{ color: active ? "var(--accent)" : "var(--foreground)" }}
-            >
-              {option.code}
+        {(fetcher) => (
+          <button
+            type="submit"
+            disabled={active || fetcher.state !== "idle"}
+            onClick={() => {
+              onSelect();
+              navigate(redirectTo, {replace: true, preventScrollReset: true});
+            }}
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-all duration-200 hover:bg-[var(--surface-2)] focus:bg-[var(--surface-2)] focus:outline-none disabled:opacity-50"
+            style={{
+              color: active ? "var(--accent)" : "var(--foreground)",
+              backgroundColor: active ? "var(--surface-2)" : "transparent",
+            }}
+          >
+            <span className="w-5 shrink-0 text-center text-sm font-light">{option.symbol}</span>
+            <span className="flex min-w-0 flex-1 flex-col leading-tight">
+              <span
+                className="text-xs font-medium tracking-[0.1em]"
+                style={{ color: active ? "var(--accent)" : "var(--foreground)" }}
+              >
+                {option.code}
+              </span>
+              <span
+                className="truncate text-[0.7rem]"
+                style={{
+                  color: active ? "var(--accent)" : "var(--muted-foreground)",
+                  opacity: active ? 0.8 : 1,
+                }}
+              >
+                {option.name}
+              </span>
             </span>
-            <span
-              className="truncate text-[0.7rem]"
-              style={{
-                color: active ? "var(--accent)" : "var(--muted-foreground)",
-                opacity: active ? 0.8 : 1,
-              }}
-            >
-              {option.name}
-            </span>
-          </span>
-          {active && <Check className="h-4 w-4 shrink-0 text-accent" strokeWidth={1.5} />}
-        </button>
+            {active && <Check className="h-4 w-4 shrink-0 text-accent" strokeWidth={1.5} />}
+          </button>
+        )}
       </CartForm>
     </li>
   );
