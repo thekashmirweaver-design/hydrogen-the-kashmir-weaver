@@ -16,6 +16,9 @@ export async function getShopPage(
 export type CollectionsPageViewModel = {
   collections: Collection[];
   productCountByHandle: Record<string, number>;
+  previewProductsByHandle: Record<string, Product[]>;
+  totalProductCount: number;
+  featuredProducts: Product[];
 };
 
 export async function getCollectionsPage(
@@ -33,7 +36,20 @@ export async function getCollectionsPage(
     ]),
   );
 
-  return {collections, productCountByHandle};
+  const previewProductsByHandle = Object.fromEntries(
+    collections.map((c) => [
+      c.handle,
+      products.filter((p) => p.collectionSlug === c.handle).slice(0, 3),
+    ]),
+  );
+
+  return {
+    collections,
+    productCountByHandle,
+    previewProductsByHandle,
+    totalProductCount: products.length,
+    featuredProducts: products.slice(0, 6),
+  };
 }
 
 export type CollectionPageViewModel = {

@@ -15,7 +15,7 @@ export function CollectionView({
   return (
     <div>
       <section className="relative pt-20">
-        <div className="relative h-[60vh] w-full overflow-hidden md:h-[80vh]">
+        <div className="relative aspect-video w-full overflow-hidden">
           <img
             src={collection.hero.src}
             alt={collection.hero.alt}

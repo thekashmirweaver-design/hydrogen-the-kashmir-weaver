@@ -171,61 +171,68 @@ function SignatureCollections({
             <span style={{fontStyle: 'italic'}}>a world of its own.</span>
           </h2>
         </Reveal>
+      </div>
 
-        <div className="mt-24 flex flex-col gap-32 md:gap-40">
-          {collections.map((c, i) => {
-            const previewProducts = products
-              .filter((p) => p.collectionSlug === c.handle)
-              .slice(0, 3);
-            const imageFirst = i % 2 === 0;
-            return (
-              <div key={c.handle}>
-                {i > 0 && <Hairline className="mb-32 md:mb-40" />}
-                <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2 md:gap-16">
-                  <Reveal
-                    className={`relative aspect-square overflow-hidden md:aspect-[4/5] ${
-                      imageFirst ? 'md:order-1' : 'md:order-2'
-                    }`}
-                  >
-                    <img
-                      src={c.hero.src}
-                      alt={c.hero.alt}
-                      className="absolute inset-0 h-full w-full object-cover edge-fade"
-                      loading="lazy"
-                    />
-                    <div className="vignette-overlay pointer-events-none absolute inset-0" />
-                  </Reveal>
-
-                  <Reveal delay={120} className={imageFirst ? 'md:order-2' : 'md:order-1'}>
-                    <Eyebrow>{c.tagline}</Eyebrow>
-                    <h3
-                      className="font-display mt-6 text-3xl leading-[1.1] sm:text-4xl md:text-5xl"
-                      style={{fontWeight: 400}}
-                    >
-                      {c.name.split(' ')[0]}{' '}
-                      <span style={{fontStyle: 'italic'}}>
-                        {c.name.split(' ').slice(1).join(' ')}
-                      </span>
-                    </h3>
-                    <p className="mt-8 max-w-md text-base leading-relaxed text-muted-foreground">
-                      {c.story}
-                    </p>
-                    <Link
-                      to={`/collections/${c.handle}`}
-                      className="mt-12 inline-flex items-center gap-5 text-foreground transition hover:text-accent"
-                    >
-                      <span className="tracked">Explore {c.name}</span>
-                      <span
-                        className="flex h-12 w-12 items-center justify-center rounded-full border"
-                        style={{borderColor: 'var(--border)'}}
-                      >
-                        <ArrowRight className="h-4 w-4" strokeWidth={1} />
-                      </span>
-                    </Link>
-                  </Reveal>
+      <div className="mt-24 flex flex-col gap-32 md:gap-40">
+        {collections.map((c, i) => {
+          const previewProducts = products
+            .filter((p) => p.collectionSlug === c.handle)
+            .slice(0, 3);
+          return (
+            <div key={c.handle}>
+              {i > 0 && (
+                <div className="mx-auto mb-32 max-w-[1600px] px-6 md:mb-40 md:px-10">
+                  <Hairline />
                 </div>
+              )}
+              <Reveal className="relative w-full">
+                <div className="relative aspect-video w-full overflow-hidden">
+                  <img
+                    src={c.hero.src}
+                    alt={c.hero.alt}
+                    className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
+                    loading="lazy"
+                  />
+                  <div className="vignette-overlay pointer-events-none absolute inset-0 hidden md:block" />
+                  <div
+                    className="pointer-events-none absolute inset-0 hidden md:block"
+                    style={{
+                      background:
+                        'linear-gradient(to top, rgba(8,16,15,0.95) 0%, rgba(8,16,15,0.35) 45%, transparent 70%)',
+                    }}
+                  />
+                </div>
+                <div className="mx-auto max-w-[1600px] px-6 pt-10 md:absolute md:inset-x-0 md:bottom-0 md:px-10 md:pt-0 md:pb-16">
+                  <Eyebrow>{c.tagline}</Eyebrow>
+                  <h3
+                    className="font-display mt-6 text-3xl leading-[1.1] sm:text-4xl md:text-5xl"
+                    style={{fontWeight: 400}}
+                  >
+                    {c.name.split(' ')[0]}{' '}
+                    <span style={{fontStyle: 'italic'}}>
+                      {c.name.split(' ').slice(1).join(' ')}
+                    </span>
+                  </h3>
+                  <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
+                    {c.story}
+                  </p>
+                  <Link
+                    to={`/collections/${c.handle}`}
+                    className="mt-10 inline-flex items-center gap-5 text-foreground transition hover:text-accent"
+                  >
+                    <span className="tracked">Explore {c.name}</span>
+                    <span
+                      className="flex h-12 w-12 items-center justify-center rounded-full border"
+                      style={{borderColor: 'var(--border)'}}
+                    >
+                      <ArrowRight className="h-4 w-4" strokeWidth={1} />
+                    </span>
+                  </Link>
+                </div>
+              </Reveal>
 
-                <div className="mt-20 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 md:gap-x-8 lg:grid-cols-3">
+              <div className="mx-auto mt-20 max-w-[1600px] px-6 md:px-10">
+                <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 md:gap-x-8 lg:grid-cols-3">
                   {previewProducts.map((p, j) => (
                     <Reveal key={p.handle} delay={j * 120}>
                       <ProductTile product={p} />
@@ -242,10 +249,12 @@ function SignatureCollections({
                   </Link>
                 </Reveal>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
+      </div>
 
+      <div className="mx-auto max-w-[1600px] px-6 md:px-10">
         <Reveal className="mt-28 text-center">
           <Link
             to="/collections/all"
