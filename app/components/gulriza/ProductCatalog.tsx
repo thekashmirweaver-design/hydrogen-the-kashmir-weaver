@@ -30,6 +30,7 @@ export function ProductCatalog({
   filters: enabled = ["collection", "price"],
   resultsLabel = "pieces",
   emptyMessage,
+  id,
 }: {
   products: Product[];
   /** Which filter facets to show. Pass [] to hide sidebar entirely (sort-only). */
@@ -37,6 +38,8 @@ export function ProductCatalog({
   resultsLabel?: string;
   /** Override empty grid copy (e.g. collection pages with no filters). */
   emptyMessage?: string;
+  /** Anchor id for in-page navigation (e.g. collection page section nav). */
+  id?: string;
 }) {
   const { collections } = useCatalog();
   const priceBounds = useMemo(() => {
@@ -156,7 +159,10 @@ export function ProductCatalog({
   );
 
   return (
-    <section className="mx-auto max-w-[1600px] px-6 py-12 md:px-10">
+    <section
+      id={id}
+      className="mx-auto max-w-[1600px] scroll-mt-28 px-6 py-12 md:px-10"
+    >
       <Hairline />
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 py-5">

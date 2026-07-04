@@ -3,6 +3,10 @@ import {ArrowRight} from 'lucide-react';
 import {Eyebrow} from '~/components/gulriza/Eyebrow';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {CollectionStoryMobile} from '~/components/gulriza/CollectionStoryMobile';
+import {
+  COLLECTION_PRODUCTS_ID,
+  CollectionProductsScrollCue,
+} from '~/components/gulriza/CollectionProductsScrollCue';
 import {ProductCatalog} from '~/components/gulriza/ProductCatalog';
 import type {Collection, Product} from '~/models/types';
 
@@ -54,7 +58,10 @@ export function CollectionView({
         </div>
       </section>
 
+      <CollectionProductsScrollCue />
+
       <ProductCatalog
+        id={COLLECTION_PRODUCTS_ID}
         products={products}
         filters={[]}
         emptyMessage="No pieces in this collection yet."
