@@ -112,11 +112,19 @@ function normalizeMenuUrl(
     const parsed = new URL(url);
     if (primaryDomainUrl) {
       const domain = new URL(primaryDomainUrl);
-      if (parsed.hostname === domain.hostname || parsed.hostname.endsWith('.myshopify.com')) {
+      if (
+        parsed.hostname === domain.hostname ||
+        parsed.hostname === `www.${domain.hostname}` ||
+        parsed.hostname.endsWith('.myshopify.com') ||
+        parsed.hostname.endsWith('.myshopify.dev')
+      ) {
         return parsed.pathname + parsed.search + parsed.hash;
       }
     }
-    if (parsed.hostname.endsWith('.myshopify.com')) {
+    if (
+      parsed.hostname.endsWith('.myshopify.com') ||
+      parsed.hostname.endsWith('.myshopify.dev')
+    ) {
       return parsed.pathname + parsed.search + parsed.hash;
     }
   } catch {

@@ -7,18 +7,16 @@ import type {HeritagePageViewModel} from '~/controllers';
 export function HeritageView({hero, chapters}: HeritagePageViewModel) {
   return (
     <div>
-      <section className="relative w-full overflow-hidden pt-20">
-        <div className="relative aspect-[2752/1536] w-full">
-          <img
-            src={hero}
-            alt=""
-            aria-hidden
-            className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
-            loading="eager"
-          />
-          <div className="absolute inset-0 vignette-overlay" />
-        </div>
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1600px] px-6 pb-24 md:px-10">
+      <section className="relative h-dvh w-full overflow-hidden">
+        <img
+          src={hero}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full object-cover object-right md:object-center edge-fade-bottom"
+          loading="eager"
+        />
+        <div className="absolute inset-0 vignette-overlay" />
+        <div className="absolute inset-x-0 bottom-0 z-10 mx-auto max-w-[1600px] px-6 pb-24 md:px-10">
           <Reveal>
             <Eyebrow>A Documentary</Eyebrow>
             <h1
