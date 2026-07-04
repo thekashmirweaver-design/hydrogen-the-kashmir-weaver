@@ -222,9 +222,11 @@ const parseBulletItems = (
         if (!entry || typeof entry !== 'object') return null;
         const {text, href} = entry as {text?: unknown; href?: unknown};
         if (typeof text !== 'string' || !text.trim()) return null;
+        const trimmedHref =
+          typeof href === 'string' && href.trim() ? href.trim() : undefined;
         return {
           text: text.trim(),
-          href: typeof href === 'string' && href.trim() ? href.trim() : undefined,
+          ...(trimmedHref ? {href: trimmedHref} : {}),
         };
       })
       .filter((item): item is ProductBulletItem => item != null);
