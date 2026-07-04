@@ -3,7 +3,9 @@ import {Suspense} from 'react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CatalogSnapshot} from '~/models/types';
 import type {ShopSettings} from '~/lib/shop-settings';
+import type {LocalizationSnapshot} from '~/lib/localization';
 import {CatalogProvider} from '~/contexts/catalog-context';
+import {LocalizationProvider} from '~/contexts/localization-context';
 import {SiteHeader} from '~/components/gulriza/SiteHeader';
 import {SiteFooter} from '~/components/gulriza/SiteFooter';
 import {ScrollToTop} from '~/components/gulriza/ScrollToTop';
@@ -13,6 +15,10 @@ interface PageLayoutProps {
   cart: Promise<CartApiQueryFragment | null>;
   catalog: CatalogSnapshot;
   shopSettings: ShopSettings;
+  localization: LocalizationSnapshot;
+  publicStoreDomain: string;
+  publicAccessToken: string;
+  customerAccessToken: Promise<string | null>;
   children?: React.ReactNode;
 }
 
@@ -20,13 +26,19 @@ export function PageLayout({
   cart,
   catalog,
   shopSettings,
+  localization,
+  publicStoreDomain,
+  publicAccessToken,
+  customerAccessToken,
   children = null,
 }: PageLayoutProps) {
   const location = useLocation();
   const isHome = location.pathname === '/';
+  const session = Promise.all([cart, customerAccessToken]);
 
   return (
     <CatalogProvider catalog={catalog}>
+      <LocalizationProvider localization={localization}>
       <ScrollToTop />
       <Suspense
         fallback={
@@ -36,20 +48,26 @@ export function PageLayout({
               cart={null}
               cartQuantity={0}
               shopSettings={shopSettings}
+              publicStoreDomain={publicStoreDomain}
+              publicAccessToken={publicAccessToken}
+              customerAccessToken={null}
             />
             <main>{children}</main>
             <SiteFooter shopSettings={shopSettings} />
           </>
         }
       >
-        <Await resolve={cart}>
-          {(resolvedCart) => (
+        <Await resolve={session}>
+          {([resolvedCart, resolvedCustomerAccessToken]) => (
             <>
               <SiteHeader
                 transparent={isHome}
                 cart={resolvedCart}
                 cartQuantity={resolvedCart?.totalQuantity ?? 0}
                 shopSettings={shopSettings}
+                publicStoreDomain={publicStoreDomain}
+                publicAccessToken={publicAccessToken}
+                customerAccessToken={resolvedCustomerAccessToken}
               />
               <main>{children}</main>
               <CartFab cartQuantity={resolvedCart?.totalQuantity ?? 0} />
@@ -58,6 +76,7 @@ export function PageLayout({
           )}
         </Await>
       </Suspense>
+      </LocalizationProvider>
     </CatalogProvider>
   );
 }

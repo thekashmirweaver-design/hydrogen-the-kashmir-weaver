@@ -7,7 +7,9 @@ import type {
   ProductImage,
   ProductOption,
   ProductVariant,
+  Shade,
 } from '../types';
+import {SOLIDS_COLLECTION_HANDLE} from '~/lib/solid-product';
 import {
   COLLECTION_METAFIELDS,
   PRODUCT_METAFIELDS,
@@ -236,6 +238,35 @@ const parseBulletItems = (
   }
 };
 
+const parseShades = (value: string | undefined): Shade[] | undefined => {
+  if (!value?.trim()) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) return undefined;
+    const shades = parsed
+      .map((entry) => {
+        if (!entry || typeof entry !== 'object') return null;
+        const {code, hex, family} = entry as {
+          code?: unknown;
+          hex?: unknown;
+          family?: unknown;
+        };
+        if (
+          typeof code !== 'string' ||
+          typeof hex !== 'string' ||
+          typeof family !== 'string'
+        ) {
+          return null;
+        }
+        return {code, hex, family};
+      })
+      .filter((shade): shade is Shade => shade != null);
+    return shades.length ? shades : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 const mapVariant = (node: ShopifyVariantNode): ProductVariant => ({
   id: gidToId(node.id),
   title: node.title,
@@ -291,13 +322,22 @@ export function mapProduct(node: ShopifyProductNode): Product {
   const reviewRating = parseReviewRating(node.reviewRating?.value);
   const reviewCount = parseInteger(node.reviewCount?.value ?? undefined);
   const inStock = primaryVariant?.availableForSale ?? false;
-  const images = node.images.edges.map(({node: image}) =>
+  const shades = parseShades(getMetafield(fields, PRODUCT_METAFIELDS.shadePalette));
+  const isSolid =
+    collection?.handle === SOLIDS_COLLECTION_HANDLE ||
+    allCollections.some((c) => c.handle === SOLIDS_COLLECTION_HANDLE);
+  const solidRecolor = isSolid;
+  const shopifyImages = node.images.edges.map(({node: image}) =>
     toImage(image, node.title),
   );
 
-  if (!images.length && node.featuredImage) {
-    images.push(toImage(node.featuredImage, node.title));
+  if (!shopifyImages.length && node.featuredImage) {
+    shopifyImages.push(toImage(node.featuredImage, node.title));
   }
+
+  const images = shopifyImages.length
+    ? shopifyImages
+    : [{src: DEFAULT_PRODUCT_IMAGE, alt: node.title}];
 
   return {
     id: gidToId(node.id),
@@ -312,9 +352,7 @@ export function mapProduct(node: ShopifyProductNode): Product {
     shortDescription: shortDescription || node.title,
     description: description || node.title,
     story: story || node.title,
-    images: images.length
-      ? images
-      : [{src: DEFAULT_PRODUCT_IMAGE, alt: node.title}],
+    images,
     material:
       getMetafield(fields, PRODUCT_METAFIELDS.material) ??
       '100% pure pashmina cashmere',
@@ -348,6 +386,8 @@ export function mapProduct(node: ShopifyProductNode): Product {
       reviewRating != null && reviewCount != null && reviewCount > 0
         ? {rating: reviewRating, count: reviewCount}
         : undefined,
+    shades,
+    solidRecolor: solidRecolor || undefined,
   };
 }
 

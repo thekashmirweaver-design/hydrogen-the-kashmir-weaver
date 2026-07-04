@@ -390,6 +390,23 @@ export type HomepageFeaturedQuery = {
   };
 };
 
+export type LocalizationQueryVariables = StorefrontAPI.Exact<{
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type LocalizationQuery = {
+  localization: {
+    availableCountries: Array<
+      Pick<StorefrontAPI.Country, 'isoCode' | 'name'> & {
+        currency: Pick<StorefrontAPI.Currency, 'isoCode' | 'name' | 'symbol'>;
+      }
+    >;
+    country: Pick<StorefrontAPI.Country, 'isoCode'> & {
+      currency: Pick<StorefrontAPI.Currency, 'isoCode' | 'name' | 'symbol'>;
+    };
+  };
+};
+
 export type ShopSettingsQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -834,6 +851,10 @@ interface GeneratedQueryTypes {
   '#graphql\n  query HomepageFeatured($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    shop {\n      homepageFeatured: metafield(namespace: "custom", key: "homepage_featured") {\n        value\n      }\n    }\n  }\n': {
     return: HomepageFeaturedQuery;
     variables: HomepageFeaturedQueryVariables;
+  };
+  '#graphql\n  query Localization($language: LanguageCode)\n  @inContext(language: $language) {\n    localization {\n      availableCountries {\n        isoCode\n        name\n        currency {\n          isoCode\n          name\n          symbol\n        }\n      }\n      country {\n        isoCode\n        currency {\n          isoCode\n          name\n          symbol\n        }\n      }\n    }\n  }\n': {
+    return: LocalizationQuery;
+    variables: LocalizationQueryVariables;
   };
   '#graphql\n  query ShopSettings(\n    $country: CountryCode\n    $language: LanguageCode\n    $headerMenuHandle: String!\n    $footerMenuHandle: String!\n  ) @inContext(language: $language, country: $country) {\n    shop {\n      marquee: metafield(namespace: "custom", key: "marquee_messages") {\n        value\n      }\n      contact: metafield(namespace: "custom", key: "contact") {\n        value\n      }\n      social: metafield(namespace: "custom", key: "social") {\n        value\n      }\n      primaryDomain {\n        url\n      }\n    }\n    headerMenu: menu(handle: $headerMenuHandle) {\n      id\n      items {\n        id\n        title\n        url\n        type\n      }\n    }\n    footerMenu: menu(handle: $footerMenuHandle) {\n      id\n      items {\n        id\n        title\n        url\n        type\n      }\n    }\n  }\n': {
     return: ShopSettingsQuery;

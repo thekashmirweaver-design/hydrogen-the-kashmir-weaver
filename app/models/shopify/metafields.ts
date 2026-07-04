@@ -11,6 +11,7 @@ export const PRODUCT_METAFIELDS = {
   care: 'care',
   guaranteesDelivery: 'guarantees_delivery',
   returnsCare: 'returns_care',
+  shadePalette: 'shade_palette',
 } as const;
 
 export const COLLECTION_METAFIELDS = {

@@ -7,6 +7,7 @@ import type {Route} from './+types/cart';
 import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartForm} from '@shopify/hydrogen';
 import {CartView} from '~/views/cart/CartView';
+import {debugLog} from '~/lib/debug-log';
 
 export const meta: Route.MetaFunction = () => {
   return [{title: 'My Bag — The Kashmir Weaver'}];
@@ -18,6 +19,23 @@ export async function action({request, context}: Route.ActionArgs) {
   const {cart} = context;
   const formData = await request.formData();
   const {action, inputs} = CartForm.getFormInput(formData);
+  const lines = Array.isArray(inputs.lines) ? inputs.lines : undefined;
+
+  debugLog(
+    'cart.tsx:action:entry',
+    'cart action received',
+    {
+      action,
+      lineCount: lines?.length,
+      lines: lines?.map((l) => ({
+        quantity: (l as {quantity?: number}).quantity,
+        attributeCount:
+          (l as {attributes?: unknown[]}).attributes?.length ?? 0,
+      })),
+      lineIds: inputs.lineIds,
+    },
+    'H5',
+  );
 
   if (!action) {
     throw new Error('No action provided');
@@ -71,6 +89,21 @@ export async function action({request, context}: Route.ActionArgs) {
   const cartId = result?.cart?.id;
   const headers = cartId ? cart.setCartId(result.cart.id) : new Headers();
   const {cart: cartResult, errors, warnings} = result;
+
+  debugLog(
+    'cart.tsx:action:result',
+    'cart action result',
+    {
+      action,
+      totalQuantity: cartResult?.totalQuantity,
+      errorCount: errors?.length ?? 0,
+      warningCount: warnings?.length ?? 0,
+      hasConflict: errors?.some((e: {extensions?: {code?: string}}) =>
+        e.extensions?.code === 'CONFLICT',
+      ),
+    },
+    'H5',
+  );
 
   const redirectTo = formData.get('redirectTo') ?? null;
   if (typeof redirectTo === 'string') {

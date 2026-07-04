@@ -1,3 +1,7 @@
+import type {Shade} from './static/shades';
+
+export type {Shade};
+
 /** Shopify-shaped image used across static and live catalog data. */
 export type ProductImage = {
   src: string;
@@ -89,6 +93,10 @@ export type Product = {
   variants?: ProductVariant[];
   options?: ProductOption[];
   reviews?: {rating: number; count: number};
+  /** Solid pashmina shade palette (from Shopify metafield or static catalog). */
+  shades?: Shade[];
+  /** PDP uses local recolor canvas (image set 0) instead of Shopify gallery. */
+  solidRecolor?: boolean;
 };
 
 export type CatalogSnapshot = {

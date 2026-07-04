@@ -1,12 +1,15 @@
 import {Link} from "react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ShoppingBag, Trash2, ArrowRight, X, Minus, Plus } from "lucide-react";
-import type { CartLineUpdateInput } from "@shopify/hydrogen/storefront-api-types";
-import { CartForm } from "@shopify/hydrogen";
+import { ShoppingBag, ArrowRight, X } from "lucide-react";
 import type { CartApiQueryFragment } from "storefrontapi.generated";
 import type { Money } from "~/models/types";
 import { useFormatPrice } from "~/lib/currency-store";
+import { CartLineShade } from "~/components/gulriza/CartLineShade";
+import {
+  CartLineQuantityControls,
+  CartLineRemoveButton,
+} from "~/components/gulriza/CartLineQuantityControls";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
 
 const CLOSE_MS = 300;
@@ -126,8 +129,6 @@ export function CartDrawer({
                 {lines.map((line) => {
                   const { merchandise, quantity, id: lineId } = line;
                   const { product, image, title } = merchandise;
-                  const prevQuantity = Math.max(0, quantity - 1);
-                  const nextQuantity = quantity + 1;
 
                   return (
                     <li
@@ -160,31 +161,10 @@ export function CartDrawer({
                           </Link>
                           <CartLineRemoveButton lineIds={[lineId]} />
                         </div>
+                        <CartLineShade attributes={line.attributes} className="mt-1.5 text-xs text-muted-foreground" />
 
                         <div className="mt-auto flex items-center justify-between pt-3">
-                          <div
-                            className="flex items-center gap-2 border px-2 py-1"
-                            style={{ borderColor: "var(--border)" }}
-                          >
-                            <CartLineUpdateButton lines={[{ id: lineId, quantity: prevQuantity }]}>
-                              <button
-                                aria-label="Decrease quantity"
-                                disabled={quantity <= 1}
-                                className="text-muted-foreground transition hover:text-accent disabled:pointer-events-none disabled:opacity-30"
-                              >
-                                <Minus className="h-3 w-3" strokeWidth={1} />
-                              </button>
-                            </CartLineUpdateButton>
-                            <span className="w-5 text-center text-xs">{quantity}</span>
-                            <CartLineUpdateButton lines={[{ id: lineId, quantity: nextQuantity }]}>
-                              <button
-                                aria-label="Increase quantity"
-                                className="text-muted-foreground transition hover:text-accent disabled:pointer-events-none disabled:opacity-30"
-                              >
-                                <Plus className="h-3 w-3" strokeWidth={1} />
-                              </button>
-                            </CartLineUpdateButton>
-                          </div>
+                          <CartLineQuantityControls lineId={lineId} quantity={quantity} />
                           <span className="text-sm">
                             {formatPrice(toMoney(line.cost.totalAmount))}
                           </span>
@@ -240,48 +220,4 @@ export function CartDrawer({
     </div>,
     document.body,
   );
-}
-
-function CartLineRemoveButton({ lineIds }: { lineIds: string[] }) {
-  return (
-    <CartForm
-      fetcherKey={getUpdateKey(lineIds)}
-      route="/cart"
-      action={CartForm.ACTIONS.LinesRemove}
-      inputs={{ lineIds }}
-    >
-      <button
-        type="submit"
-        aria-label="Remove item"
-        className="shrink-0 text-muted-foreground transition hover:text-accent"
-      >
-        <Trash2 className="h-4 w-4" strokeWidth={1} />
-      </button>
-    </CartForm>
-  );
-}
-
-function CartLineUpdateButton({
-  children,
-  lines,
-}: {
-  children: React.ReactNode;
-  lines: CartLineUpdateInput[];
-}) {
-  const lineIds = lines.map((line) => line.id);
-
-  return (
-    <CartForm
-      fetcherKey={getUpdateKey(lineIds)}
-      route="/cart"
-      action={CartForm.ACTIONS.LinesUpdate}
-      inputs={{ lines }}
-    >
-      {children}
-    </CartForm>
-  );
-}
-
-function getUpdateKey(lineIds: string[]) {
-  return [CartForm.ACTIONS.LinesUpdate, ...lineIds].join("-");
 }

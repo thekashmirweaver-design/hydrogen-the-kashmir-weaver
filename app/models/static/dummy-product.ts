@@ -5,6 +5,7 @@ import {
   TEST_PRODUCT_GUARANTEES,
   TEST_PRODUCT_RETURNS_CARE,
 } from '../product-accordion-content';
+import {SHADES} from '../static/shades';
 import {
   STORE_SIZE_OPTION_NAME,
   STORE_SIZE_VALUES,
@@ -61,11 +62,6 @@ export const DUMMY_TEST_PRODUCT: Product = {
     img('/assets/product-midnight.jpg', 'Test All Fields Pashmina — midnight variant'),
     img('/assets/product-charcoal.jpg', 'Test All Fields Pashmina — detail'),
     img('/assets/blue-pashmina-1.jpg', 'Test All Fields Pashmina — embroidery close-up'),
-    img('/assets/blue-pashmina-2.jpg', 'Test All Fields Pashmina — border detail'),
-    img('/assets/himalayas.jpg', 'Test All Fields Pashmina — lifestyle'),
-    img('/assets/artisan-hands.jpg', 'Test All Fields Pashmina — atelier'),
-    img('/assets/collection-modern.jpg', 'Test All Fields Pashmina — drape'),
-    img('/assets/craft-film.jpg', 'Test All Fields Pashmina — texture'),
   ],
   material: '100% Kashmir Pashmina Cashmere',
   origin: 'Srinagar, Kashmir, India',
@@ -89,6 +85,8 @@ export const DUMMY_TEST_PRODUCT: Product = {
   reviews: {rating: 4.8, count: 12},
   options: [storeSizeProductOption()],
   variants: sizeOnlyVariants,
+  shades: SHADES,
+  solidRecolor: true,
 };
 
 export function isDummyTestProduct(handle: string): boolean {

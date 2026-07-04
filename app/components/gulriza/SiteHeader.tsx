@@ -1,13 +1,14 @@
-import {Link} from "react-router";
-import {useLocation} from "react-router";
+import {Link, useLocation} from "react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Search, User, ShoppingBag, Menu, X, ChevronDown, Check, Globe } from "lucide-react";
+import { Search, ShoppingBag, Menu, X, ChevronDown, Check, Globe } from "lucide-react";
 import type { CartApiQueryFragment } from "storefrontapi.generated";
-import { useAnalytics } from "@shopify/hydrogen";
-import { CURRENCIES, countryForCurrency, getCurrency, useCurrency, type CurrencyCode } from "~/lib/currency-store";
+import { CartForm, useAnalytics } from "@shopify/hydrogen";
+import { useLocalization } from "~/contexts/localization-context";
+import type { ShopCurrencyOption } from "~/lib/localization";
 import { Marquee } from "~/components/gulriza/Marquee";
 import { SearchModal, lockScroll, unlockScroll } from "~/components/gulriza/SearchModal";
 import { CartDrawer } from "~/components/gulriza/CartDrawer";
+import { ShopifyAccount } from "~/components/gulriza/ShopifyAccount";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
 import type {ShopSettings, NavItem} from "~/lib/shop-settings";
 
@@ -43,11 +44,17 @@ export function SiteHeader({
   cart = null,
   cartQuantity = 0,
   shopSettings,
+  publicStoreDomain,
+  publicAccessToken,
+  customerAccessToken = null,
 }: {
   transparent?: boolean;
   cart?: CartApiQueryFragment | null;
   cartQuantity?: number;
   shopSettings?: ShopSettings;
+  publicStoreDomain: string;
+  publicAccessToken: string;
+  customerAccessToken?: string | null;
 }) {
   const {publish} = useAnalytics();
   const [scrolled, setScrolled] = useState(false);
@@ -226,13 +233,12 @@ export function SiteHeader({
                 >
                   <Search className="h-[18px] w-[18px]" strokeWidth={1} />
                 </button>
-                <Link
-                  to="/account"
-                  aria-label="Account"
-                  className="flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent"
-                >
-                  <User className="h-[18px] w-[18px]" strokeWidth={1} />
-                </Link>
+                <ShopifyAccount
+                  publicStoreDomain={publicStoreDomain}
+                  publicAccessToken={publicAccessToken}
+                  customerAccessToken={customerAccessToken}
+                  className="flex h-11 w-11 items-center justify-center"
+                />
                 <button
                   type="button"
                   onClick={() => setCartOpen(true)}
@@ -306,7 +312,7 @@ export function SiteHeader({
                   </Link>
                 ))}
                 <Link
-                  to="/account"
+                  to="/account/login"
                   onClick={requestMenuClose}
                   className="font-display text-3xl tracking-wide transition hover:text-accent"
                 >
@@ -325,14 +331,13 @@ export function SiteHeader({
 }
 
 function CurrencyDropdown() {
+  const {currencies, selectedCurrency} = useLocalization();
+  const {pathname, search} = useLocation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const code = useCurrency((s) => s.code);
-  const setCurrency = useCurrency((s) => s.setCurrency);
-  const selected = getCurrency(code);
 
   useEffect(() => {
     if (!open) return;
@@ -363,10 +368,10 @@ function CurrencyDropdown() {
 
   const q = query.trim().toLowerCase();
   const results = q
-    ? CURRENCIES.filter((c) =>
+    ? currencies.filter((c) =>
         [c.code, c.symbol, c.name].some((field) => field.toLowerCase().includes(q)),
       )
-    : CURRENCIES;
+    : currencies;
 
   return (
     <div ref={wrapRef} className="relative">
@@ -375,12 +380,12 @@ function CurrencyDropdown() {
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={`Select currency, current ${selected.code}`}
+        aria-label={`Select currency, current ${selectedCurrency.code}`}
         onClick={() => setOpen((o) => !o)}
         className="flex h-11 w-auto min-w-11 items-center justify-center gap-1.5 px-1.5 text-xs uppercase tracking-[0.25em] text-foreground/90 transition hover:text-accent focus:outline-none lg:justify-start"
       >
         <Globe className="h-3.5 w-3.5 shrink-0" strokeWidth={1} aria-hidden />
-        <span>{selected.code}</span>
+        <span>{selectedCurrency.code}</span>
         <ChevronDown
           className="hidden h-3.5 w-3.5 shrink-0 transition-transform lg:block"
           strokeWidth={1}
@@ -436,51 +441,87 @@ function CurrencyDropdown() {
             aria-label="Currency"
             className="max-h-[60vh] overflow-y-auto px-2 pb-1"
           >
-            {results.map((c) => {
-              const active = c.code === code;
-              return (
-                <li key={c.code} role="option" aria-selected={active}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCurrency(c.code);
-                      setOpen(false);
-                      const url = new URL(window.location.href);
-                      url.searchParams.set("country", countryForCurrency(c.code as CurrencyCode));
-                      window.location.assign(url.toString());
-                    }}
-                    className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-all duration-200 hover:bg-[var(--surface-2)] focus:bg-[var(--surface-2)] focus:outline-none"
-                    style={{
-                      color: active ? "var(--accent)" : "var(--foreground)",
-                      backgroundColor: active ? "var(--surface-2)" : "transparent",
-                    }}
-                  >
-                    <span className="w-5 shrink-0 text-center text-sm font-light">{c.symbol}</span>
-                    <span className="flex min-w-0 flex-1 flex-col leading-tight">
-                      <span
-                        className="text-xs font-medium tracking-[0.1em]"
-                        style={{ color: active ? "var(--accent)" : "var(--foreground)" }}
-                      >
-                        {c.code}
-                      </span>
-                      <span
-                        className="truncate text-[0.7rem]"
-                        style={{
-                          color: active ? "var(--accent)" : "var(--muted-foreground)",
-                          opacity: active ? 0.8 : 1,
-                        }}
-                      >
-                        {c.name}
-                      </span>
-                    </span>
-                    {active && <Check className="h-4 w-4 shrink-0 text-accent" strokeWidth={1.5} />}
-                  </button>
-                </li>
-              );
-            })}
+            {results.map((c) => (
+              <CurrencyOption
+                key={c.code}
+                option={c}
+                active={c.code === selectedCurrency.code}
+                pathname={pathname}
+                search={search}
+                onSelect={() => setOpen(false)}
+              />
+            ))}
           </ul>
         )}
       </div>
     </div>
   );
+}
+
+function CurrencyOption({
+  option,
+  active,
+  pathname,
+  search,
+  onSelect,
+}: {
+  option: ShopCurrencyOption;
+  active: boolean;
+  pathname: string;
+  search: string;
+  onSelect: () => void;
+}) {
+  const redirectTo = buildMarketRedirect(pathname, search, option.countryCode);
+
+  return (
+    <li role="option" aria-selected={active}>
+      <CartForm
+        route="/cart"
+        action={CartForm.ACTIONS.BuyerIdentityUpdate}
+        inputs={{
+          buyerIdentity: {
+            countryCode: option.countryCode,
+          },
+        }}
+      >
+        <input type="hidden" name="redirectTo" value={redirectTo} />
+        <button
+          type="submit"
+          onClick={onSelect}
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-all duration-200 hover:bg-[var(--surface-2)] focus:bg-[var(--surface-2)] focus:outline-none"
+          style={{
+            color: active ? "var(--accent)" : "var(--foreground)",
+            backgroundColor: active ? "var(--surface-2)" : "transparent",
+          }}
+        >
+          <span className="w-5 shrink-0 text-center text-sm font-light">{option.symbol}</span>
+          <span className="flex min-w-0 flex-1 flex-col leading-tight">
+            <span
+              className="text-xs font-medium tracking-[0.1em]"
+              style={{ color: active ? "var(--accent)" : "var(--foreground)" }}
+            >
+              {option.code}
+            </span>
+            <span
+              className="truncate text-[0.7rem]"
+              style={{
+                color: active ? "var(--accent)" : "var(--muted-foreground)",
+                opacity: active ? 0.8 : 1,
+              }}
+            >
+              {option.name}
+            </span>
+          </span>
+          {active && <Check className="h-4 w-4 shrink-0 text-accent" strokeWidth={1.5} />}
+        </button>
+      </CartForm>
+    </li>
+  );
+}
+
+function buildMarketRedirect(pathname: string, search: string, countryCode: string) {
+  const params = new URLSearchParams(search);
+  params.set("country", countryCode);
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
 }

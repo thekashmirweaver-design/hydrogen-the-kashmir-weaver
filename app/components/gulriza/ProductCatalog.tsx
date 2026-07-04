@@ -4,17 +4,21 @@ import type { Product } from "~/models/types";
 import { useCatalog } from "~/contexts/catalog-context";
 import { ProductTile } from "~/components/gulriza/ProductTile";
 import { Hairline } from "~/components/gulriza/Eyebrow";
-import { type Currency, getCurrency, useCurrency } from "~/lib/currency-store";
+import { useLocalization } from "~/contexts/localization-context";
+import type { ShopCurrencyOption } from "~/lib/localization";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
+import { ShadeDropdown } from "~/components/gulriza/ShadeDropdown";
+import { collectShadesFromProducts, getDefaultSolidShadeCode } from "~/lib/solid-product";
 
 export type SortKey = "featured" | "newest" | "price-asc" | "price-desc" | "best-selling";
 
-export type FilterKey = "collection" | "price";
+export type FilterKey = "collection" | "price" | "color";
 
 type Filters = {
   collections: Set<string>;
   priceMin: number;
   priceMax: number;
+  colorCode: string;
 };
 
 const SORT_OPTIONS: { id: SortKey; label: string }[] = [
@@ -49,11 +53,23 @@ export function ProductCatalog({
     return { min, max };
   }, [products]);
 
+  const availableShades = useMemo(
+    () => (enabled.includes("color") ? collectShadesFromProducts(products) : []),
+    [enabled, products],
+  );
+  const defaultColorCode = useMemo(
+    () => getDefaultSolidShadeCode(availableShades),
+    [availableShades],
+  );
+
   const initial: Filters = {
     collections: new Set(),
     priceMin: priceBounds.min,
     priceMax: priceBounds.max,
+    colorCode: defaultColorCode,
   };
+
+  const showColorFilter = enabled.includes("color") && availableShades.length > 0;
 
   const [filters, setFilters] = useState<Filters>(initial);
   const [sort, setSort] = useState<SortKey>("featured");
@@ -61,9 +77,8 @@ export function ProductCatalog({
   const drawerRef = useRef<HTMLDivElement>(null);
   useFocusTrap(drawer, drawerRef);
 
-  const showSidebar = enabled.length > 0;
-  // Filtering stays in base USD; only the displayed numbers/symbol are converted.
-  const currency = getCurrency(useCurrency((s) => s.code));
+  const showSidebar = enabled.length > 0 && (showColorFilter || enabled.some((f) => f !== "color"));
+  const { selectedCurrency } = useLocalization();
 
   // Mobile filter drawer: lock body scroll and close on Escape while open.
   useEffect(() => {
@@ -118,7 +133,8 @@ export function ProductCatalog({
     (enabled.includes("price") &&
     (filters.priceMin !== priceBounds.min || filters.priceMax !== priceBounds.max)
       ? 1
-      : 0);
+      : 0) +
+    (showColorFilter && filters.colorCode !== defaultColorCode ? 1 : 0);
 
   const reset = () => setFilters(initial);
 
@@ -144,8 +160,19 @@ export function ProductCatalog({
             max={priceBounds.max}
             valueMin={filters.priceMin}
             valueMax={filters.priceMax}
-            currency={currency}
+            currency={selectedCurrency}
             onChange={(lo, hi) => setFilters((f) => ({ ...f, priceMin: lo, priceMax: hi }))}
+          />
+        </FilterGroup>
+      )}
+
+      {showColorFilter && (
+        <FilterGroup title="Colour">
+          <ShadeDropdown
+            shades={availableShades}
+            selectedCode={filters.colorCode}
+            onSelect={(colorCode) => setFilters((f) => ({ ...f, colorCode }))}
+            showLabel={false}
           />
         </FilterGroup>
       )}
@@ -383,7 +410,7 @@ function PriceRange({
   max: number;
   valueMin: number;
   valueMax: number;
-  currency: Currency;
+  currency: ShopCurrencyOption;
   onChange: (lo: number, hi: number) => void;
 }) {
   const step = 50;
@@ -472,14 +499,9 @@ function PriceField({
   min: number;
   max: number;
   step: number;
-  currency: Currency;
+  currency: ShopCurrencyOption;
   onCommit: (value: number) => void;
 }) {
-  // Display values are converted to the selected currency; committed values are
-  // converted back to base USD so the underlying filter logic stays in USD.
-  const toDisplay = (usd: number) => Math.round(usd * currency.rate);
-  const fromDisplay = (shown: number) => shown / currency.rate;
-
   return (
     <label
       className="flex flex-1 items-center gap-1 border px-2.5 py-2 focus-within:border-accent"
@@ -490,14 +512,14 @@ function PriceField({
       <input
         type="number"
         inputMode="numeric"
-        min={toDisplay(min)}
-        max={toDisplay(max)}
+        min={min}
+        max={max}
         step={step}
-        value={toDisplay(value)}
+        value={Math.round(value)}
         aria-label={label}
         onChange={(e) => {
           if (e.target.value === "") return;
-          onCommit(fromDisplay(Number(e.target.value)));
+          onCommit(Number(e.target.value));
         }}
         className="w-full bg-transparent text-sm text-foreground focus:outline-none"
       />

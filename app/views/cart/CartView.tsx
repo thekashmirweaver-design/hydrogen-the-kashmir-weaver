@@ -1,11 +1,15 @@
 import {Link} from 'react-router';
-import {Trash2, Plus, Minus, ArrowRight} from 'lucide-react';
-import type {CartLineUpdateInput} from '@shopify/hydrogen/storefront-api-types';
+import {ArrowRight} from 'lucide-react';
 import {CartForm} from '@shopify/hydrogen';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {formatShopifyMoney} from '~/lib/format-money';
+import {CartLineShade} from '~/components/gulriza/CartLineShade';
+import {
+  CartLineQuantityControls,
+  CartLineRemoveButton,
+} from '~/components/gulriza/CartLineQuantityControls';
 
 export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
   const lines = cart?.lines?.nodes ?? [];
@@ -37,10 +41,8 @@ export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
             <div>
               <Hairline />
               {lines.map((line) => {
-                const {merchandise, quantity, id: lineId, cost} = line;
+                const {merchandise, quantity, id: lineId, cost, attributes} = line;
                 const {product, image, title} = merchandise;
-                const prevQuantity = Math.max(0, quantity - 1);
-                const nextQuantity = quantity + 1;
 
                 return (
                   <div key={lineId}>
@@ -77,34 +79,13 @@ export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
                             merchandise.price.currencyCode,
                           )}
                         </div>
+                        <CartLineShade attributes={attributes} className="mt-2 text-sm text-muted-foreground" />
                         <div className="mt-5 flex items-center gap-4">
-                          <div
-                            className="flex items-center gap-3 border px-3 py-1.5"
-                            style={{borderColor: 'var(--border)'}}
-                          >
-                            <CartLineUpdateButton
-                              lines={[{id: lineId, quantity: prevQuantity}]}
-                            >
-                              <button
-                                aria-label="Decrease"
-                                disabled={quantity <= 1}
-                                className="transition hover:text-accent disabled:pointer-events-none disabled:opacity-30"
-                              >
-                                <Minus className="h-3 w-3" strokeWidth={1} />
-                              </button>
-                            </CartLineUpdateButton>
-                            <span className="w-6 text-center text-sm">{quantity}</span>
-                            <CartLineUpdateButton
-                              lines={[{id: lineId, quantity: nextQuantity}]}
-                            >
-                              <button
-                                aria-label="Increase"
-                                className="transition hover:text-accent disabled:pointer-events-none disabled:opacity-30"
-                              >
-                                <Plus className="h-3 w-3" strokeWidth={1} />
-                              </button>
-                            </CartLineUpdateButton>
-                          </div>
+                          <CartLineQuantityControls
+                            lineId={lineId}
+                            quantity={quantity}
+                            compact={false}
+                          />
                         </div>
                       </div>
                       <div className="whitespace-nowrap text-sm">
@@ -262,48 +243,4 @@ function Row({k, v}: {k: React.ReactNode; v: React.ReactNode}) {
       <span>{v}</span>
     </div>
   );
-}
-
-function CartLineRemoveButton({lineIds}: {lineIds: string[]}) {
-  return (
-    <CartForm
-      fetcherKey={getUpdateKey(lineIds)}
-      route="/cart"
-      action={CartForm.ACTIONS.LinesRemove}
-      inputs={{lineIds}}
-    >
-      <button
-        type="submit"
-        aria-label="Remove"
-        className="text-muted-foreground transition hover:text-accent"
-      >
-        <Trash2 className="h-4 w-4" strokeWidth={1} />
-      </button>
-    </CartForm>
-  );
-}
-
-function CartLineUpdateButton({
-  children,
-  lines,
-}: {
-  children: React.ReactNode;
-  lines: CartLineUpdateInput[];
-}) {
-  const lineIds = lines.map((line) => line.id);
-
-  return (
-    <CartForm
-      fetcherKey={getUpdateKey(lineIds)}
-      route="/cart"
-      action={CartForm.ACTIONS.LinesUpdate}
-      inputs={{lines}}
-    >
-      {children}
-    </CartForm>
-  );
-}
-
-function getUpdateKey(lineIds: string[]) {
-  return [CartForm.ACTIONS.LinesUpdate, ...lineIds].join('-');
 }

@@ -11,6 +11,7 @@ import {
   DUMMY_TEST_HANDLE,
   DUMMY_TEST_PRODUCT,
 } from '../app/models/static/dummy-product.ts';
+import {SHADES} from '../app/models/static/shades.ts';
 import {
   TEST_PRODUCT_CARE,
   TEST_PRODUCT_GUARANTEES,
@@ -167,6 +168,12 @@ function productMetafields(product: Product) {
       type: 'json',
       value: JSON.stringify(product.returnsCare ?? TEST_PRODUCT_RETURNS_CARE),
     },
+    {
+      namespace: 'custom',
+      key: 'shade_palette',
+      type: 'json',
+      value: JSON.stringify(product.shades ?? SHADES),
+    },
   ];
 }
 
@@ -187,6 +194,12 @@ async function ensureAccordionMetafieldDefinitions() {
     {
       key: 'returns_care',
       name: 'Returns and care',
+      type: 'json',
+      owner: 'PRODUCT',
+    },
+    {
+      key: 'shade_palette',
+      name: 'Shade palette',
       type: 'json',
       owner: 'PRODUCT',
     },

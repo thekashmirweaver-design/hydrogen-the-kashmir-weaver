@@ -1,9 +1,12 @@
 import {redirect} from 'react-router';
 import type {Route} from './+types/account.$';
+import {shopifyHostedAccountUrl} from '~/lib/shopify-account-url';
 
-// fallback wild card for all unauthenticated routes in account section
 export async function loader({context}: Route.LoaderArgs) {
-  context.customerAccount.handleAuthStatus();
+  await context.customerAccount.handleAuthStatus();
+  return redirect(shopifyHostedAccountUrl(context.env.SHOP_ID, 'orders'));
+}
 
-  return redirect('/account');
+export default function AccountFallback() {
+  return null;
 }

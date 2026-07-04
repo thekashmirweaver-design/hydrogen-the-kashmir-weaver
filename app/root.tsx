@@ -1,4 +1,4 @@
-import {Analytics, getShopAnalytics, useNonce} from '@shopify/hydrogen';
+import {Analytics, getShopAnalytics, Script, useNonce} from '@shopify/hydrogen';
 import {
   Outlet,
   useRouteError,
@@ -17,6 +17,8 @@ import {PageLayout, NotFoundView} from './components/PageLayout';
 import {getSearchCatalog} from '~/controllers';
 import {getCatalogOptions} from '~/lib/catalog-options';
 import {loadShopSettings} from '~/lib/shop-settings';
+import {loadLocalization} from '~/lib/localization';
+import {debugLog} from '~/lib/debug-log';
 
 export type RootLoader = typeof loader;
 
@@ -27,6 +29,14 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 }) => {
   if (formMethod && formMethod !== 'GET') return true;
   if (currentUrl.toString() === nextUrl.toString()) return true;
+
+  const marketParams = ['country', 'language'] as const;
+  for (const param of marketParams) {
+    if (currentUrl.searchParams.get(param) !== nextUrl.searchParams.get(param)) {
+      return true;
+    }
+  }
+
   return false;
 };
 
@@ -62,6 +72,7 @@ export async function loader(args: Route.LoaderArgs) {
     ...deferredData,
     ...criticalData,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
+    publicAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
     shop: getShopAnalytics({
       storefront,
       publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
@@ -78,21 +89,78 @@ export async function loader(args: Route.LoaderArgs) {
 
 async function loadCriticalData({context}: Route.LoaderArgs) {
   const catalogOptions = getCatalogOptions(context);
-  const [catalog, shopSettings] = await Promise.all([
+  const [catalog, shopSettings, localization] = await Promise.all([
     getSearchCatalog(catalogOptions),
     loadShopSettings(context.storefront, {
       publicStoreDomain: context.env.PUBLIC_STORE_DOMAIN,
     }),
+    loadLocalization(context.storefront),
   ]);
-  return {catalog, shopSettings};
+
+  debugLog(
+    'root.tsx:loadCriticalData',
+    'localization and env snapshot',
+    {
+      currencyCount: localization.currencies.length,
+      currencyCodes: localization.currencies.map((c) => c.code),
+      selectedCountry: localization.selectedCountry,
+      selectedCurrency: localization.selectedCurrency.code,
+      hasShopId: Boolean(context.env.SHOP_ID),
+      hasCustomerAccountClientId: Boolean(
+        context.env.PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID,
+      ),
+      hasCheckoutDomain: Boolean(context.env.PUBLIC_CHECKOUT_DOMAIN),
+    },
+    'H1-H4',
+  );
+
+  return {catalog, shopSettings, localization};
 }
 
 function loadDeferredData({context}: Route.LoaderArgs) {
-  const {customerAccount, cart} = context;
+  const {customerAccount, cart, storefront} = context;
+  const countryCode = storefront.i18n.country;
+
+  async function loadCustomerAccessToken(): Promise<string | null> {
+    try {
+      const loggedIn = await customerAccount.isLoggedIn();
+      if (loggedIn) {
+        const token = (await customerAccount.getAccessToken()) ?? null;
+        debugLog(
+          'root.tsx:customerSession',
+          'customer session resolved',
+          {loggedIn: true, hasAccessToken: Boolean(token)},
+          'H2',
+        );
+        return token;
+      }
+      debugLog(
+        'root.tsx:customerSession',
+        'customer session resolved',
+        {loggedIn: false, hasAccessToken: false},
+        'H2',
+      );
+    } catch (error) {
+      debugLog(
+        'root.tsx:customerSession',
+        'customer session error',
+        {loggedIn: false, error: error instanceof Error ? error.message : 'unknown'},
+        'H2',
+      );
+    }
+    return null;
+  }
 
   return {
-    cart: cart.get(),
+    cart: cart.get().then(async (cartData) => {
+      if (!cartData?.id) return cartData;
+      if (cartData.buyerIdentity?.countryCode === countryCode) return cartData;
+
+      const result = await cart.updateBuyerIdentity({countryCode});
+      return result.cart ?? cartData;
+    }),
     isLoggedIn: customerAccount.isLoggedIn(),
+    customerAccessToken: loadCustomerAccessToken(),
   };
 }
 
@@ -109,6 +177,12 @@ export function Layout({children}: {children?: React.ReactNode}) {
         />
         <Meta />
         <Links />
+        <Script
+          src="https://cdn.shopify.com/storefront/web-components/account.js"
+          type="module"
+          crossOrigin="anonymous"
+          nonce={nonce}
+        />
       </head>
       <body>
         {children}
@@ -132,7 +206,15 @@ export default function App() {
       shop={data.shop}
       consent={data.consent}
     >
-      <PageLayout cart={data.cart} catalog={data.catalog} shopSettings={data.shopSettings}>
+      <PageLayout
+        cart={data.cart}
+        catalog={data.catalog}
+        shopSettings={data.shopSettings}
+        localization={data.localization}
+        publicStoreDomain={data.publicStoreDomain}
+        publicAccessToken={data.publicAccessToken}
+        customerAccessToken={data.customerAccessToken}
+      >
         <Outlet />
       </PageLayout>
     </Analytics.Provider>

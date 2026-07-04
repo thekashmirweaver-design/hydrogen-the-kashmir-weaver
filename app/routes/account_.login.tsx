@@ -1,4 +1,8 @@
+import {redirect} from 'react-router';
 import type {Route} from './+types/account_.login';
+import {debugLog} from '~/lib/debug-log';
+
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
 
 export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);
@@ -6,6 +10,39 @@ export async function loader({request, context}: Route.LoaderArgs) {
   const loginHint = url.searchParams.get('login_hint') || undefined;
   const loginHintMode = url.searchParams.get('login_hint_mode') || undefined;
   const locale = url.searchParams.get('locale') || undefined;
+  const returnTo = url.searchParams.get('return_to') || undefined;
+
+  // Customer Account OAuth uses request.origin as redirect_uri. Shopify does not
+  // accept localhost callbacks — register production (or tunnel) URIs instead.
+  // See docs/deploy.md § "Fix redirect_uri mismatch on account login".
+  const storeUrl = (
+    context.env.PUBLIC_STORE_URL ?? 'https://thekashmirweaver.shop'
+  ).replace(/\/$/, '');
+  if (LOCAL_HOSTS.has(url.hostname)) {
+    const productionLogin = new URL('/account/login', storeUrl);
+    url.searchParams.forEach((value, key) => {
+      productionLogin.searchParams.set(key, value);
+    });
+    debugLog(
+      'account_.login.tsx:loader',
+      'localhost login redirected to production',
+      {from: url.origin, to: productionLogin.origin},
+      'H3',
+    );
+    return redirect(productionLogin.toString());
+  }
+
+  debugLog(
+    'account_.login.tsx:loader',
+    'shopify login initiated',
+    {
+      countryCode: context.storefront.i18n.country,
+      hasReturnTo: Boolean(returnTo),
+      returnTo,
+      hasShopId: Boolean(context.env.SHOP_ID),
+    },
+    'H3',
+  );
 
   return context.customerAccount.login({
     countryCode: context.storefront.i18n.country,

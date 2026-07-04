@@ -16,6 +16,19 @@ function storefrontOrigins(storeUrl?: string): string[] {
   }
 }
 
+function isLocalDevHost(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1';
+}
+
+/** CSP allowances for Hydrogen dev (HMR, debug tooling, account web components). */
+function localDevCspOrigins(): string[] {
+  const hosts = ['localhost', '127.0.0.1'];
+  const schemes = ['http', 'https', 'ws', 'wss'] as const;
+  return hosts.flatMap((host) =>
+    schemes.map((scheme) => `${scheme}://${host}:*`),
+  );
+}
+
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
@@ -23,7 +36,10 @@ export default async function handleRequest(
   reactRouterContext: EntryContext,
   context: HydrogenRouterContextProvider,
 ) {
+  const {hostname} = new URL(request.url);
+  const localDev = isLocalDevHost(hostname);
   const extraOrigins = storefrontOrigins(context.env.PUBLIC_STORE_URL);
+  const devOrigins = localDev ? localDevCspOrigins() : [];
 
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {
@@ -32,10 +48,15 @@ export default async function handleRequest(
     },
     styleSrc: ['https://fonts.googleapis.com'],
     fontSrc: ['https://fonts.gstatic.com', "'self'"],
-    ...(extraOrigins.length
+    ...(extraOrigins.length || devOrigins.length
       ? {
-          connectSrc: extraOrigins,
-          imgSrc: ["'self'", 'https://cdn.shopify.com', ...extraOrigins],
+          connectSrc: [...extraOrigins, ...devOrigins],
+          imgSrc: [
+            "'self'",
+            'https://cdn.shopify.com',
+            ...extraOrigins,
+            ...devOrigins,
+          ],
         }
       : {}),
   });

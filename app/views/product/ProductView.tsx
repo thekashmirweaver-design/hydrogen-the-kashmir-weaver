@@ -12,6 +12,8 @@ import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {Accordion} from '~/components/gulriza/Accordion';
 import {ProductTile} from '~/components/gulriza/ProductTile';
 import {CatalogImage} from '~/components/gulriza/CatalogImage';
+import {SolidRecolorCanvas} from '~/components/gulriza/SolidRecolorCanvas';
+import {ShadeDropdown} from '~/components/gulriza/ShadeDropdown';
 import {ProductOptionPicker} from '~/components/gulriza/ProductOptionPicker';
 import {QuantityStepper} from '~/components/gulriza/QuantityStepper';
 import {Reveal} from '~/components/gulriza/Reveal';
@@ -24,6 +26,8 @@ import {
 } from '~/lib/product-inventory';
 import {formatOptionDisplay, isSizeOptionName} from '~/lib/parse-size-option';
 import {useFocusTrap} from '~/hooks/use-focus-trap';
+import {getProductShades, getDefaultSolidShadeCode, isSolidProduct, SOLID_COLOUR_DISCLAIMER, SOLID_RECOLOR_IMAGE_SETS} from '~/lib/solid-product';
+import {buildBuyNowShadeQuery, shadeCartAttributes} from '~/lib/shade-cart';
 
 function isShopifyMerchandiseId(id?: string): boolean {
   if (!id) return false;
@@ -87,6 +91,12 @@ export function ProductView({
   }, [product.images, selectedVariant?.image]);
 
   const [imgIdx, setImgIdx] = useState(0);
+  const productShades = useMemo(() => getProductShades(product), [product]);
+  const defaultShadeCode = useMemo(
+    () => getDefaultSolidShadeCode(productShades),
+    [productShades],
+  );
+  const [selectedShadeCode, setSelectedShadeCode] = useState(defaultShadeCode);
   const [quantity, setQuantity] = useState(1);
   const [fullOpen, setFullOpen] = useState(false);
   const lightboxRef = useRef<HTMLDivElement>(null);
@@ -97,6 +107,11 @@ export function ProductView({
     setImgIdx(0);
     setQuantity(1);
   }, [selectedVariant?.id]);
+
+  useEffect(() => {
+    setImgIdx(0);
+    setSelectedShadeCode(defaultShadeCode);
+  }, [product.handle, defaultShadeCode]);
 
   const canChooseQuantity = showQuantitySelector(selectedVariant);
   const maxQuantity = maxCartQuantity(selectedVariant);
@@ -122,12 +137,24 @@ export function ProductView({
     selectedVariant != null
       ? !selectedVariant.availableForSale
       : product.stock === 'out';
+  const solidRecolor = isSolidProduct(product);
+  const activeSolidImageSet = SOLID_RECOLOR_IMAGE_SETS[imgIdx] ?? SOLID_RECOLOR_IMAGE_SETS[0]!;
+  const selectedShade = useMemo(
+    () =>
+      productShades.find((shade) => shade.code === selectedShadeCode) ??
+      productShades.find((shade) => shade.code === defaultShadeCode) ??
+      productShades[0] ??
+      null,
+    [productShades, selectedShadeCode, defaultShadeCode],
+  );
   const isShopifyVariant = isShopifyMerchandiseId(activeVariantId);
   const merchandiseGid = activeVariantId
     ? toMerchandiseGid(activeVariantId)
     : undefined;
 
-  const imgCount = displayImages.length;
+  const imgCount = solidRecolor
+    ? SOLID_RECOLOR_IMAGE_SETS.length
+    : displayImages.length;
   const prevImg = () => setImgIdx((i) => (i - 1 + imgCount) % imgCount);
   const nextImg = () => setImgIdx((i) => (i + 1) % imgCount);
 
@@ -136,6 +163,16 @@ export function ProductView({
     /^gid:\/\/shopify\/ProductVariant\//,
     '',
   );
+  const shadeLineAttributes = useMemo(
+    () => (solidRecolor ? shadeCartAttributes(selectedShade) : []),
+    [solidRecolor, selectedShade],
+  );
+  const buyNowHref = useMemo(() => {
+    if (!buyNowVariantId) return '/cart';
+    const shadeQuery = buildBuyNowShadeQuery(solidRecolor ? selectedShade : null);
+    const path = `/cart/${buyNowVariantId}:${buyNowQuantity}`;
+    return shadeQuery ? `${path}?${shadeQuery}` : path;
+  }, [buyNowVariantId, buyNowQuantity, solidRecolor, selectedShade]);
 
   useEffect(() => {
     if (!fullOpen) return;
@@ -183,12 +220,22 @@ export function ProductView({
                 className="relative aspect-[4/5] min-h-0 min-w-0 overflow-hidden md:col-start-2 md:row-start-1 lg:aspect-auto lg:h-full"
                 style={{background: 'var(--surface)'}}
               >
-                <CatalogImage
-                  image={displayImages[imgIdx]}
-                  onClick={() => setFullOpen(true)}
-                  className="absolute inset-0 h-full w-full cursor-zoom-in object-cover"
-                  loading="eager"
-                />
+                {solidRecolor ? (
+                  <SolidRecolorCanvas
+                    hex={selectedShade?.hex}
+                    imageSetId={activeSolidImageSet.id}
+                    alt={`${product.name} — ${activeSolidImageSet.label}`}
+                    onClick={() => setFullOpen(true)}
+                    className="absolute inset-0 h-full w-full cursor-zoom-in"
+                  />
+                ) : (
+                  <CatalogImage
+                    image={displayImages[imgIdx]}
+                    onClick={() => setFullOpen(true)}
+                    className="absolute inset-0 h-full w-full cursor-zoom-in object-cover"
+                    loading="eager"
+                  />
+                )}
                 <div className="pointer-events-none absolute inset-0 vignette-overlay" />
                 <button
                   aria-label="View full screen"
@@ -214,7 +261,7 @@ export function ProductView({
                     Sold Out
                   </div>
                 )}
-                {displayImages.length > 1 && (
+                {imgCount > 1 && (
                   <>
                     <button
                       onClick={prevImg}
@@ -233,11 +280,67 @@ export function ProductView({
                   </>
                 )}
                 <div className="absolute bottom-3 right-3 text-xs tracking-[0.25em] text-muted-foreground md:bottom-4 md:right-4">
-                  {imgIdx + 1}/{displayImages.length}
+                  {imgIdx + 1}/{imgCount}
                 </div>
               </div>
 
-              {displayImages.length > 1 && (
+              {imgCount > 1 && solidRecolor && (
+                <>
+                  <div className="flex gap-2 overflow-x-auto pb-1 md:hidden">
+                    {SOLID_RECOLOR_IMAGE_SETS.map((set, i) => (
+                      <button
+                        key={set.id}
+                        onClick={() => setImgIdx(i)}
+                        aria-label={set.label}
+                        aria-current={i === imgIdx}
+                        className="relative aspect-square w-[4.5rem] shrink-0 overflow-hidden"
+                        style={{
+                          outline:
+                            i === imgIdx
+                              ? '1px solid var(--accent)'
+                              : '1px solid var(--border)',
+                        }}
+                      >
+                        <SolidRecolorCanvas
+                          hex={selectedShade?.hex}
+                          imageSetId={set.id}
+                          alt=""
+                          className="absolute inset-0 h-full w-full"
+                        />
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="relative hidden w-16 shrink-0 self-stretch md:col-start-1 md:row-start-1 md:block lg:w-[4.5rem]">
+                    <div className="absolute inset-0 flex flex-col gap-1.5 overflow-y-auto overscroll-contain">
+                      {SOLID_RECOLOR_IMAGE_SETS.map((set, i) => (
+                        <button
+                          key={set.id}
+                          onClick={() => setImgIdx(i)}
+                          aria-label={set.label}
+                          aria-current={i === imgIdx}
+                          className="relative aspect-square w-full shrink-0 overflow-hidden"
+                          style={{
+                            outline:
+                              i === imgIdx
+                                ? '1px solid var(--accent)'
+                                : '1px solid var(--border)',
+                          }}
+                        >
+                          <SolidRecolorCanvas
+                            hex={selectedShade?.hex}
+                            imageSetId={set.id}
+                            alt=""
+                            className="absolute inset-0 h-full w-full"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {imgCount > 1 && !solidRecolor && (
                 <>
                   <div className="flex gap-2 overflow-x-auto pb-1 md:hidden">
                     {displayImages.map((img, i) => (
@@ -321,6 +424,18 @@ export function ProductView({
             ) : null}
 
             <div className="mt-6 flex flex-col gap-4">
+              {solidRecolor && productShades.length > 0 ? (
+                <div>
+                  <ShadeDropdown
+                    shades={productShades}
+                    selectedCode={selectedShadeCode}
+                    onSelect={setSelectedShadeCode}
+                  />
+                  <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                    {SOLID_COLOUR_DISCLAIMER}
+                  </p>
+                </div>
+              ) : null}
               {choosableOptions.map((option) => (
                 <ProductOptionPicker
                   key={option.name}
@@ -378,6 +493,9 @@ export function ProductView({
                           {
                             merchandiseId: merchandiseGid!,
                             quantity: canChooseQuantity ? quantity : 1,
+                            ...(shadeLineAttributes.length
+                              ? {attributes: shadeLineAttributes}
+                              : {}),
                           },
                         ],
                       }}
@@ -398,11 +516,7 @@ export function ProductView({
                       )}
                     </CartForm>
                     <Link
-                      to={
-                        buyNowVariantId
-                          ? `/cart/${buyNowVariantId}:${buyNowQuantity}`
-                          : '/cart'
-                      }
+                      to={buyNowHref}
                       className="block w-full border py-3.5 text-center tracked transition hover:text-accent"
                       style={{borderColor: 'var(--border)'}}
                     >
@@ -633,35 +747,68 @@ export function ProductView({
               className="no-scrollbar order-last flex shrink-0 gap-3 overflow-x-auto border-t p-4 md:order-first md:max-h-full md:w-28 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:border-r md:border-t-0 md:p-5"
               style={{borderColor: 'var(--border)'}}
             >
-              {displayImages.map((img, i) => (
-                <button
-                  key={img.src}
-                  onClick={() => setImgIdx(i)}
-                  aria-label={`View image ${i + 1}`}
-                  aria-current={i === imgIdx}
-                  className="relative aspect-square w-16 shrink-0 overflow-hidden transition md:w-full"
-                  style={{
-                    outline:
-                      i === imgIdx
-                        ? '1px solid var(--accent)'
-                        : '1px solid var(--border)',
-                  }}
-                >
-                  <CatalogImage
-                    image={{...img, alt: ''}}
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                </button>
-              ))}
+              {solidRecolor
+                ? SOLID_RECOLOR_IMAGE_SETS.map((set, i) => (
+                    <button
+                      key={set.id}
+                      onClick={() => setImgIdx(i)}
+                      aria-label={set.label}
+                      aria-current={i === imgIdx}
+                      className="relative aspect-square w-16 shrink-0 overflow-hidden transition md:w-full"
+                      style={{
+                        outline:
+                          i === imgIdx
+                            ? '1px solid var(--accent)'
+                            : '1px solid var(--border)',
+                      }}
+                    >
+                      <SolidRecolorCanvas
+                        hex={selectedShade?.hex}
+                        imageSetId={set.id}
+                        alt=""
+                        className="absolute inset-0 h-full w-full"
+                      />
+                    </button>
+                  ))
+                : displayImages.map((img, i) => (
+                    <button
+                      key={img.src}
+                      onClick={() => setImgIdx(i)}
+                      aria-label={`View image ${i + 1}`}
+                      aria-current={i === imgIdx}
+                      className="relative aspect-square w-16 shrink-0 overflow-hidden transition md:w-full"
+                      style={{
+                        outline:
+                          i === imgIdx
+                            ? '1px solid var(--accent)'
+                            : '1px solid var(--border)',
+                      }}
+                    >
+                      <CatalogImage
+                        image={{...img, alt: ''}}
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    </button>
+                  ))}
             </div>
           )}
 
           <div className="relative flex min-h-0 flex-1 items-center justify-center p-4 md:p-10">
-            <CatalogImage
-              image={displayImages[imgIdx]}
-              onClick={(e) => e.stopPropagation()}
-              className="absolute inset-0 m-auto max-h-full max-w-full object-contain p-4 md:p-10"
-            />
+            {solidRecolor ? (
+              <SolidRecolorCanvas
+                hex={selectedShade?.hex}
+                imageSetId={activeSolidImageSet.id}
+                alt={`${product.name} — ${activeSolidImageSet.label}`}
+                onClick={(e) => e.stopPropagation()}
+                className="absolute inset-0 m-auto max-h-full max-w-full p-4 md:p-10"
+              />
+            ) : (
+              <CatalogImage
+                image={displayImages[imgIdx]}
+                onClick={(e) => e.stopPropagation()}
+                className="absolute inset-0 m-auto max-h-full max-w-full object-contain p-4 md:p-10"
+              />
+            )}
             {imgCount > 1 && (
               <>
                 <button
