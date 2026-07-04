@@ -1,6 +1,7 @@
 import {Link} from 'react-router';
 import {ArrowRight} from 'lucide-react';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
+import {CollectionStoryMobile} from '~/components/gulriza/CollectionStoryMobile';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {OriginMap} from '~/components/gulriza/OriginMap';
 import {ProductTile} from '~/components/gulriza/ProductTile';
@@ -150,6 +151,17 @@ function FeaturedProducts({products}: {products: Product[]}) {
   );
 }
 
+function ExploreCollectionCta({handle, name}: {handle: string; name: string}) {
+  return (
+    <Link
+      to={`/collections/${handle}`}
+      className="mt-8 inline-flex w-max items-center gap-3 rounded-full border border-accent/40 bg-accent/5 px-5 py-2.5 text-[0.65rem] font-medium tracking-widest text-accent uppercase transition-all duration-300 hover:bg-accent/10 md:mt-10 md:text-xs"
+    >
+      Explore {name} <ArrowRight className="h-3.5 w-3.5" />
+    </Link>
+  );
+}
+
 function SignatureCollections({
   collections,
   products,
@@ -178,6 +190,10 @@ function SignatureCollections({
           const previewProducts = products
             .filter((p) => p.collectionSlug === c.handle)
             .slice(0, 3);
+          const nameParts = c.name.split(' ');
+          const firstName = nameParts[0];
+          const restName = nameParts.slice(1).join(' ');
+
           return (
             <div key={c.handle}>
               {i > 0 && (
@@ -186,14 +202,14 @@ function SignatureCollections({
                 </div>
               )}
               <Reveal className="relative w-full">
-                <div className="relative aspect-video w-full overflow-hidden">
+                <div className="relative aspect-[3/4] w-full overflow-hidden md:aspect-video">
                   <img
                     src={c.hero.src}
                     alt={c.hero.alt}
                     className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
                     loading="lazy"
                   />
-                  <div className="vignette-overlay pointer-events-none absolute inset-0 hidden md:block" />
+                  <div className="vignette-overlay pointer-events-none absolute inset-0" />
                   <div
                     className="pointer-events-none absolute inset-0 hidden md:block"
                     style={{
@@ -201,33 +217,29 @@ function SignatureCollections({
                         'linear-gradient(to top, rgba(8,16,15,0.95) 0%, rgba(8,16,15,0.35) 45%, transparent 70%)',
                     }}
                   />
-                </div>
-                <div className="mx-auto max-w-[1600px] px-6 pt-10 md:absolute md:inset-x-0 md:bottom-0 md:px-10 md:pt-0 md:pb-16">
-                  <Eyebrow>{c.tagline}</Eyebrow>
-                  <h3
-                    className="font-display mt-6 text-3xl leading-[1.1] sm:text-4xl md:text-5xl"
-                    style={{fontWeight: 400}}
-                  >
-                    {c.name.split(' ')[0]}{' '}
-                    <span style={{fontStyle: 'italic'}}>
-                      {c.name.split(' ').slice(1).join(' ')}
-                    </span>
-                  </h3>
-                  <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-                    {c.story}
-                  </p>
-                  <Link
-                    to={`/collections/${c.handle}`}
-                    className="mt-10 inline-flex items-center gap-5 text-foreground transition hover:text-accent"
-                  >
-                    <span className="tracked">Explore {c.name}</span>
-                    <span
-                      className="flex h-12 w-12 items-center justify-center rounded-full border"
-                      style={{borderColor: 'var(--border)'}}
+                  <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1600px] px-6 pb-10 md:px-10 md:pb-16">
+                    <Eyebrow>{c.tagline}</Eyebrow>
+                    <h3
+                      className="font-display mt-4 text-3xl leading-[1.1] sm:text-4xl md:mt-6 md:text-5xl"
+                      style={{fontWeight: 400}}
                     >
-                      <ArrowRight className="h-4 w-4" strokeWidth={1} />
-                    </span>
-                  </Link>
+                      {firstName}{' '}
+                      {restName ? (
+                        <span style={{fontStyle: 'italic'}}>{restName}</span>
+                      ) : null}
+                    </h3>
+                    <p className="mt-6 hidden max-w-xl text-base leading-relaxed text-muted-foreground md:block">
+                      {c.story}
+                    </p>
+                    <div className="hidden md:block">
+                      <ExploreCollectionCta handle={c.handle} name={c.name} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mx-auto max-w-[1600px] px-6 pt-8 md:hidden">
+                  <CollectionStoryMobile text={c.story} />
+                  <ExploreCollectionCta handle={c.handle} name={c.name} />
                 </div>
               </Reveal>
 

@@ -29,11 +29,14 @@ export function ProductCatalog({
   products,
   filters: enabled = ["collection", "price"],
   resultsLabel = "pieces",
+  emptyMessage,
 }: {
   products: Product[];
   /** Which filter facets to show. Pass [] to hide sidebar entirely (sort-only). */
   filters?: FilterKey[];
   resultsLabel?: string;
+  /** Override empty grid copy (e.g. collection pages with no filters). */
+  emptyMessage?: string;
 }) {
   const { collections } = useCatalog();
   const priceBounds = useMemo(() => {
@@ -192,7 +195,7 @@ export function ProductCatalog({
         <div>
           {filtered.length === 0 ? (
             <div className="py-24 text-center text-muted-foreground">
-              <p>No pieces match this selection.</p>
+              <p>{emptyMessage ?? "No pieces match this selection."}</p>
               {showSidebar && (
                 <button onClick={reset} className="tracked mt-6 text-accent">
                   Reset filters

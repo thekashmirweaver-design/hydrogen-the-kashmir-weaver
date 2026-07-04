@@ -2,6 +2,7 @@ import {Link} from 'react-router';
 import {ArrowRight} from 'lucide-react';
 import {Eyebrow} from '~/components/gulriza/Eyebrow';
 import {Reveal} from '~/components/gulriza/Reveal';
+import {CollectionStoryMobile} from '~/components/gulriza/CollectionStoryMobile';
 import {ProductCatalog} from '~/components/gulriza/ProductCatalog';
 import type {Collection, Product} from '~/models/types';
 
@@ -12,10 +13,14 @@ export function CollectionView({
   collection: Collection;
   products: Product[];
 }) {
+  const nameParts = collection.name.split(' ');
+  const firstName = nameParts[0];
+  const restName = nameParts.slice(1).join(' ');
+
   return (
     <div>
       <section className="relative pt-20">
-        <div className="relative aspect-video w-full overflow-hidden">
+        <div className="relative aspect-[3/4] w-full overflow-hidden md:aspect-video">
           <img
             src={collection.hero.src}
             alt={collection.hero.alt}
@@ -23,27 +28,37 @@ export function CollectionView({
             loading="eager"
           />
           <div className="absolute inset-0 vignette-overlay" />
-          <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1600px] px-6 pb-12 md:px-10 md:pb-20">
+          <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1600px] px-6 pb-10 md:px-10 md:pb-20">
             <Reveal>
               <Eyebrow>{collection.tagline}</Eyebrow>
               <h1
-                className="font-display mt-6 text-4xl leading-[1.05] sm:text-5xl md:text-7xl"
+                className="font-display mt-4 text-4xl leading-[1.05] sm:text-5xl md:mt-6 md:text-7xl"
                 style={{fontWeight: 300}}
               >
-                {collection.name.split(' ')[0]}{' '}
-                <span style={{fontStyle: 'italic'}}>
-                  {collection.name.split(' ').slice(1).join(' ')}.
-                </span>
+                {firstName}{' '}
+                {restName ? (
+                  <span style={{fontStyle: 'italic'}}>{restName}.</span>
+                ) : null}
               </h1>
-              <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
+              <p className="mt-6 hidden max-w-xl text-base leading-relaxed text-muted-foreground md:block">
                 {collection.story}
               </p>
             </Reveal>
           </div>
         </div>
+
+        <div className="mx-auto max-w-[1600px] px-6 pt-8 md:hidden">
+          <Reveal>
+            <CollectionStoryMobile text={collection.story} />
+          </Reveal>
+        </div>
       </section>
 
-      <ProductCatalog products={products} filters={[]} />
+      <ProductCatalog
+        products={products}
+        filters={[]}
+        emptyMessage="No pieces in this collection yet."
+      />
 
       <section className="mx-auto max-w-[1600px] px-6 py-32 md:px-10">
         <Reveal className="text-center">

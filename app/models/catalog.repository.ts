@@ -2,6 +2,7 @@ import type {Storefront} from '@shopify/hydrogen';
 import type {CatalogSnapshot, Collection, Product} from './types';
 import * as ShopifyRepository from './shopify/repository';
 import * as StaticRepository from './static/repository';
+import {withDummyTestProduct} from './static/dummy-product';
 
 export type CatalogSource = 'shopify' | 'static';
 
@@ -33,14 +34,21 @@ async function withCatalog<T>(
   return staticFallback();
 }
 
+/** Static catalog only — Shopify catalog is seeded via npm run seed:dummy-product */
+function withStaticDummyProducts(products: Product[], options?: CatalogOptions) {
+  if (options?.useStatic) return withDummyTestProduct(products);
+  return products;
+}
+
 export async function listProducts(
   options?: CatalogOptions,
 ): Promise<Product[]> {
-  return withCatalog(
+  const products = await withCatalog(
     ShopifyRepository.listProducts,
     () => StaticRepository.products,
     options,
   );
+  return withStaticDummyProducts(products, options);
 }
 
 export async function findProductByHandle(
@@ -80,12 +88,13 @@ export async function listProductsByCollection(
   handle: string,
   options?: CatalogOptions,
 ): Promise<Product[]> {
-  return withCatalog(
+  const products = await withCatalog(
     (storefront) =>
       ShopifyRepository.listProductsByCollection(storefront, handle),
     () => StaticRepository.productsByCollection(handle),
     options,
   );
+  return withStaticDummyProducts(products, options);
 }
 
 export async function listWeaveFacets(
@@ -105,7 +114,7 @@ export async function listOriginFacets(
 export async function getCatalogSnapshot(
   options?: CatalogOptions,
 ): Promise<CatalogSnapshot> {
-  return withCatalog(
+  const snapshot = await withCatalog(
     ShopifyRepository.getCatalogSnapshot,
     async () => ({
       products: StaticRepository.products,
@@ -113,4 +122,8 @@ export async function getCatalogSnapshot(
     }),
     options,
   );
+  return {
+    ...snapshot,
+    products: withStaticDummyProducts(snapshot.products, options),
+  };
 }
