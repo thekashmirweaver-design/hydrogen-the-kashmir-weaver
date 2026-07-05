@@ -1,38 +1,99 @@
 import {Link} from "react-router";
-import { useEffect, useState } from "react";
-import type { Product } from "~/models/types";
-import { useFormatPrice } from "~/lib/currency-store";
-import { CatalogImage } from "~/components/gulriza/CatalogImage";
+import {useEffect, useState} from "react";
+import type {Product} from "~/models/types";
+import {useFormatPrice} from "~/lib/currency-store";
+import {CatalogImage} from "~/components/gulriza/CatalogImage";
 
-export function ProductTile({ product }: { product: Product }) {
+const TILE_CAROUSEL_MS = 1400;
+const MAX_DOT_INDICATORS = 5;
+
+function TileImageIndicator({
+  active,
+  total,
+}: {
+  active: number;
+  total: number;
+}) {
+  if (total <= MAX_DOT_INDICATORS) {
+    return (
+      <div className="pointer-events-none absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5">
+        {Array.from({length: total}, (_, i) => (
+          <span
+            key={i}
+            className="h-1.5 w-1.5 rounded-full transition-colors duration-300"
+            style={{
+              background: i === active ? "var(--accent)" : "rgba(255,255,255,0.35)",
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  const progress = total > 1 ? ((active + 1) / total) * 100 : 100;
+
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-4 flex flex-col items-center gap-2 px-4">
+      <span className="rounded-full bg-black/35 px-2.5 py-0.5 text-[0.65rem] tracking-[0.2em] text-white/90 backdrop-blur-sm">
+        {active + 1} / {total}
+      </span>
+      <div
+        className="h-0.5 w-[min(72%,7rem)] overflow-hidden rounded-full bg-white/25"
+        role="progressbar"
+        aria-valuenow={active + 1}
+        aria-valuemin={1}
+        aria-valuemax={total}
+        aria-label={`Image ${active + 1} of ${total}`}
+      >
+        <span
+          className="block h-full rounded-full bg-accent transition-[width] duration-300 ease-out"
+          style={{width: `${progress}%`}}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function ProductTile({product}: {product: Product}) {
   const [hover, setHover] = useState(false);
   const [active, setActive] = useState(0);
   const [loadExtras, setLoadExtras] = useState(false);
   const formatPrice = useFormatPrice();
-  const multiImage = product.images.length > 1;
+  const imageCount = product.images.length;
+  const multiImage = imageCount > 1;
   const soldOut = product.stock === "out";
   const onSale =
     product.compareAtPrice != null && product.compareAtPrice.amount > product.price.amount;
 
-  const visibleImages = loadExtras ? product.images : product.images.slice(0, 1);
+  const displayIndex = hover && loadExtras ? active : 0;
+  const displayImage = product.images[displayIndex] ?? product.images[0];
 
-  // While hovered, auto-advance through every image as a crossfading carousel.
-  // The interval only runs on hover and is cleared on mouse-leave / unmount.
   useEffect(() => {
     if (!hover || !multiImage) return;
     const id = window.setInterval(() => {
-      setActive((i) => (i + 1) % product.images.length);
-    }, 950);
+      setActive((i) => (i + 1) % imageCount);
+    }, TILE_CAROUSEL_MS);
     return () => window.clearInterval(id);
-  }, [hover, multiImage, product.images.length]);
+  }, [hover, multiImage, imageCount]);
 
   const handlePointerEnter = () => {
     setHover(true);
     if (multiImage) setLoadExtras(true);
   };
 
+  const priceBlock = onSale ? (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+      <span style={{color: "var(--accent)"}}>{formatPrice(product.price)}</span>
+      <span className="text-muted-foreground line-through">
+        {formatPrice(product.compareAtPrice!)}
+      </span>
+    </div>
+  ) : (
+    <div className="text-sm text-muted-foreground">{formatPrice(product.price)}</div>
+  );
+
   return (
-    <div className="group block">
+    <article className="group flex h-full flex-col">
       <Link
         to={`/products/${product.handle}`}
         prefetch="intent"
@@ -50,68 +111,36 @@ export function ProductTile({ product }: { product: Product }) {
       >
         <div
           className="relative aspect-[4/5] w-full overflow-hidden"
-          style={{ background: "var(--surface)" }}
+          style={{background: "var(--surface)"}}
         >
-          {visibleImages.map((img, i) => (
-            <CatalogImage
-              key={`${img.src}-${i}`}
-              image={{...img, alt: i === 0 ? img.alt : ""}}
-              className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
-              style={{
-                opacity: i === active ? 1 : 0,
-                filter: soldOut ? "grayscale(0.6)" : undefined,
-              }}
-            />
-          ))}
-          <div
-            className="pointer-events-none absolute inset-0"
+          <CatalogImage
+            key={displayImage.src}
+            image={displayImage}
+            wrapperClassName="absolute inset-0"
+            className="h-full w-full object-cover transition-opacity duration-700 motion-reduce:transition-none"
             style={{
-              background:
-                "radial-gradient(ellipse at center, transparent 55%, rgba(8,16,15,0.6) 100%)",
+              filter: soldOut ? "grayscale(0.6)" : undefined,
             }}
+            loading={displayIndex === 0 ? "lazy" : "eager"}
           />
 
-          {/* Position indicators (only while cycling through multiple images) */}
-          {hover && multiImage && loadExtras && (
-            <div className="pointer-events-none absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5">
-              {product.images.map((img, i) => (
-                <span
-                  key={`dot-${img.src}-${i}`}
-                  className="h-1.5 w-1.5 rounded-full transition-colors duration-300"
-                  style={{
-                    background: i === active ? "var(--accent)" : "rgba(255,255,255,0.35)",
-                  }}
-                />
-              ))}
-            </div>
-          )}
+          {hover && multiImage && loadExtras ? (
+            <TileImageIndicator active={active} total={imageCount} />
+          ) : null}
         </div>
       </Link>
 
-      <div className="mt-4 flex flex-col gap-4 sm:mt-6 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-        <div className="min-w-0 flex-1">
-          <div className="eyebrow truncate opacity-70">{product.collectionName}</div>
-          <Link
-            to={`/products/${product.handle}`}
-            prefetch="intent"
-            className="mt-2 block font-display text-lg leading-tight hover:text-accent sm:text-xl"
-          >
-            {product.name}
-          </Link>
-        </div>
-        <div className="flex items-center justify-between sm:flex-col sm:items-end sm:gap-3">
-          {onSale ? (
-            <div className="flex items-center gap-2 text-sm">
-              <span style={{ color: "var(--accent)" }}>{formatPrice(product.price)}</span>
-              <span className="text-muted-foreground line-through">
-                {formatPrice(product.compareAtPrice!)}
-              </span>
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">{formatPrice(product.price)}</div>
-          )}
-        </div>
+      <div className="mt-4 flex min-h-0 flex-1 flex-col gap-2 sm:mt-5">
+        <p className="eyebrow truncate opacity-70">{product.collectionName}</p>
+        <Link
+          to={`/products/${product.handle}`}
+          prefetch="intent"
+          className="font-display text-lg leading-snug hover:text-accent sm:text-xl line-clamp-2"
+        >
+          {product.name}
+        </Link>
+        {priceBlock}
       </div>
-    </div>
+    </article>
   );
 }

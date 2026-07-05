@@ -1,45 +1,87 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import type { Product } from "~/models/types";
-import { ProductTile } from "~/components/gulriza/ProductTile";
-import { Reveal } from "~/components/gulriza/Reveal";
-import { Hand } from "lucide-react";
+import {useCallback, useEffect, useRef, useState} from "react";
+import type {Product} from "~/models/types";
+import {ProductTile} from "~/components/gulriza/ProductTile";
+import {Reveal} from "~/components/gulriza/Reveal";
+import {Hand} from "lucide-react";
 
-export function ProductCarousel({ products }: { products: Product[] }) {
+const AUTO_SCROLL_MS = 5500;
+
+export function ProductCarousel({products}: {products: Product[]}) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const pausedRef = useRef(false);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const handleScroll = () => {
-      if (el.scrollLeft > 10 && !hasScrolled) {
-        setHasScrolled(true);
+      if (el.scrollLeft > 10) setHasScrolled(true);
+    };
+    el.addEventListener("scroll", handleScroll, {passive: true});
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const pause = useCallback(() => {
+    pausedRef.current = true;
+  }, []);
+
+  const resume = useCallback(() => {
+    pausedRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || products.length <= 1) return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) return;
+
+    const tick = () => {
+      if (pausedRef.current || !el) return;
+      const first = el.firstElementChild as HTMLElement | null;
+      const gap = 24;
+      const step = first ? first.offsetWidth + gap : el.clientWidth * 0.85;
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (maxScroll <= 0) return;
+
+      if (el.scrollLeft >= maxScroll - 8) {
+        el.scrollTo({left: 0, behavior: "smooth"});
+      } else {
+        el.scrollTo({left: el.scrollLeft + step, behavior: "smooth"});
       }
     };
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [hasScrolled]);
+
+    const id = window.setInterval(tick, AUTO_SCROLL_MS);
+    return () => window.clearInterval(id);
+  }, [products.length]);
 
   return (
     <div className="relative">
-      {/* Mobile swipe indicator */}
       <div
-        className={`pointer-events-none absolute right-4 top-[35%] z-10 flex -translate-y-1/2 items-center gap-2 rounded-full bg-background/80 px-3 py-2 text-[0.65rem] uppercase tracking-widest text-foreground shadow-sm backdrop-blur-md transition-opacity duration-500 md:hidden ${
+        className={`pointer-events-none absolute right-4 top-[35%] z-10 flex -translate-y-1/2 items-center gap-2 rounded-full bg-background/80 px-3 py-2 text-[0.65rem] uppercase tracking-widest text-foreground shadow-sm backdrop-blur-md transition-opacity duration-500 motion-reduce:transition-none ${
           hasScrolled ? "opacity-0" : "opacity-100"
         }`}
       >
         <span>Swipe to explore</span>
-        <Hand className="h-3 w-3 animate-pulse" />
+        <Hand className="h-3 w-3 animate-pulse motion-reduce:animate-none" />
       </div>
 
       <div
         ref={scrollRef}
-        className="no-scrollbar -mx-6 flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-8 scroll-pl-6 md:mx-0 md:grid md:grid-cols-2 md:snap-none md:overflow-visible md:px-0 md:scroll-pl-0 lg:grid-cols-4"
+        onMouseEnter={pause}
+        onMouseLeave={resume}
+        onTouchStart={pause}
+        onTouchEnd={() => window.setTimeout(resume, 4000)}
+        className="no-scrollbar -mx-6 flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-8 scroll-pl-6 overscroll-x-contain md:-mx-0 md:px-0 md:scroll-pl-0"
+        style={{WebkitOverflowScrolling: "touch"}}
       >
         {products.map((product, idx) => (
-          <div key={product.handle} className="w-[85vw] shrink-0 snap-start sm:w-[60vw] md:w-auto">
+          <div
+            key={product.handle}
+            className="w-[min(85vw,320px)] shrink-0 snap-start sm:w-[min(58vw,340px)] md:w-[min(32vw,300px)] lg:w-[280px] xl:w-[300px]"
+          >
             <Reveal delay={idx * 100}>
               <ProductTile product={product} />
             </Reveal>

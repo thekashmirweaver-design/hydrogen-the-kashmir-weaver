@@ -324,6 +324,17 @@
   .studio-slide-up {
     transition: transform 280ms ease-out;
   }
+
+  .image-skeleton {
+    background: linear-gradient(
+      110deg,
+      var(--surface) 8%,
+      color-mix(in srgb, var(--foreground) 6%, var(--surface)) 18%,
+      var(--surface) 33%
+    );
+    background-size: 200% 100%;
+    animation: image-shimmer 1.4s ease-in-out infinite;
+  }
 }
 
 @layer base {
@@ -476,6 +487,15 @@
 
 .animate-slow-zoom {
   animation: slow-zoom 25s ease-out forwards;
+}
+
+@keyframes image-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @keyframes shimmer {

@@ -95,6 +95,7 @@ export function ProductView({
   }, [product.images, selectedVariant?.image]);
 
   const [imgIdx, setImgIdx] = useState(0);
+  const [hoverImgIdx, setHoverImgIdx] = useState<number | null>(null);
   const productShades = useMemo(() => getProductShades(product), [product]);
   const defaultShadeCode = useMemo(
     () => getDefaultSolidShadeCode(productShades),
@@ -111,11 +112,13 @@ export function ProductView({
 
   useEffect(() => {
     setImgIdx(0);
+    setHoverImgIdx(null);
     setQuantity(1);
   }, [selectedVariant?.id]);
 
   useEffect(() => {
     setImgIdx(0);
+    setHoverImgIdx(null);
     setSelectedShadeCode(defaultShadeCode);
   }, [product.handle, defaultShadeCode]);
 
@@ -158,6 +161,10 @@ export function ProductView({
     : undefined;
 
   const imgCount = displayImages.length;
+  const displayIdx = hoverImgIdx ?? imgIdx;
+  const activeImage = displayImages[displayIdx] ?? displayImages[0];
+  const previewImage = (i: number) => setHoverImgIdx(i);
+  const clearImagePreview = () => setHoverImgIdx(null);
   const prevImg = () => setImgIdx((i) => (i - 1 + imgCount) % imgCount);
   const nextImg = () => setImgIdx((i) => (i + 1) % imgCount);
   const touchStartX = useRef<number | null>(null);
@@ -240,21 +247,26 @@ export function ProductView({
       <section className="mx-auto max-w-[1200px] px-6 py-10 md:px-10 md:py-14">
         <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-stretch lg:gap-12">
           {/* Gallery */}
-          <div className="mx-auto w-full max-w-sm min-w-0 lg:mx-0 lg:h-full lg:max-w-none lg:self-stretch">
+          <div className="mx-auto w-full min-w-0 lg:mx-0 lg:h-full lg:self-stretch">
             <div className="flex h-full min-h-0 flex-col gap-2 md:grid md:grid-cols-[auto_1fr] md:gap-2">
               <div
-                className="relative aspect-[4/5] min-h-0 min-w-0 overflow-hidden md:col-start-2 md:row-start-1 lg:aspect-auto lg:h-full"
-                style={{background: 'var(--surface)'}}
+                className="relative flex w-full min-w-0 items-center justify-center md:col-start-2 md:row-start-1"
                 onTouchStart={handleGalleryTouchStart}
                 onTouchEnd={handleGalleryTouchEnd}
               >
                 <CatalogImage
-                  image={displayImages[imgIdx]}
+                  image={activeImage!}
                   onClick={() => setFullOpen(true)}
-                  className="absolute inset-0 h-full w-full cursor-zoom-in object-cover"
+                  className="mx-auto w-full max-h-[min(75dvh,720px)] cursor-zoom-in object-contain"
+                  wrapperClassName="relative w-full"
+                  wrapperStyle={
+                    activeImage?.width && activeImage?.height
+                      ? {aspectRatio: `${activeImage.width} / ${activeImage.height}`}
+                      : {aspectRatio: '4 / 5'}
+                  }
                   loading="eager"
+                  sizes="(min-width: 1024px) 55vw, 100vw"
                 />
-                <div className="pointer-events-none absolute inset-0 vignette-overlay" />
                 <button
                   aria-label="View full screen"
                   onClick={() => setFullOpen(true)}
@@ -298,20 +310,24 @@ export function ProductView({
                   </>
                 )}
                 <div className="absolute bottom-3 right-3 text-xs tracking-[0.25em] text-muted-foreground md:bottom-4 md:right-4">
-                  {imgIdx + 1}/{imgCount}
+                  {displayIdx + 1}/{imgCount}
                 </div>
               </div>
 
               {imgCount > 1 && (
                 <>
-                  <HorizontalScrollCue
-                    cueLabel="Swipe"
-                    className="flex gap-2 overflow-x-auto pb-1 md:hidden no-scrollbar"
-                  >
+                  <div onMouseLeave={clearImagePreview} className="md:hidden">
+                    <HorizontalScrollCue
+                      cueLabel="Swipe"
+                      className="flex gap-2 overflow-x-auto pb-1 no-scrollbar"
+                    >
                     {displayImages.map((img, i) => (
                       <button
                         key={img.src}
                         onClick={() => setImgIdx(i)}
+                        onMouseEnter={() => previewImage(i)}
+                        onFocus={() => previewImage(i)}
+                        onBlur={clearImagePreview}
                         aria-label={`View image ${i + 1}`}
                         aria-current={i === imgIdx}
                         className="relative aspect-square w-[4.5rem] shrink-0 overflow-hidden"
@@ -324,18 +340,26 @@ export function ProductView({
                       >
                         <CatalogImage
                           image={{...img, alt: ''}}
-                          className="absolute inset-0 h-full w-full object-cover"
+                          wrapperClassName="absolute inset-0"
+                          className="h-full w-full object-cover"
                         />
                       </button>
                     ))}
-                  </HorizontalScrollCue>
+                    </HorizontalScrollCue>
+                  </div>
 
-                  <div className="relative hidden w-16 shrink-0 self-stretch md:col-start-1 md:row-start-1 md:block lg:w-[4.5rem]">
+                  <div
+                    className="relative hidden w-16 shrink-0 self-stretch md:col-start-1 md:row-start-1 md:block lg:w-[4.5rem]"
+                    onMouseLeave={clearImagePreview}
+                  >
                     <div className="absolute inset-0 flex flex-col gap-1.5 overflow-y-auto overscroll-contain">
                       {displayImages.map((img, i) => (
                         <button
                           key={img.src}
                           onClick={() => setImgIdx(i)}
+                          onMouseEnter={() => previewImage(i)}
+                          onFocus={() => previewImage(i)}
+                          onBlur={clearImagePreview}
                           aria-label={`View image ${i + 1}`}
                           aria-current={i === imgIdx}
                           className="relative aspect-square w-full shrink-0 overflow-hidden"
@@ -348,7 +372,8 @@ export function ProductView({
                         >
                           <CatalogImage
                             image={{...img, alt: ''}}
-                            className="absolute inset-0 h-full w-full object-cover"
+                            wrapperClassName="absolute inset-0"
+                            className="h-full w-full object-cover"
                           />
                         </button>
                       ))}
@@ -726,6 +751,7 @@ export function ProductView({
               {imgCount > 1 && (
                 <div
                   onClick={(e) => e.stopPropagation()}
+                  onMouseLeave={clearImagePreview}
                   className="no-scrollbar order-last flex shrink-0 gap-3 overflow-x-auto border-t p-4 md:order-first md:max-h-full md:w-28 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:border-r md:border-t-0 md:p-5"
                   style={{
                     borderColor: 'var(--border)',
@@ -736,6 +762,9 @@ export function ProductView({
                     <button
                       key={img.src}
                       onClick={() => setImgIdx(i)}
+                      onMouseEnter={() => previewImage(i)}
+                      onFocus={() => previewImage(i)}
+                      onBlur={clearImagePreview}
                       aria-label={`View image ${i + 1}`}
                       aria-current={i === imgIdx}
                       className="relative aspect-square w-16 shrink-0 overflow-hidden transition md:w-full"
@@ -748,7 +777,8 @@ export function ProductView({
                     >
                       <CatalogImage
                         image={{...img, alt: ''}}
-                        className="absolute inset-0 h-full w-full object-cover"
+                        wrapperClassName="absolute inset-0"
+                        className="h-full w-full object-cover"
                       />
                     </button>
                   ))}
@@ -761,9 +791,12 @@ export function ProductView({
                 onTouchEnd={handleGalleryTouchEnd}
               >
                 <CatalogImage
-                  image={displayImages[imgIdx]}
+                  image={activeImage!}
                   onClick={(e) => e.stopPropagation()}
-                  className="absolute inset-0 m-auto max-h-full max-w-full object-contain p-4 md:p-10"
+                  className="max-h-full max-w-full object-contain"
+                  wrapperClassName="flex h-full w-full items-center justify-center"
+                  loading="eager"
+                  sizes="100vw"
                 />
                 {imgCount > 1 && (
                   <>
@@ -791,7 +824,7 @@ export function ProductView({
                       className="absolute left-1/2 -translate-x-1/2 text-xs tracking-[0.25em] text-muted-foreground"
                       style={{bottom: 'max(1.25rem, env(safe-area-inset-bottom))'}}
                     >
-                      {imgIdx + 1}/{imgCount}
+                      {displayIdx + 1}/{imgCount}
                     </div>
                   </>
                 )}
