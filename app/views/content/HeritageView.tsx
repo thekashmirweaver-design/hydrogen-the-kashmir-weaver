@@ -16,7 +16,10 @@ export function HeritageView({hero, chapters}: HeritagePageViewModel) {
           loading="eager"
         />
         <div className="absolute inset-0 vignette-overlay" />
-        <div className="absolute inset-x-0 bottom-0 z-10 mx-auto max-w-[1600px] px-6 pb-24 md:px-10">
+        <div
+          className="absolute inset-x-0 bottom-0 z-10 mx-auto max-w-[1600px] px-6 md:px-10"
+          style={{paddingBottom: 'max(6rem, env(safe-area-inset-bottom))'}}
+        >
           <Reveal>
             <Eyebrow>A Documentary</Eyebrow>
             <h1

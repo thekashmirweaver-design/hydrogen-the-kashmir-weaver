@@ -7,6 +7,7 @@ import {OriginMap} from '~/components/gulriza/OriginMap';
 import {ProductTile} from '~/components/gulriza/ProductTile';
 import {ScrollIndicator} from '~/components/gulriza/ScrollIndicator';
 import {ProductCarousel} from '~/components/gulriza/ProductCarousel';
+import {EditorialImage} from '~/components/gulriza/CatalogImage';
 import type {Collection, Product} from '~/models/types';
 import type {JournalPost} from '~/models/static/journal';
 
@@ -63,12 +64,14 @@ function Hero({
   return (
     <section className="relative min-h-[100dvh] w-full overflow-hidden">
       <div className="absolute inset-y-0 right-0 w-full md:w-[62%] lg:w-[55%]">
-        <img
+        <EditorialImage
           src={src}
           alt={alt}
           className="absolute inset-0 h-full w-full object-cover edge-fade-left"
           style={{objectPosition: 'center'}}
           loading="eager"
+          fetchPriority="high"
+          sizes="(min-width: 768px) 55vw, 100vw"
         />
         <div className="vignette-overlay pointer-events-none absolute inset-0" />
       </div>
@@ -81,7 +84,7 @@ function Hero({
         <span className="eyebrow text-muted-foreground opacity-70">04</span>
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1600px] items-center px-6 pb-44 pt-32 md:px-20 md:py-0 lg:px-28 xl:px-36">
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1600px] items-center px-6 pb-44 pt-[calc(var(--header-h)+2rem)] md:px-20 md:py-0 lg:px-28 xl:px-36">
         <Reveal className="mt-auto max-w-2xl md:-mt-32 lg:-mt-10">
           <Eyebrow>Pure Origin · Rare Luxury</Eyebrow>
           <h1
@@ -113,7 +116,7 @@ function Hero({
         </Reveal>
       </div>
 
-      <ScrollIndicator className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 md:bottom-10" />
+      <ScrollIndicator className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-10 -translate-x-1/2 md:bottom-10" />
     </section>
   );
 }
@@ -155,7 +158,8 @@ function ExploreCollectionCta({handle, name}: {handle: string; name: string}) {
   return (
     <Link
       to={`/collections/${handle}`}
-      className="mt-8 inline-flex w-max items-center gap-3 rounded-full border border-accent/40 bg-accent/5 px-5 py-2.5 text-[0.65rem] font-medium tracking-widest text-accent uppercase transition-all duration-300 hover:bg-accent/10 md:mt-10 md:text-xs"
+      prefetch="intent"
+      className="mt-8 inline-flex min-h-11 w-max items-center gap-3 rounded-full border border-accent/40 bg-accent/5 px-5 py-3 text-[0.65rem] font-medium tracking-widest text-accent uppercase transition-all duration-300 hover:bg-accent/10 active:opacity-80 md:mt-10 md:text-xs"
     >
       Explore {name} <ArrowRight className="h-3.5 w-3.5" />
     </Link>
@@ -203,11 +207,11 @@ function SignatureCollections({
               )}
               <Reveal className="relative w-full">
                 <div className="relative aspect-[3/4] w-full overflow-hidden md:aspect-video">
-                  <img
+                  <EditorialImage
                     src={c.hero.src}
                     alt={c.hero.alt}
                     className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
-                    loading="lazy"
+                    sizes="100vw"
                   />
                   <div className="vignette-overlay pointer-events-none absolute inset-0" />
                   <div
@@ -285,7 +289,7 @@ function CraftAndOrigin() {
   return (
     <section className="relative py-32 md:py-40" style={{background: 'var(--surface)'}}>
       <div className="absolute inset-y-0 left-0 hidden w-1/2 lg:block">
-        <img
+        <EditorialImage
           src={artisan}
           alt=""
           aria-hidden
@@ -294,7 +298,7 @@ function CraftAndOrigin() {
             maskImage: 'linear-gradient(to right, black 50%, transparent 90%)',
             WebkitMaskImage: 'linear-gradient(to right, black 50%, transparent 90%)',
           }}
-          loading="lazy"
+          sizes="50vw"
         />
       </div>
 
@@ -399,11 +403,11 @@ function JournalSection({posts}: {posts: JournalPost[]}) {
             <Reveal className="md:col-span-7">
               <Link to={`/journal/${featured.slug}`}>
                 <div className="relative aspect-[5/4] w-full overflow-hidden">
-                  <img
+                  <EditorialImage
                     src={featured.img}
-                    alt=""
+                    alt={featured.title}
                     className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
-                    loading="lazy"
+                    sizes="(min-width: 768px) 58vw, 100vw"
                   />
                 </div>
                 <div className="mt-8">
@@ -429,11 +433,11 @@ function JournalSection({posts}: {posts: JournalPost[]}) {
               <Reveal key={p.slug} delay={i * 150}>
                 <Link to={`/journal/${p.slug}`} className="grid grid-cols-5 gap-6">
                   <div className="relative col-span-2 aspect-[4/5] overflow-hidden">
-                    <img
+                    <EditorialImage
                       src={p.img}
-                      alt=""
+                      alt={p.title}
                       className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
-                      loading="lazy"
+                      sizes="120px"
                     />
                   </div>
                   <div className="col-span-3">

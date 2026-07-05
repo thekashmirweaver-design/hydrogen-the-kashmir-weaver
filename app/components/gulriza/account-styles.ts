@@ -1,16 +1,16 @@
 /** Shared class names for account forms and actions. */
 export const accountInputClass =
-  'mt-2 w-full border bg-transparent px-3 py-2.5 text-sm focus:outline-none focus:border-accent';
+  'mt-2 min-h-11 w-full border bg-transparent px-3 py-2.5 text-base focus:outline-none focus:border-accent';
 
 export const accountInputStyle = {borderColor: 'var(--border)'} as const;
 
 export const accountButtonClass =
-  'tracked mt-4 border px-6 py-2.5 text-xs uppercase tracking-[0.2em] transition hover:text-accent disabled:opacity-50';
+  'tracked mt-4 min-h-11 border px-6 py-2.5 text-xs uppercase tracking-[0.2em] transition hover:text-accent disabled:opacity-50';
 
 export const accountButtonStyle = {borderColor: 'var(--border)'} as const;
 
 export const accountPrimaryButtonClass =
-  'tracked mt-4 px-6 py-2.5 text-xs uppercase tracking-[0.2em] transition hover:opacity-90 disabled:opacity-50';
+  'tracked mt-4 min-h-11 px-6 py-2.5 text-xs uppercase tracking-[0.2em] transition hover:opacity-90 disabled:opacity-50';
 
 export const accountPrimaryButtonStyle = {
   background: 'var(--accent)',

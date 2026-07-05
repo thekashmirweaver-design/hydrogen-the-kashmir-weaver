@@ -2,17 +2,18 @@ import {useLoaderData} from 'react-router';
 import type {Route} from './+types/faq';
 import {getFaqPage} from '~/controllers';
 import {FaqView} from '~/views/content/FaqView';
-import {faqPageLd, ogMeta} from '~/lib/seo';
+import {faqPageLd, getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = ({data}) => {
+export const meta: Route.MetaFunction = ({data, location, matches}) => {
   const title = data?.metadata?.title ?? 'FAQ — The Kashmir Weaver';
   const description = data?.metadata?.description;
-  return [
-    {title},
-    ...(description ? [{name: 'description' as const, content: description}] : []),
-    ...ogMeta({title, description}),
-    ...(data?.faqs ? [{'script:ld+json': faqPageLd(data.faqs)}] : []),
-  ];
+  const storeUrl = getStoreUrlFromMatches(matches);
+  return seoBundle({
+    metadata: {title, description},
+    pathname: location.pathname,
+    storeUrl,
+    jsonLd: data?.faqs ? [faqPageLd(data.faqs)] : [],
+  });
 };
 
 export async function loader({context}: Route.LoaderArgs) {

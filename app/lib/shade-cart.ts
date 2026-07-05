@@ -1,11 +1,20 @@
 import type {Shade} from '~/models/static/shades';
+import {SHADES} from '~/models/static/shades';
+import {findShadeByCode} from '~/lib/solid-product';
 
 export const SHADE_CART_ATTR = {
   code: 'Shade code',
   colour: 'Colour',
+  hex: 'Shade hex',
 } as const;
 
 export type CartLineAttribute = {key: string; value: string};
+
+export type ParsedCartShade = {
+  code?: string;
+  family?: string;
+  hex?: string;
+};
 
 export function shadeCartAttributes(
   shade: Shade | null | undefined,
@@ -14,6 +23,7 @@ export function shadeCartAttributes(
   return [
     {key: SHADE_CART_ATTR.code, value: shade.code},
     {key: SHADE_CART_ATTR.colour, value: shade.family},
+    {key: SHADE_CART_ATTR.hex, value: shade.hex},
   ];
 }
 
@@ -22,9 +32,13 @@ export function shadeCartAttributesFromSearch(
 ): CartLineAttribute[] {
   const code = searchParams.get('shadeCode')?.trim();
   const colour = searchParams.get('shadeColour')?.trim();
+  const hex =
+    searchParams.get('shadeHex')?.trim() ??
+    (code ? findShadeByCode(SHADES, code)?.hex : undefined);
   const attrs: CartLineAttribute[] = [];
   if (code) attrs.push({key: SHADE_CART_ATTR.code, value: code});
   if (colour) attrs.push({key: SHADE_CART_ATTR.colour, value: colour});
+  if (hex) attrs.push({key: SHADE_CART_ATTR.hex, value: hex});
   return attrs;
 }
 
@@ -33,7 +47,28 @@ export function buildBuyNowShadeQuery(shade: Shade | null | undefined): string {
   const params = new URLSearchParams();
   params.set('shadeCode', shade.code);
   params.set('shadeColour', shade.family);
+  params.set('shadeHex', shade.hex);
   return params.toString();
+}
+
+export function parseShadeFromCartAttributes(
+  attributes:
+    | Array<{key?: string | null; value?: string | null} | null>
+    | null
+    | undefined,
+): ParsedCartShade | null {
+  const code = attributes?.find((a) => a?.key === SHADE_CART_ATTR.code)?.value;
+  const family = attributes?.find((a) => a?.key === SHADE_CART_ATTR.colour)?.value;
+  let hex = attributes?.find((a) => a?.key === SHADE_CART_ATTR.hex)?.value;
+  if (!code && !family && !hex) return null;
+  if (!hex && code) {
+    hex = findShadeByCode(SHADES, code)?.hex;
+  }
+  return {
+    ...(code ? {code} : {}),
+    ...(family ? {family} : {}),
+    ...(hex ? {hex} : {}),
+  };
 }
 
 export function formatShadeCartLabel(
@@ -42,10 +77,11 @@ export function formatShadeCartLabel(
     | null
     | undefined,
 ): string | null {
-  const code = attributes?.find((a) => a?.key === SHADE_CART_ATTR.code)?.value;
-  const colour = attributes?.find((a) => a?.key === SHADE_CART_ATTR.colour)?.value;
-  if (colour && code) return `${colour} (${code})`;
-  if (colour) return colour;
+  const parsed = parseShadeFromCartAttributes(attributes);
+  if (!parsed) return null;
+  const {code, family} = parsed;
+  if (family && code) return `${family} (${code})`;
+  if (family) return family;
   if (code) return code;
   return null;
 }

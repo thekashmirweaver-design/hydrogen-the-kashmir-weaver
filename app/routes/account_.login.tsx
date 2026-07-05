@@ -1,6 +1,5 @@
 import {redirect} from 'react-router';
 import type {Route} from './+types/account_.login';
-import {debugLog} from '~/lib/debug-log';
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
 
@@ -23,26 +22,8 @@ export async function loader({request, context}: Route.LoaderArgs) {
     url.searchParams.forEach((value, key) => {
       productionLogin.searchParams.set(key, value);
     });
-    debugLog(
-      'account_.login.tsx:loader',
-      'localhost login redirected to production',
-      {from: url.origin, to: productionLogin.origin},
-      'H3',
-    );
     return redirect(productionLogin.toString());
   }
-
-  debugLog(
-    'account_.login.tsx:loader',
-    'shopify login initiated',
-    {
-      countryCode: context.storefront.i18n.country,
-      hasReturnTo: Boolean(returnTo),
-      returnTo,
-      hasShopId: Boolean(context.env.SHOP_ID),
-    },
-    'H3',
-  );
 
   return context.customerAccount.login({
     countryCode: context.storefront.i18n.country,

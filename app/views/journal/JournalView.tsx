@@ -1,7 +1,9 @@
 import {Link} from 'react-router';
 import {useState} from 'react';
 import {ArrowRight} from 'lucide-react';
+import {HorizontalScrollCue} from '~/components/gulriza/HorizontalScrollCue';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
+import {EditorialImage} from '~/components/gulriza/CatalogImage';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {JOURNAL_CATEGORIES, type JournalPost} from '~/models/static/journal';
 
@@ -13,7 +15,7 @@ export function JournalView({posts}: {posts: JournalPost[]}) {
 
   return (
     <div>
-      <section className="mx-auto max-w-[1600px] px-6 pt-32 md:px-10">
+      <section className="mx-auto max-w-[1600px] px-6 pt-[calc(var(--header-h)+1.5rem)] md:px-10">
         <Eyebrow>Journal — Issue 09</Eyebrow>
         <h1
           className="font-display mt-6 text-5xl leading-[1.05] md:text-[5.5rem]"
@@ -24,12 +26,15 @@ export function JournalView({posts}: {posts: JournalPost[]}) {
           <span style={{fontStyle: 'italic'}}>Valley.</span>
         </h1>
 
-        <div className="mt-16 flex overflow-x-auto items-center gap-x-8 md:gap-x-10 border-b pb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <HorizontalScrollCue
+          cueLabel="Swipe"
+          className="mt-16 flex items-center gap-x-8 overflow-x-auto border-b pb-6 md:gap-x-10 no-scrollbar"
+        >
           {JOURNAL_CATEGORIES.map((c) => (
             <button
               key={c}
               onClick={() => setCat(c)}
-              className="tracked transition whitespace-nowrap shrink-0"
+              className="tracked inline-flex min-h-11 shrink-0 touch-manipulation items-center whitespace-nowrap transition active:opacity-80"
               style={{
                 color: c === cat ? 'var(--accent)' : 'var(--foreground)',
                 borderBottom: c === cat ? '1px solid var(--accent)' : '1px solid transparent',
@@ -39,7 +44,7 @@ export function JournalView({posts}: {posts: JournalPost[]}) {
               {c}
             </button>
           ))}
-        </div>
+        </HorizontalScrollCue>
       </section>
 
       {feature && (
@@ -51,11 +56,13 @@ export function JournalView({posts}: {posts: JournalPost[]}) {
             >
               <div className="md:col-span-8">
                 <div className="relative aspect-[16/10] w-full overflow-hidden">
-                  <img
+                  <EditorialImage
                     src={feature.img}
-                    alt=""
+                    alt={feature.title}
                     className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
                     loading="eager"
+                    fetchPriority="high"
+                    sizes="(min-width: 768px) 66vw, 100vw"
                   />
                 </div>
               </div>
@@ -89,11 +96,11 @@ export function JournalView({posts}: {posts: JournalPost[]}) {
                 className="group block md:grid md:grid-cols-[1fr_1.2fr] md:gap-x-12 md:items-center lg:block"
               >
                 <div className="relative aspect-[4/5] md:aspect-[4/3] lg:aspect-[4/5] w-full overflow-hidden">
-                  <img
+                  <EditorialImage
                     src={p.img}
-                    alt=""
+                    alt={p.title}
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-[2000ms] group-hover:scale-105 edge-fade-bottom"
-                    loading="lazy"
+                    sizes="(min-width: 1024px) 33vw, 100vw"
                   />
                 </div>
                 <div className="mt-8 md:mt-0 lg:mt-8">

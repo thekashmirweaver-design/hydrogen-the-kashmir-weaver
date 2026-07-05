@@ -7,6 +7,7 @@ import { Hairline } from "~/components/gulriza/Eyebrow";
 import { useLocalization } from "~/contexts/localization-context";
 import type { ShopCurrencyOption } from "~/lib/localization";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
+import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 import { ShadeDropdown } from "~/components/gulriza/ShadeDropdown";
 import { collectShadesFromProducts, getDefaultSolidShadeCode } from "~/lib/solid-product";
 
@@ -87,11 +88,10 @@ export function ProductCatalog({
       if (e.key === "Escape") setDrawer(false);
     };
     window.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    lockScroll();
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
+      unlockScroll();
     };
   }, [drawer]);
 
@@ -521,7 +521,7 @@ function PriceField({
           if (e.target.value === "") return;
           onCommit(Number(e.target.value));
         }}
-        className="w-full bg-transparent text-sm text-foreground focus:outline-none"
+        className="w-full bg-transparent text-base text-foreground focus:outline-none"
       />
     </label>
   );

@@ -16,6 +16,12 @@ function storefrontOrigins(storeUrl?: string): string[] {
   }
 }
 
+function shopifyStoreDomainOrigin(storeDomain?: string): string | null {
+  if (!storeDomain?.trim()) return null;
+  const host = storeDomain.trim().replace(/^https?:\/\//, '').split('/')[0];
+  return host ? `https://${host}` : null;
+}
+
 function isLocalDevHost(hostname: string): boolean {
   return hostname === 'localhost' || hostname === '127.0.0.1';
 }
@@ -40,6 +46,15 @@ export default async function handleRequest(
   const localDev = isLocalDevHost(hostname);
   const extraOrigins = storefrontOrigins(context.env.PUBLIC_STORE_URL);
   const devOrigins = localDev ? localDevCspOrigins() : [];
+  const storeDomainOrigin = shopifyStoreDomainOrigin(
+    context.env.PUBLIC_STORE_DOMAIN,
+  );
+  const crossStorefrontImgOrigins = [
+    ...extraOrigins,
+    ...(storeDomainOrigin ? [storeDomainOrigin] : []),
+    // Metafield/seed asset URLs may still reference Oxygen preview hosts.
+    'https://*.myshopify.dev',
+  ];
 
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {
@@ -48,13 +63,13 @@ export default async function handleRequest(
     },
     styleSrc: ['https://fonts.googleapis.com'],
     fontSrc: ['https://fonts.gstatic.com', "'self'"],
-    ...(extraOrigins.length || devOrigins.length
+    ...(extraOrigins.length || devOrigins.length || crossStorefrontImgOrigins.length
       ? {
           connectSrc: [...extraOrigins, ...devOrigins],
           imgSrc: [
             "'self'",
             'https://cdn.shopify.com',
-            ...extraOrigins,
+            ...crossStorefrontImgOrigins,
             ...devOrigins,
           ],
         }

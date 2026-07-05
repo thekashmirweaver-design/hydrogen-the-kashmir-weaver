@@ -74,6 +74,19 @@ export type ShopifyProductNode = {
   reviewCount?: {value?: string | null} | null;
 };
 
+export type ShopifyMenuProductNode = {
+  id: string;
+  handle: string;
+  title: string;
+  description: string;
+  availableForSale: boolean;
+  createdAt: string;
+  featuredImage?: ShopifyImage | null;
+  priceRange: {minVariantPrice: ShopifyMoney};
+  compareAtPriceRange?: {minVariantPrice: ShopifyMoney} | null;
+  collections: {edges: Array<{node: {handle: string; title: string}}>};
+};
+
 export type ShopifyCollectionNode = {
   id: string;
   handle: string;
@@ -388,6 +401,40 @@ export function mapProduct(node: ShopifyProductNode): Product {
         : undefined,
     shades,
     solidRecolor: solidRecolor || undefined,
+  };
+}
+
+/** Lightweight product row for header search and footer on non-shop routes. */
+export function mapMenuProduct(node: ShopifyMenuProductNode): Product {
+  const collection = node.collections.edges[0]?.node;
+  const description = node.description.trim();
+  const shortDescription =
+    description.length > 160 ? `${description.slice(0, 157)}…` : description;
+  const images = node.featuredImage
+    ? [toImage(node.featuredImage, node.title)]
+    : [{src: DEFAULT_PRODUCT_IMAGE, alt: node.title}];
+  const compareAt = node.compareAtPriceRange?.minVariantPrice;
+
+  return {
+    id: gidToId(node.id),
+    handle: node.handle,
+    name: node.title,
+    collectionSlug: collection?.handle ?? 'shop',
+    collectionName: collection?.title ?? 'Shop',
+    price: toMoney(node.priceRange.minVariantPrice),
+    compareAtPrice:
+      compareAt && Number.parseFloat(compareAt.amount) > 0
+        ? toMoney(compareAt)
+        : undefined,
+    shortDescription: shortDescription || node.title,
+    description: '',
+    story: '',
+    images,
+    material: '',
+    origin: '',
+    weave: '',
+    stock: node.availableForSale ? 'in' : 'out',
+    createdAt: node.createdAt.slice(0, 10),
   };
 }
 

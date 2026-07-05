@@ -7,7 +7,7 @@ import type {PrivacyPageViewModel} from '~/controllers';
 export function PrivacyView({intro, sections, bodyHtml}: PrivacyPageViewModel) {
   return (
     <div>
-      <section className="mx-auto max-w-[800px] px-6 pt-32 pb-24 md:px-10">
+      <section className="mx-auto max-w-[800px] px-6 pt-[calc(var(--header-h)+1.5rem)] pb-24 md:px-10">
         <Reveal>
           <Eyebrow>Legal</Eyebrow>
           <h1
@@ -23,7 +23,7 @@ export function PrivacyView({intro, sections, bodyHtml}: PrivacyPageViewModel) {
 
         {bodyHtml ? (
           <div
-            className="prose prose-invert mt-16 max-w-none text-muted-foreground leading-relaxed"
+            className="prose prose-invert mt-16 max-w-none text-muted-foreground leading-relaxed [&_img]:max-w-full [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto"
             dangerouslySetInnerHTML={{__html: bodyHtml}}
           />
         ) : (

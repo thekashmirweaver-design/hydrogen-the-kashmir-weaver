@@ -167,6 +167,7 @@ export async function loadShopSettings(
         headerMenuHandle,
         footerMenuHandle,
       },
+      cache: storefront.CacheLong(),
     });
 
     const primaryDomainUrl = data.shop?.primaryDomain?.url ?? null;
@@ -200,9 +201,11 @@ export async function loadShopSettings(
     const [headerData, footerData] = await Promise.all([
       storefront.query<{menu?: ShopSettingsQueryResult['headerMenu']}>(HEADER_QUERY, {
         variables: {headerMenuHandle},
+        cache: storefront.CacheLong(),
       }),
       storefront.query<{menu?: ShopSettingsQueryResult['footerMenu']}>(FOOTER_QUERY, {
         variables: {footerMenuHandle},
+        cache: storefront.CacheLong(),
       }),
     ]);
 

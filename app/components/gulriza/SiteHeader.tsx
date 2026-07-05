@@ -7,7 +7,8 @@ import { CartForm, useAnalytics } from "@shopify/hydrogen";
 import { useLocalization } from "~/contexts/localization-context";
 import type { ShopCurrencyOption } from "~/lib/localization";
 import { Marquee } from "~/components/gulriza/Marquee";
-import { SearchModal, lockScroll, unlockScroll } from "~/components/gulriza/SearchModal";
+import { SearchModal } from "~/components/gulriza/SearchModal";
+import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 import { CartDrawer } from "~/components/gulriza/CartDrawer";
 import { ShopifyAccount } from "~/components/gulriza/ShopifyAccount";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
@@ -164,7 +165,7 @@ export function SiteHeader({
           <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 md:h-20 md:px-6 lg:px-8 xl:px-10">
             {/* LEFT: brand (all screens) */}
             <div className="flex shrink items-center min-w-0">
-              <Link to="/" className="-ml-0.5 flex items-center">
+              <Link to="/" aria-label="Home" className="-ml-0.5 flex items-center">
                 <BrandLockup className="text-left text-[0.85rem] tracking-[0.08em] min-[375px]:text-[0.95rem] min-[375px]:tracking-[0.1em] md:text-[1.25rem] md:tracking-[0.15em] lg:text-[1.5rem] lg:tracking-[0.2em]" />
               </Link>
             </div>
@@ -201,7 +202,7 @@ export function SiteHeader({
               <div className="flex items-center gap-0 lg:hidden">
                 <button
                   aria-label="Search"
-                  className="flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent"
+                  className="touch-target flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent active:opacity-80"
                   onClick={() => {
                     publish('custom_search_opened', {});
                     setSearchOpen(true);
@@ -210,11 +211,16 @@ export function SiteHeader({
                   <Search className="h-[18px] w-[18px]" strokeWidth={1} />
                 </button>
                 <CurrencyDropdown />
+                <ShopifyAccount
+                  publicStoreDomain={publicStoreDomain}
+                  publicAccessToken={publicAccessToken}
+                  customerAccessToken={customerAccessToken}
+                />
                 <button
                   type="button"
                   onClick={() => setCartOpen(true)}
                   aria-label={count > 0 ? `Bag, ${count} item${count === 1 ? "" : "s"}` : "Bag"}
-                  className="relative flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent"
+                  className="relative touch-target flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent active:opacity-80"
                 >
                   <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1} />
                   {count > 0 && (
@@ -228,7 +234,7 @@ export function SiteHeader({
                 </button>
                 <button
                   ref={menuTriggerRef}
-                  className="-mr-2.5 flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent"
+                  className="touch-target -mr-2.5 flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent active:opacity-80"
                   aria-label="Open menu"
                   aria-expanded={open}
                   onClick={() => setOpen(true)}
@@ -242,7 +248,7 @@ export function SiteHeader({
                 <CurrencyDropdown />
                 <button
                   aria-label="Search"
-                  className="flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent"
+                  className="touch-target flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent active:opacity-80"
                   onClick={() => {
                     publish('custom_search_opened', {});
                     setSearchOpen(true);
@@ -254,13 +260,12 @@ export function SiteHeader({
                   publicStoreDomain={publicStoreDomain}
                   publicAccessToken={publicAccessToken}
                   customerAccessToken={customerAccessToken}
-                  className="flex h-11 w-11 items-center justify-center"
                 />
                 <button
                   type="button"
                   onClick={() => setCartOpen(true)}
                   aria-label={count > 0 ? `Bag, ${count} item${count === 1 ? "" : "s"}` : "Bag"}
-                  className="relative flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent"
+                  className="relative touch-target flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent active:opacity-80"
                 >
                   <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1} />
                   {count > 0 && (
@@ -299,11 +304,18 @@ export function SiteHeader({
                 <button
                   onClick={requestMenuClose}
                   aria-label="Close menu"
-                  className="-ml-2.5 flex h-11 w-11 items-center justify-center"
+                  className="touch-target -ml-2.5 flex h-11 w-11 items-center justify-center active:opacity-80"
                 >
                   <X className="h-5 w-5" strokeWidth={1} />
                 </button>
-                <BrandLockup className="items-center text-center text-xl tracking-[0.3em]" />
+                <Link
+                  to="/"
+                  aria-label="Home"
+                  onClick={requestMenuClose}
+                  className="flex items-center"
+                >
+                  <BrandLockup className="items-center text-center text-xl tracking-[0.3em]" />
+                </Link>
                 <button
                   onClick={() => {
                     requestMenuClose();
@@ -311,7 +323,7 @@ export function SiteHeader({
                     setSearchOpen(true);
                   }}
                   aria-label="Search"
-                  className="-mr-2.5 flex h-11 w-11 items-center justify-center"
+                  className="touch-target -mr-2.5 flex h-11 w-11 items-center justify-center active:opacity-80"
                 >
                   <Search className="h-5 w-5" strokeWidth={1} />
                 </button>
@@ -322,19 +334,12 @@ export function SiteHeader({
                     key={n.to}
                     to={n.to}
                     onClick={requestMenuClose}
-                    className="font-display text-3xl tracking-wide transition hover:text-accent"
+                    className="font-display flex min-h-11 items-center py-2 text-3xl tracking-wide transition hover:text-accent active:opacity-80"
                     style={pathname === n.to ? { color: "var(--accent)" } : undefined}
                   >
                     {n.label}
                   </Link>
                 ))}
-                <Link
-                  to="/account/login"
-                  onClick={requestMenuClose}
-                  className="font-display text-3xl tracking-wide transition hover:text-accent"
-                >
-                  Account
-                </Link>
               </nav>
             </div>
           )}

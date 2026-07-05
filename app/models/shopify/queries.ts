@@ -67,6 +67,31 @@ export const PRODUCT_VARIANT_FRAGMENT = `#graphql
   }
 ` as const;
 
+/** Same as ProductVariantFields but omits quantityAvailable (no inventory scope). */
+export const PRODUCT_VARIANT_FRAGMENT_NO_INVENTORY = `#graphql
+  fragment ProductVariantFields on ProductVariant {
+    id
+    title
+    availableForSale
+    sku
+    weight
+    weightUnit
+    selectedOptions {
+      name
+      value
+    }
+    price {
+      ...CatalogMoney
+    }
+    compareAtPrice {
+      ...CatalogMoney
+    }
+    image {
+      ...CatalogImage
+    }
+  }
+` as const;
+
 export const PRODUCT_OPTION_FRAGMENT = `#graphql
   fragment ProductOptionFields on ProductOption {
     name
@@ -147,6 +172,13 @@ export const CATALOG_QUERY_FRAGMENTS =
   PRODUCT_OPTION_FRAGMENT +
   PRODUCT_VARIANT_FRAGMENT;
 
+export const CATALOG_QUERY_FRAGMENTS_NO_INVENTORY =
+  CATALOG_MONEY_FRAGMENT +
+  CATALOG_IMAGE_FRAGMENT +
+  METAFIELD_FRAGMENT +
+  PRODUCT_OPTION_FRAGMENT +
+  PRODUCT_VARIANT_FRAGMENT_NO_INVENTORY;
+
 export const CATALOG_COLLECTION_FRAGMENT =
   `#graphql
   fragment CatalogCollection on Collection {
@@ -217,6 +249,57 @@ export const ALL_PRODUCTS_QUERY = `#graphql
   ${CATALOG_PRODUCT_FRAGMENT}
 ` as const;
 
+export const CATALOG_MENU_PRODUCT_FRAGMENT = `#graphql
+  fragment CatalogMenuProduct on Product {
+    id
+    handle
+    title
+    description
+    availableForSale
+    createdAt
+    featuredImage {
+      ...CatalogImage
+    }
+    priceRange {
+      minVariantPrice {
+        ...CatalogMoney
+      }
+    }
+    compareAtPriceRange {
+      minVariantPrice {
+        ...CatalogMoney
+      }
+    }
+    collections(first: 1) {
+      edges {
+        node {
+          handle
+          title
+        }
+      }
+    }
+  }
+` as const;
+
+export const ALL_MENU_PRODUCTS_QUERY = `#graphql
+  query CatalogMenuProducts(
+    $country: CountryCode
+    $language: LanguageCode
+    $first: Int!
+  ) @inContext(country: $country, language: $language) {
+    products(first: $first, sortKey: CREATED_AT, reverse: true) {
+      edges {
+        node {
+          ...CatalogMenuProduct
+        }
+      }
+    }
+  }
+  ${CATALOG_MONEY_FRAGMENT}
+  ${CATALOG_IMAGE_FRAGMENT}
+  ${CATALOG_MENU_PRODUCT_FRAGMENT}
+` as const;
+
 export const PRODUCT_BY_HANDLE_QUERY = `#graphql
   query CatalogProductByHandle(
     $country: CountryCode
@@ -228,6 +311,38 @@ export const PRODUCT_BY_HANDLE_QUERY = `#graphql
     }
   }
   ${CATALOG_QUERY_FRAGMENTS}
+  ${CATALOG_PRODUCT_FRAGMENT}
+` as const;
+
+export const PRODUCT_BY_HANDLE_QUERY_NO_INVENTORY = `#graphql
+  query CatalogProductByHandle(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+  ) @inContext(country: $country, language: $language) {
+    product(handle: $handle) {
+      ...CatalogProduct
+    }
+  }
+  ${CATALOG_QUERY_FRAGMENTS_NO_INVENTORY}
+  ${CATALOG_PRODUCT_FRAGMENT}
+` as const;
+
+export const ALL_PRODUCTS_QUERY_NO_INVENTORY = `#graphql
+  query CatalogAllProducts(
+    $country: CountryCode
+    $language: LanguageCode
+    $first: Int!
+  ) @inContext(country: $country, language: $language) {
+    products(first: $first, sortKey: CREATED_AT, reverse: true) {
+      edges {
+        node {
+          ...CatalogProduct
+        }
+      }
+    }
+  }
+  ${CATALOG_QUERY_FRAGMENTS_NO_INVENTORY}
   ${CATALOG_PRODUCT_FRAGMENT}
 ` as const;
 
@@ -269,6 +384,29 @@ export const COLLECTION_BY_HANDLE_QUERY = `#graphql
     }
   }
   ${CATALOG_QUERY_FRAGMENTS}
+  ${CATALOG_COLLECTION_FRAGMENT}
+  ${CATALOG_PRODUCT_FRAGMENT}
+` as const;
+
+export const COLLECTION_BY_HANDLE_QUERY_NO_INVENTORY = `#graphql
+  query CatalogCollectionByHandle(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+    $productFirst: Int!
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      ...CatalogCollection
+      products(first: $productFirst, sortKey: CREATED, reverse: true) {
+        edges {
+          node {
+            ...CatalogProduct
+          }
+        }
+      }
+    }
+  }
+  ${CATALOG_QUERY_FRAGMENTS_NO_INVENTORY}
   ${CATALOG_COLLECTION_FRAGMENT}
   ${CATALOG_PRODUCT_FRAGMENT}
 ` as const;

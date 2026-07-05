@@ -2,7 +2,7 @@ import {
   useLoaderData,
 } from 'react-router';
 import type {Route} from './+types/search';
-import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
+import {getPaginationVariables} from '@shopify/hydrogen';
 import {
   type RegularSearchReturn,
   type PredictiveSearchReturn,
@@ -10,12 +10,18 @@ import {
 } from '~/lib/search';
 import type {RegularSearchQuery, PredictiveSearchQuery} from 'storefrontapi.generated';
 import {SearchView} from '~/views/search/SearchView';
-import {ogMeta} from '~/lib/seo';
+import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
 
 const SEARCH_TITLE = 'Search — The Kashmir Weaver';
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: SEARCH_TITLE}, ...ogMeta({title: SEARCH_TITLE})];
+export const meta: Route.MetaFunction = ({location, matches}) => {
+  const storeUrl = getStoreUrlFromMatches(matches);
+  return seoBundle({
+    metadata: {title: SEARCH_TITLE},
+    pathname: location.pathname,
+    storeUrl,
+    robots: 'noindex',
+  });
 };
 
 export async function loader({request, context}: Route.LoaderArgs) {

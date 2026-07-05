@@ -28,6 +28,7 @@ export type ArticlePageViewModel = {
   slug: string;
   article: JournalArticle;
   metadata: PageMetadata;
+  datePublished?: string;
 };
 
 const VALID_CATEGORIES = new Set<string>(JOURNAL_CATEGORIES);
@@ -140,6 +141,7 @@ export async function getArticlePage(
             handle: string;
             title: string;
             contentHtml?: string | null;
+            publishedAt?: string | null;
             tags?: string[] | null;
             image?: {url?: string | null} | null;
             seo?: {title?: string | null; description?: string | null} | null;
@@ -158,6 +160,7 @@ export async function getArticlePage(
         return {
           slug,
           article: mapped,
+          datePublished: article.publishedAt?.slice(0, 10),
           metadata: {
             title:
               article.seo?.title ??
@@ -175,9 +178,12 @@ export async function getArticlePage(
   const article = ARTICLES[slug];
   if (!article) return null;
 
+  const post = POSTS.find((entry) => entry.slug === slug);
+
   return {
     slug,
     article,
+    datePublished: post?.date,
     metadata: {
       title: `${article.title} — Journal — The Kashmir Weaver`,
       description: article.body[0],

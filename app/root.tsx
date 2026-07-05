@@ -12,22 +12,26 @@ import {
 } from 'react-router';
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
+import inter400Woff2 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
+import cormorant400Woff2 from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-400-normal.woff2?url';
 import '~/styles/globals.css';
 import {PageLayout, NotFoundView} from './components/PageLayout';
-import {getSearchCatalog} from '~/controllers';
 import {getCatalogOptions} from '~/lib/catalog-options';
 import {loadShopSettings} from '~/lib/shop-settings';
 import {loadLocalization} from '~/lib/localization';
-import {debugLog} from '~/lib/debug-log';
+import {isCartFormAction} from '~/lib/cart-form-action';
+import {loadSharedCatalog, loadSharedCatalogMenu} from '~/lib/shared-catalog';
+import {needsFullCatalog} from '~/lib/catalog-routes';
+import {resolveStoreUrl} from '~/lib/seo';
 
 export type RootLoader = typeof loader;
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   formMethod,
+  formAction,
   currentUrl,
   nextUrl,
 }) => {
-  if (formMethod && formMethod !== 'GET') return true;
   if (currentUrl.toString() === nextUrl.toString()) return true;
 
   const marketParams = ['country', 'language'] as const;
@@ -37,23 +41,37 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     }
   }
 
+  // Cart fetchers sync via useLiveCart — skip refetching catalog, menus, localization.
+  if (formMethod && formMethod !== 'GET' && isCartFormAction(formAction)) {
+    return false;
+  }
+
+  if (formMethod && formMethod !== 'GET') return true;
+
   return false;
 };
 
 export function links() {
   return [
     {
-      rel: 'preconnect',
-      href: 'https://fonts.googleapis.com',
-    },
-    {
-      rel: 'preconnect',
-      href: 'https://fonts.gstatic.com',
+      rel: 'preload',
+      href: inter400Woff2,
+      as: 'font',
+      type: 'font/woff2',
       crossOrigin: 'anonymous',
     },
     {
-      rel: 'stylesheet',
-      href: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Inter:wght@300;400;500&display=swap',
+      rel: 'preload',
+      href: cormorant400Woff2,
+      as: 'font',
+      type: 'font/woff2',
+      crossOrigin: 'anonymous',
+    },
+    {
+      rel: 'preload',
+      href: '/assets/hero-portrait.jpg',
+      as: 'image',
+      fetchPriority: 'high',
     },
     {
       rel: 'preconnect',
@@ -72,6 +90,10 @@ export async function loader(args: Route.LoaderArgs) {
     ...deferredData,
     ...criticalData,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
+    publicStoreUrl: resolveStoreUrl(
+      env.PUBLIC_STORE_URL,
+      args.request.url,
+    ),
     publicAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
     shop: getShopAnalytics({
       storefront,
@@ -88,70 +110,39 @@ export async function loader(args: Route.LoaderArgs) {
 }
 
 async function loadCriticalData({context}: Route.LoaderArgs) {
-  const catalogOptions = getCatalogOptions(context);
-  const [catalog, shopSettings, localization] = await Promise.all([
-    getSearchCatalog(catalogOptions),
+  const [shopSettings, localization] = await Promise.all([
     loadShopSettings(context.storefront, {
       publicStoreDomain: context.env.PUBLIC_STORE_DOMAIN,
     }),
     loadLocalization(context.storefront),
   ]);
 
-  debugLog(
-    'root.tsx:loadCriticalData',
-    'localization and env snapshot',
-    {
-      currencyCount: localization.currencies.length,
-      currencyCodes: localization.currencies.map((c) => c.code),
-      selectedCountry: localization.selectedCountry,
-      selectedCurrency: localization.selectedCurrency.code,
-      hasShopId: Boolean(context.env.SHOP_ID),
-      hasCustomerAccountClientId: Boolean(
-        context.env.PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID,
-      ),
-      hasCheckoutDomain: Boolean(context.env.PUBLIC_CHECKOUT_DOMAIN),
-    },
-    'H1-H4',
-  );
-
-  return {catalog, shopSettings, localization};
+  return {shopSettings, localization};
 }
 
-function loadDeferredData({context}: Route.LoaderArgs) {
+function loadDeferredData({context, request}: Route.LoaderArgs) {
   const {customerAccount, cart, storefront} = context;
   const countryCode = storefront.i18n.country;
+  const catalogOptions = getCatalogOptions(context);
+  const pathname = new URL(request.url).pathname;
+  const catalogPromise = needsFullCatalog(pathname)
+    ? loadSharedCatalog(request, catalogOptions)
+    : loadSharedCatalogMenu(request, catalogOptions);
 
   async function loadCustomerAccessToken(): Promise<string | null> {
     try {
       const loggedIn = await customerAccount.isLoggedIn();
       if (loggedIn) {
-        const token = (await customerAccount.getAccessToken()) ?? null;
-        debugLog(
-          'root.tsx:customerSession',
-          'customer session resolved',
-          {loggedIn: true, hasAccessToken: Boolean(token)},
-          'H2',
-        );
-        return token;
+        return (await customerAccount.getAccessToken()) ?? null;
       }
-      debugLog(
-        'root.tsx:customerSession',
-        'customer session resolved',
-        {loggedIn: false, hasAccessToken: false},
-        'H2',
-      );
-    } catch (error) {
-      debugLog(
-        'root.tsx:customerSession',
-        'customer session error',
-        {loggedIn: false, error: error instanceof Error ? error.message : 'unknown'},
-        'H2',
-      );
+    } catch {
+      // Guest checkout — no customer session
     }
     return null;
   }
 
   return {
+    catalog: catalogPromise,
     cart: cart.get().then(async (cartData) => {
       if (!cartData?.id) return cartData;
       if (cartData.buyerIdentity?.countryCode === countryCode) return cartData;

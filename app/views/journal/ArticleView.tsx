@@ -1,21 +1,27 @@
 import {Link} from 'react-router';
 import {ArrowRight} from 'lucide-react';
 import {Eyebrow} from '~/components/gulriza/Eyebrow';
+import {EditorialImage} from '~/components/gulriza/CatalogImage';
 import {Reveal} from '~/components/gulriza/Reveal';
 import type {JournalArticle} from '~/models/static/journal';
 
 export function ArticleView({article}: {article: JournalArticle}) {
   return (
     <div>
-      <section className="relative h-[80dvh] w-full overflow-hidden pt-20">
-        <img
+      <section className="relative h-[80dvh] w-full overflow-hidden pt-[calc(var(--header-h)+1rem)]">
+        <EditorialImage
           src={article.img}
           alt={article.title}
           className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
           loading="eager"
+          fetchPriority="high"
+          sizes="100vw"
         />
         <div className="absolute inset-0 vignette-overlay" />
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1100px] px-6 pb-20 md:px-10">
+        <div
+          className="absolute inset-x-0 bottom-0 mx-auto max-w-[1100px] px-6 md:px-10"
+          style={{paddingBottom: 'max(5rem, env(safe-area-inset-bottom))'}}
+        >
           <Reveal>
             <Eyebrow>
               {article.cat} · {article.minutes} min read
@@ -43,7 +49,7 @@ export function ArticleView({article}: {article: JournalArticle}) {
             {i === 0 ? (
               <>
                 <span
-                  className="font-display float-left mr-3 text-7xl leading-[0.85] text-accent"
+                  className="font-display float-left mr-3 text-5xl leading-[0.85] text-accent sm:text-7xl"
                   style={{fontWeight: 400}}
                 >
                   {p[0]}
@@ -56,16 +62,16 @@ export function ArticleView({article}: {article: JournalArticle}) {
           </p>
         ))}
         <div className="mt-16 border-t pt-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <Link to="/journal" className="tracked text-muted-foreground hover:text-accent">
+          <Link to="/journal" className="tracked inline-flex min-h-11 items-center text-muted-foreground hover:text-accent active:opacity-80">
             ← Return to the Journal
           </Link>
           <Link
             to="/collections"
-            className="tracked inline-flex items-center gap-3 text-foreground transition hover:text-accent"
+            className="tracked inline-flex min-h-11 items-center gap-3 text-foreground transition hover:text-accent active:opacity-80"
           >
             Explore Collections
             <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border"
               style={{borderColor: 'var(--border)'}}
             >
               <ArrowRight className="h-4 w-4" strokeWidth={1} />

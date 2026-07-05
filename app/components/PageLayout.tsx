@@ -10,10 +10,13 @@ import {SiteHeader} from '~/components/gulriza/SiteHeader';
 import {SiteFooter} from '~/components/gulriza/SiteFooter';
 import {ScrollToTop} from '~/components/gulriza/ScrollToTop';
 import {CartFab} from '~/components/gulriza/CartFab';
+import {useLiveCart} from '~/lib/use-live-cart';
+
+const EMPTY_CATALOG: CatalogSnapshot = {products: [], collections: []};
 
 interface PageLayoutProps {
   cart: Promise<CartApiQueryFragment | null>;
-  catalog: CatalogSnapshot;
+  catalog: Promise<CatalogSnapshot>;
   shopSettings: ShopSettings;
   localization: LocalizationSnapshot;
   publicStoreDomain: string;
@@ -51,50 +54,86 @@ export function PageLayout({
 }: PageLayoutProps) {
   const location = useLocation();
   const isHome = location.pathname === '/';
-  const session = Promise.all([cart, customerAccessToken]);
+  const layoutSession = Promise.all([catalog, cart, customerAccessToken]);
 
   return (
-    <CatalogProvider catalog={catalog}>
-      <LocalizationProvider localization={localization}>
+    <LocalizationProvider localization={localization}>
       <ScrollToTop />
       <Suspense
         fallback={
-          <>
-            <SiteHeader
-              transparent={isHome}
-              cart={null}
-              cartQuantity={0}
-              shopSettings={shopSettings}
-              publicStoreDomain={publicStoreDomain}
-              publicAccessToken={publicAccessToken}
-              customerAccessToken={null}
-            />
-            <main>{children}</main>
-            <SiteFooter shopSettings={shopSettings} />
-          </>
-        }
-      >
-        <Await resolve={session}>
-          {([resolvedCart, resolvedCustomerAccessToken]) => (
+          <CatalogProvider catalog={EMPTY_CATALOG}>
             <>
               <SiteHeader
                 transparent={isHome}
-                cart={resolvedCart}
-                cartQuantity={resolvedCart?.totalQuantity ?? 0}
+                cart={null}
+                cartQuantity={0}
                 shopSettings={shopSettings}
                 publicStoreDomain={publicStoreDomain}
                 publicAccessToken={publicAccessToken}
-                customerAccessToken={resolvedCustomerAccessToken}
+                customerAccessToken={null}
               />
-              <MarketAwareMain>{children}</MarketAwareMain>
-              <CartFab cartQuantity={resolvedCart?.totalQuantity ?? 0} />
+              <main>{children}</main>
               <SiteFooter shopSettings={shopSettings} />
             </>
+          </CatalogProvider>
+        }
+      >
+        <Await resolve={layoutSession}>
+          {([resolvedCatalog, resolvedCart, resolvedCustomerAccessToken]) => (
+            <CatalogProvider catalog={resolvedCatalog}>
+              <CartAwareChrome
+                isHome={isHome}
+                resolvedCart={resolvedCart}
+                resolvedCustomerAccessToken={resolvedCustomerAccessToken}
+                shopSettings={shopSettings}
+                publicStoreDomain={publicStoreDomain}
+                publicAccessToken={publicAccessToken}
+              >
+                {children}
+              </CartAwareChrome>
+            </CatalogProvider>
           )}
         </Await>
       </Suspense>
-      </LocalizationProvider>
-    </CatalogProvider>
+    </LocalizationProvider>
+  );
+}
+
+function CartAwareChrome({
+  isHome,
+  resolvedCart,
+  resolvedCustomerAccessToken,
+  shopSettings,
+  publicStoreDomain,
+  publicAccessToken,
+  children,
+}: {
+  isHome: boolean;
+  resolvedCart: CartApiQueryFragment | null;
+  resolvedCustomerAccessToken: string | null;
+  shopSettings: ShopSettings;
+  publicStoreDomain: string;
+  publicAccessToken: string;
+  children?: React.ReactNode;
+}) {
+  const cart = useLiveCart(resolvedCart);
+  const cartQuantity = cart?.totalQuantity ?? 0;
+
+  return (
+    <>
+      <SiteHeader
+        transparent={isHome}
+        cart={cart}
+        cartQuantity={cartQuantity}
+        shopSettings={shopSettings}
+        publicStoreDomain={publicStoreDomain}
+        publicAccessToken={publicAccessToken}
+        customerAccessToken={resolvedCustomerAccessToken}
+      />
+      <MarketAwareMain>{children}</MarketAwareMain>
+      <CartFab cartQuantity={cartQuantity} />
+      <SiteFooter shopSettings={shopSettings} />
+    </>
   );
 }
 

@@ -36,9 +36,10 @@ export function CollectionProductsScrollCue() {
       type="button"
       onClick={scrollToProducts}
       aria-label="View products in this collection"
-      className={`fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 flex-col items-center gap-1 transition-opacity duration-500 md:bottom-10 md:gap-2 ${
+      className={`fixed left-1/2 z-40 flex -translate-x-1/2 flex-col items-center gap-1 transition-opacity duration-500 md:gap-2 ${
         visible ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
+      style={{bottom: 'calc(1.5rem + env(safe-area-inset-bottom))'}}
     >
       <span className="tracked text-[0.6rem] text-muted-foreground md:text-[0.65rem]">
         View Products

@@ -96,7 +96,7 @@ export function ConciergeView() {
 
   return (
     <div>
-      <section className="mx-auto max-w-[1100px] px-6 pt-40 text-center md:px-10">
+      <section className="mx-auto max-w-[1100px] px-6 pt-[calc(var(--header-h)+1.5rem)] text-center md:px-10">
         <Reveal>
           <Eyebrow>Concierge</Eyebrow>
           <h1
@@ -262,10 +262,10 @@ function TypeDropdown({value, onChange}: {value: string; onChange: (value: strin
         triggerRef.current?.focus();
       }
     };
-    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
     return () => {
-      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [open]);
@@ -280,7 +280,7 @@ function TypeDropdown({value, onChange}: {value: string; onChange: (value: strin
           aria-haspopup="listbox"
           aria-expanded={open}
           onClick={() => setOpen((o) => !o)}
-          className="flex min-h-11 w-full items-center justify-between gap-3 bg-transparent py-3 text-left text-sm text-foreground outline-none transition"
+          className="flex min-h-11 w-full items-center justify-between gap-3 bg-transparent py-3 text-left text-base text-foreground outline-none transition touch-manipulation"
           style={{
             borderBottom: open ? '1px solid var(--accent)' : '1px solid var(--border)',
           }}
@@ -350,6 +350,22 @@ function Field({
   textarea?: boolean;
   error?: string;
 }) {
+  const inputProps: React.InputHTMLAttributes<HTMLInputElement> = {};
+  if (type === 'email') {
+    inputProps.autoComplete = 'email';
+    inputProps.inputMode = 'email';
+  } else if (type === 'tel') {
+    inputProps.autoComplete = 'tel';
+    inputProps.inputMode = 'tel';
+  } else if (name === 'name') {
+    inputProps.autoComplete = 'name';
+  } else if (name === 'location') {
+    inputProps.autoComplete = 'address-level2';
+  }
+
+  const fieldClass =
+    'mt-3 block min-h-11 w-full border-0 border-b bg-transparent py-3 text-base text-foreground outline-none transition focus:border-accent';
+
   return (
     <label className="block">
       <span className="tracked text-muted-foreground">{label}</span>
@@ -358,7 +374,7 @@ function Field({
           name={name}
           required
           rows={4}
-          className="mt-3 block w-full border-0 border-b bg-transparent py-3 text-sm text-foreground outline-none transition focus:border-accent"
+          className={fieldClass}
           style={{borderBottom: '1px solid var(--border)'}}
         />
       ) : (
@@ -366,8 +382,9 @@ function Field({
           name={name}
           type={type}
           required={name !== 'phone'}
-          className="mt-3 block w-full border-0 border-b bg-transparent py-3 text-sm text-foreground outline-none transition focus:border-accent"
+          className={fieldClass}
           style={{borderBottom: '1px solid var(--border)'}}
+          {...inputProps}
         />
       )}
       {error && <p className="mt-2 text-xs text-accent">{error}</p>}

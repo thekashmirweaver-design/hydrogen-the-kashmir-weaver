@@ -3,9 +3,22 @@ import {
 } from 'react-router';
 import type {Route} from './+types/pages.$handle';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {pageMetaWithOg, getStoreUrlFromMatches} from '~/lib/seo';
+import {truncateMetaDescription} from '~/lib/meta-description';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.page.title ?? ''}`}];
+export const meta: Route.MetaFunction = ({data, location, matches}) => {
+  if (!data?.page) return [{title: 'The Kashmir Weaver'}];
+  const storeUrl = getStoreUrlFromMatches(matches);
+  const title =
+    data.page.seo?.title ?? `${data.page.title} — The Kashmir Weaver`;
+  const description = data.page.seo?.description
+    ? truncateMetaDescription(data.page.seo.description)
+    : undefined;
+  return pageMetaWithOg(
+    {title, description},
+    undefined,
+    {pathname: location.pathname, storeUrl},
+  );
 };
 
 export async function loader(args: Route.LoaderArgs) {

@@ -10,8 +10,10 @@ import {
   CartLineQuantityControls,
   CartLineRemoveButton,
 } from '~/components/gulriza/CartLineQuantityControls';
+import {useLiveCart} from '~/lib/use-live-cart';
 
-export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
+export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}) {
+  const cart = useLiveCart(loaderCart);
   const lines = cart?.lines?.nodes ?? [];
   const subtotal = cart?.cost?.subtotalAmount;
   const checkoutUrl = cart?.checkoutUrl;
@@ -19,7 +21,7 @@ export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
 
   return (
     <div>
-      <section className="mx-auto max-w-[1400px] px-6 pt-32 pb-24 md:px-10">
+      <section className="mx-auto max-w-[1400px] px-6 pt-[calc(var(--header-h)+1.5rem)] pb-24 md:px-10">
         <Eyebrow>Your Selection</Eyebrow>
         <h1
           className="font-display mt-6 text-4xl leading-tight md:text-6xl"
@@ -46,7 +48,7 @@ export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
 
                 return (
                   <div key={lineId}>
-                    <div className="grid grid-cols-[88px_1fr_auto] items-start gap-4 py-8 sm:grid-cols-[120px_1fr_auto] sm:gap-8">
+                    <div className="grid grid-cols-[88px_1fr] items-start gap-4 py-8 sm:grid-cols-[120px_1fr_auto] sm:gap-8">
                       <Link
                         to={`/products/${product.handle}`}
                         className="relative aspect-[4/5] w-[88px] overflow-hidden sm:w-[120px]"
@@ -79,16 +81,22 @@ export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
                             merchandise.price.currencyCode,
                           )}
                         </div>
-                        <CartLineShade attributes={attributes} className="mt-2 text-sm text-muted-foreground" />
-                        <div className="mt-5 flex items-center gap-4">
+                        <CartLineShade attributes={attributes} swatchSize="md" className="mt-2 text-sm text-muted-foreground" />
+                        <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
                           <CartLineQuantityControls
                             lineId={lineId}
                             quantity={quantity}
                             compact={false}
                           />
+                          <div className="text-sm sm:hidden">
+                            {formatShopifyMoney(
+                              cost.totalAmount.amount,
+                              cost.totalAmount.currencyCode,
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="whitespace-nowrap text-sm">
+                      <div className="hidden whitespace-nowrap text-sm sm:block">
                         {formatShopifyMoney(
                           cost.totalAmount.amount,
                           cost.totalAmount.currencyCode,
@@ -101,7 +109,7 @@ export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
               })}
             </div>
 
-            <aside className="h-fit p-10" style={{background: 'var(--surface)'}}>
+            <aside className="h-fit p-6 md:p-10" style={{background: 'var(--surface)'}}>
               <Eyebrow>Order Summary</Eyebrow>
               <div className="mt-8 space-y-4 text-sm">
                 <Row
@@ -136,13 +144,13 @@ export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
                     <input
                       name="discountCode"
                       placeholder="Promo code"
-                      className="flex-1 border bg-transparent px-3 py-2 text-xs uppercase tracking-[0.15em] focus:outline-none"
+                      className="min-h-11 flex-1 border bg-transparent px-3 py-2 text-base uppercase tracking-[0.15em] focus:outline-none"
                       style={{borderColor: 'var(--border)'}}
                     />
                     <button
                       type="submit"
                       disabled={fetcher.state !== 'idle'}
-                      className="tracked border px-4 py-2 text-xs transition hover:text-accent disabled:opacity-50"
+                      className="tracked min-h-11 border px-4 py-2 text-xs transition hover:text-accent disabled:opacity-50"
                       style={{borderColor: 'var(--border)'}}
                     >
                       Apply
@@ -161,13 +169,13 @@ export function CartView({cart}: {cart: CartApiQueryFragment | null}) {
                     <input
                       name="giftCardCode"
                       placeholder="Gift card"
-                      className="flex-1 border bg-transparent px-3 py-2 text-xs uppercase tracking-[0.15em] focus:outline-none"
+                      className="min-h-11 flex-1 border bg-transparent px-3 py-2 text-base uppercase tracking-[0.15em] focus:outline-none"
                       style={{borderColor: 'var(--border)'}}
                     />
                     <button
                       type="submit"
                       disabled={fetcher.state !== 'idle'}
-                      className="tracked border px-4 py-2 text-xs transition hover:text-accent disabled:opacity-50"
+                      className="tracked min-h-11 border px-4 py-2 text-xs transition hover:text-accent disabled:opacity-50"
                       style={{borderColor: 'var(--border)'}}
                     >
                       Apply

@@ -1,6 +1,7 @@
 import {Link} from 'react-router';
 import {ArrowRight} from 'lucide-react';
 import {Eyebrow} from '~/components/gulriza/Eyebrow';
+import {CatalogImage, EditorialImage} from '~/components/gulriza/CatalogImage';
 import type {Collection, Product} from '~/models/types';
 
 type CollectionTileProps = {
@@ -67,11 +68,10 @@ function InventoryRow({
               style={{background: 'var(--surface)'}}
             >
               {p.images[0] && (
-                <img
-                  src={p.images[0].src}
-                  alt=""
+                <CatalogImage
+                  image={p.images[0]}
                   className="h-full w-full object-cover"
-                  loading="lazy"
+                  sizes="44px"
                 />
               )}
             </div>
@@ -122,6 +122,7 @@ export function CollectionTile({
     return (
       <Link
         to={`/collections/${collection.handle}`}
+        prefetch="intent"
         className="group relative block w-full overflow-hidden"
         style={{background: 'var(--surface)'}}
       >
@@ -143,11 +144,11 @@ export function CollectionTile({
           </div>
 
           <div className="relative order-1 aspect-[4/3] overflow-hidden md:order-2 md:aspect-auto md:min-h-0">
-            <img
+            <EditorialImage
               src={collection.hero.src}
               alt={collection.hero.alt}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105"
-              loading="lazy"
+              sizes="(min-width: 768px) 60vw, 100vw"
             />
             <div className="vignette-overlay pointer-events-none absolute inset-0 hidden md:block" />
           </div>
@@ -159,6 +160,7 @@ export function CollectionTile({
   return (
     <Link
       to={`/collections/${collection.handle}`}
+      prefetch="intent"
       className="group relative block w-full overflow-hidden"
       style={{background: 'var(--surface)'}}
     >
@@ -169,11 +171,11 @@ export function CollectionTile({
             : 'relative aspect-[3/4] w-full'
         }
       >
-        <img
+        <EditorialImage
           src={collection.hero.src}
           alt={collection.hero.alt}
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105"
-          loading="lazy"
+          sizes="(min-width: 640px) 50vw, 100vw"
         />
         <ImageScrim />
 

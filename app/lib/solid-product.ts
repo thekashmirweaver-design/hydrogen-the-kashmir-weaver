@@ -84,4 +84,4 @@ export function getDefaultSolidShadeCode(shades: Shade[]): string {
 }
 
 export const SOLID_COLOUR_DISCLAIMER =
-  'Colours shown are representative. Slight variation may occur between the preview and the finished piece.';
+  'Colour studio is in beta — some shades may not look accurate in the preview. Colours shown are representative; slight variation may occur between the preview and the finished piece.';

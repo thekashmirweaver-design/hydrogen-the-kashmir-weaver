@@ -22,7 +22,7 @@ export function SearchView({
     : [];
 
   return (
-    <section className="mx-auto max-w-[1400px] px-6 pt-32 pb-24 md:px-10">
+    <section className="mx-auto max-w-[1400px] px-6 pt-[calc(var(--header-h)+1.5rem)] pb-24 md:px-10">
       <Eyebrow>Search</Eyebrow>
       <h1
         className="font-display mt-6 text-4xl leading-tight md:text-6xl"
@@ -36,12 +36,15 @@ export function SearchView({
           name="q"
           defaultValue={term}
           placeholder="Search pashmina, collections…"
-          className="flex-1 border bg-transparent px-4 py-3 text-sm focus:outline-none focus:border-accent"
+          inputMode="search"
+          enterKeyHint="search"
+          autoComplete="off"
+          className="min-h-11 flex-1 border bg-transparent px-4 py-3 text-base focus:outline-none focus:border-accent"
           style={{borderColor: 'var(--border)'}}
         />
         <button
           type="submit"
-          className="tracked px-6 py-3 transition hover:opacity-90"
+          className="tracked min-h-11 px-6 py-3 transition hover:opacity-90 active:opacity-80"
           style={{background: 'var(--accent)', color: 'var(--background)'}}
         >
           Search

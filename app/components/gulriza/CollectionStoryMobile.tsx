@@ -1,6 +1,7 @@
 'use client';
 
-import {useLayoutEffect, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
+import {useIsomorphicLayoutEffect} from '~/hooks/use-isomorphic-layout-effect';
 import {ChevronDown} from 'lucide-react';
 
 const TRUNCATE_AT = 140;
@@ -13,7 +14,7 @@ export function CollectionStoryMobile({text}: {text: string}) {
   const [fullHeight, setFullHeight] = useState<number | null>(null);
   const truncatable = text.length > TRUNCATE_AT;
 
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const el = contentRef.current;
     if (!el) return;
     setFullHeight(el.scrollHeight);

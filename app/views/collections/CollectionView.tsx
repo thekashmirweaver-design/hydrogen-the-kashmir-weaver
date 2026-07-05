@@ -23,7 +23,7 @@ export function CollectionView({
 
   return (
     <div>
-      <section className="relative pt-20">
+      <section className="relative pt-[calc(var(--header-h)+1rem)]">
         <div className="relative aspect-[3/4] w-full overflow-hidden md:aspect-video">
           <img
             src={collection.hero.src}

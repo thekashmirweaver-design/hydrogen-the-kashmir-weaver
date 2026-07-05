@@ -2,18 +2,20 @@ import {useLoaderData} from 'react-router';
 import type {Route} from './+types/journal._index';
 import {getJournalPage} from '~/controllers';
 import {JournalView} from '~/views/journal/JournalView';
-import {ogMeta} from '~/lib/seo';
+import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
 
-const JOURNAL_TITLE = 'Journal — The Kashmir Weaver';
-const JOURNAL_DESC =
-  'Stories of heritage, craft, and quiet luxury from Kashmir.';
-
-export const meta: Route.MetaFunction = () => {
-  return [
-    {title: JOURNAL_TITLE},
-    {name: 'description', content: JOURNAL_DESC},
-    ...ogMeta({title: JOURNAL_TITLE, description: JOURNAL_DESC}),
-  ];
+export const meta: Route.MetaFunction = ({data, location, matches}) => {
+  const metadata = data?.metadata ?? {
+    title: 'Journal — The Kashmir Weaver',
+    description:
+      'Stories of heritage, craft, and quiet luxury from Kashmir.',
+  };
+  const storeUrl = getStoreUrlFromMatches(matches);
+  return seoBundle({
+    metadata,
+    pathname: location.pathname,
+    storeUrl,
+  });
 };
 
 export async function loader({context}: Route.LoaderArgs) {

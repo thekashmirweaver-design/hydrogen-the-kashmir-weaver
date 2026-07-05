@@ -11,6 +11,7 @@ import {
   CartLineRemoveButton,
 } from "~/components/gulriza/CartLineQuantityControls";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
+import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 
 const CLOSE_MS = 300;
 
@@ -52,12 +53,11 @@ export function CartDrawer({
       if (e.key === "Escape") requestClose();
     };
     window.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    lockScroll();
     const raf = requestAnimationFrame(() => setVisible(true));
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
+      unlockScroll();
       cancelAnimationFrame(raf);
     };
   }, [open, requestClose]);
@@ -94,7 +94,7 @@ export function CartDrawer({
           <button
             onClick={requestClose}
             aria-label="Close bag"
-            className="flex h-9 w-9 items-center justify-center rounded-full border text-muted-foreground transition hover:border-accent hover:text-accent"
+            className="touch-target flex h-11 w-11 items-center justify-center rounded-full border text-muted-foreground transition hover:border-accent hover:text-accent active:opacity-80"
             style={{ borderColor: "var(--border)" }}
           >
             <X className="h-4 w-4" strokeWidth={1} />
@@ -124,7 +124,7 @@ export function CartDrawer({
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-hidden px-6 py-5">
+            <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5">
               <ul className="flex flex-col">
                 {lines.map((line) => {
                   const { merchandise, quantity, id: lineId } = line;
@@ -161,7 +161,7 @@ export function CartDrawer({
                           </Link>
                           <CartLineRemoveButton lineIds={[lineId]} />
                         </div>
-                        <CartLineShade attributes={line.attributes} className="mt-1.5 text-xs text-muted-foreground" />
+                        <CartLineShade attributes={line.attributes} swatchSize="md" className="mt-1.5 text-xs text-muted-foreground" />
 
                         <div className="mt-auto flex items-center justify-between pt-3">
                           <CartLineQuantityControls lineId={lineId} quantity={quantity} />
@@ -176,7 +176,13 @@ export function CartDrawer({
               </ul>
             </div>
 
-            <div className="space-y-4 border-t px-6 py-5" style={{ borderColor: "var(--border)" }}>
+            <div
+              className="space-y-4 border-t px-6 py-5"
+              style={{
+                borderColor: "var(--border)",
+                paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))",
+              }}
+            >
               <div className="flex items-center justify-between">
                 <span className="text-[0.7rem] uppercase tracking-[0.25em] text-muted-foreground">
                   Subtotal

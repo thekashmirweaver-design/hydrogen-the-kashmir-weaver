@@ -6,40 +6,10 @@ import type { Collection, Money, Product } from "~/models/types";
 import { useCatalog } from "~/contexts/catalog-context";
 import { useFormatPrice } from "~/lib/currency-store";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
+import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 
 const MAX_RESULTS = 10;
 const CLOSE_MS = 220;
-
-// Ref-counted body scroll lock shared across overlays (menu + search). A plain
-// per-overlay save/restore of `body.overflow` breaks when overlays overlap (one
-// closing restores scroll while another is still open). Counting locks keeps the
-// background frozen until *every* overlay has closed. We also lock <html> and
-// disable overscroll to stop iOS Safari scroll bleed behind the overlay.
-let scrollLockCount = 0;
-const scrollLockSaved = { body: "", html: "", overscroll: "" };
-
-export function lockScroll() {
-  if (typeof document === "undefined") return;
-  if (scrollLockCount === 0) {
-    scrollLockSaved.body = document.body.style.overflow;
-    scrollLockSaved.html = document.documentElement.style.overflow;
-    scrollLockSaved.overscroll = document.body.style.overscrollBehavior;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overscrollBehavior = "none";
-  }
-  scrollLockCount += 1;
-}
-
-export function unlockScroll() {
-  if (typeof document === "undefined") return;
-  scrollLockCount = Math.max(0, scrollLockCount - 1);
-  if (scrollLockCount === 0) {
-    document.body.style.overflow = scrollLockSaved.body;
-    document.documentElement.style.overflow = scrollLockSaved.html;
-    document.body.style.overscrollBehavior = scrollLockSaved.overscroll;
-  }
-}
 
 export function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { products, collections } = useCatalog();
@@ -181,7 +151,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
       <button
         onClick={requestClose}
         aria-label="Close search"
-        className="fixed right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border text-muted-foreground transition hover:border-accent hover:text-accent"
+        className="touch-target fixed right-5 top-5 z-10 flex h-11 w-11 items-center justify-center rounded-full border text-muted-foreground transition hover:border-accent hover:text-accent active:opacity-80"
         style={{ borderColor: "var(--border)", background: "rgba(8,16,15,0.5)" }}
       >
         <X className="h-5 w-5" strokeWidth={1} />
@@ -213,6 +183,8 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
             placeholder="Search the atelier — by name or collection"
             aria-label="Search the atelier by name or collection"
             autoComplete="off"
+            inputMode="search"
+            enterKeyHint="search"
             spellCheck={false}
             className="font-display w-full bg-transparent text-2xl outline-none placeholder:text-muted-foreground md:text-3xl"
           />
@@ -224,7 +196,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                 inputRef.current?.focus();
               }}
               aria-label="Clear search"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:text-accent"
+              className="touch-target flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:text-accent active:opacity-80"
             >
               <X className="h-4 w-4" strokeWidth={1.25} />
             </button>
@@ -243,7 +215,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                       key={c.handle}
                       to={`/collections/${c.handle}`}
                       onClick={requestClose}
-                      className="border px-4 py-2 text-xs tracking-[0.2em] uppercase text-muted-foreground transition hover:border-accent hover:text-accent hover:bg-accent/5"
+                      className="inline-flex min-h-11 items-center border px-4 py-2 text-xs tracking-[0.2em] uppercase text-muted-foreground transition hover:border-accent hover:text-accent hover:bg-accent/5 active:opacity-80"
                       style={{ borderColor: "var(--border)" }}
                     >
                       {c.name}

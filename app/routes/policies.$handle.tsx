@@ -2,11 +2,21 @@ import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/policies.$handle';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {Reveal} from '~/components/gulriza/Reveal';
+import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
+import {truncateMetaDescription} from '~/lib/meta-description';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [
-    {title: `${data?.policy.title ?? 'Policy'} — The Kashmir Weaver`},
-  ];
+export const meta: Route.MetaFunction = ({data, location, matches}) => {
+  const title = `${data?.policy.title ?? 'Policy'} — The Kashmir Weaver`;
+  const bodyText = data?.policy.body?.replace(/<[^>]+>/g, ' ').trim() ?? '';
+  const description = bodyText
+    ? truncateMetaDescription(bodyText)
+    : undefined;
+  const storeUrl = getStoreUrlFromMatches(matches);
+  return seoBundle({
+    metadata: {title, description},
+    pathname: location.pathname,
+    storeUrl,
+  });
 };
 
 export async function loader({params, context}: Route.LoaderArgs) {

@@ -1,5 +1,7 @@
 # Deploy & seed checklist
 
+**See also:** [seo-and-domains.md](./seo-and-domains.md) — indexing strategy, `.shop` → `.com` migration, sitemaps, and Search Console.
+
 ## 1. Get environment variables
 
 **Recommended:** let Shopify CLI populate them.
@@ -421,8 +423,8 @@ Custom domains attached to the **Production** Hydrogen environment are publicly 
 
 | Domain | Status |
 | --- | --- |
-| `thekashmirweaver.shop` | **Live** — primary Hydrogen production storefront (`www` → apex) |
-| `thekashmirweaver.com` / `www.thekashmirweaver.com` | Separate site (Vercel) — repoint DNS only if you want `.com` on Oxygen too |
+| `thekashmirweaver.shop` | **Live** — primary Hydrogen production storefront for **indexing now** (`www` → apex) |
+| `thekashmirweaver.com` / `www.thekashmirweaver.com` | Legacy app today → **Phase 2:** client redirect to `.shop` (DNS unchanged) → **Phase 3:** DNS to Hydrogen, primary — see [seo-and-domains.md](./seo-and-domains.md) |
 | `70yuey-sr.myshopify.com` | **Password-protected** Online Store |
 
 **Steps:**

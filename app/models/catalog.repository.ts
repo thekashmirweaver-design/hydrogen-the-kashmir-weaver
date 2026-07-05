@@ -112,6 +112,29 @@ export async function listOriginFacets(
   return Array.from(new Set(items.map((product) => product.origin))).sort();
 }
 
+export async function getCatalogMenuSnapshot(
+  options?: CatalogOptions,
+): Promise<CatalogSnapshot> {
+  const snapshot = await withCatalog(
+    ShopifyRepository.getCatalogMenuSnapshot,
+    async () => ({
+      products: StaticRepository.products.map((product) => ({
+        ...product,
+        images: product.images.slice(0, 1),
+        variants: undefined,
+        options: undefined,
+        shades: undefined,
+      })),
+      collections: StaticRepository.collections,
+    }),
+    options,
+  );
+  return {
+    ...snapshot,
+    products: withStaticDummyProducts(snapshot.products, options),
+  };
+}
+
 export async function getCatalogSnapshot(
   options?: CatalogOptions,
 ): Promise<CatalogSnapshot> {

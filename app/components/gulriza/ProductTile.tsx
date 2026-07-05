@@ -7,11 +7,14 @@ import { CatalogImage } from "~/components/gulriza/CatalogImage";
 export function ProductTile({ product }: { product: Product }) {
   const [hover, setHover] = useState(false);
   const [active, setActive] = useState(0);
+  const [loadExtras, setLoadExtras] = useState(false);
   const formatPrice = useFormatPrice();
   const multiImage = product.images.length > 1;
   const soldOut = product.stock === "out";
   const onSale =
     product.compareAtPrice != null && product.compareAtPrice.amount > product.price.amount;
+
+  const visibleImages = loadExtras ? product.images : product.images.slice(0, 1);
 
   // While hovered, auto-advance through every image as a crossfading carousel.
   // The interval only runs on hover and is cleared on mouse-leave / unmount.
@@ -23,12 +26,23 @@ export function ProductTile({ product }: { product: Product }) {
     return () => window.clearInterval(id);
   }, [hover, multiImage, product.images.length]);
 
+  const handlePointerEnter = () => {
+    setHover(true);
+    if (multiImage) setLoadExtras(true);
+  };
+
   return (
     <div className="group block">
       <Link
         to={`/products/${product.handle}`}
-        onMouseEnter={() => setHover(true)}
+        prefetch="intent"
+        onMouseEnter={handlePointerEnter}
+        onFocus={handlePointerEnter}
         onMouseLeave={() => {
+          setHover(false);
+          setActive(0);
+        }}
+        onBlur={() => {
           setHover(false);
           setActive(0);
         }}
@@ -38,7 +52,7 @@ export function ProductTile({ product }: { product: Product }) {
           className="relative aspect-[4/5] w-full overflow-hidden"
           style={{ background: "var(--surface)" }}
         >
-          {product.images.map((img, i) => (
+          {visibleImages.map((img, i) => (
             <CatalogImage
               key={`${img.src}-${i}`}
               image={{...img, alt: i === 0 ? img.alt : ""}}
@@ -58,7 +72,7 @@ export function ProductTile({ product }: { product: Product }) {
           />
 
           {/* Position indicators (only while cycling through multiple images) */}
-          {hover && multiImage && (
+          {hover && multiImage && loadExtras && (
             <div className="pointer-events-none absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5">
               {product.images.map((img, i) => (
                 <span
@@ -79,6 +93,7 @@ export function ProductTile({ product }: { product: Product }) {
           <div className="eyebrow truncate opacity-70">{product.collectionName}</div>
           <Link
             to={`/products/${product.handle}`}
+            prefetch="intent"
             className="mt-2 block font-display text-lg leading-tight hover:text-accent sm:text-xl"
           >
             {product.name}

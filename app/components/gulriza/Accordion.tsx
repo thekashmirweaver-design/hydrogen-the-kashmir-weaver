@@ -19,7 +19,7 @@ export function Accordion({
       <Hairline />
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between py-5 text-left tracked transition hover:text-accent"
+        className="flex min-h-11 w-full touch-manipulation items-center justify-between py-5 text-left tracked transition hover:text-accent active:opacity-80"
       >
         <span>{title}</span>
         {open ? (
@@ -29,10 +29,12 @@ export function Accordion({
         )}
       </button>
       <div
-        className="overflow-hidden transition-all duration-500"
-        style={{ maxHeight: open ? 600 : 0 }}
+        className="grid transition-all duration-500 motion-reduce:transition-none"
+        style={{gridTemplateRows: open ? '1fr' : '0fr'}}
       >
-        <div className="pb-6 text-sm leading-relaxed text-muted-foreground">{children}</div>
+        <div className="overflow-hidden">
+          <div className="pb-6 text-sm leading-relaxed text-muted-foreground">{children}</div>
+        </div>
       </div>
     </div>
   );

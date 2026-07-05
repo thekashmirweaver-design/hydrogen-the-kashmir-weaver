@@ -22,7 +22,10 @@ export function CraftView({
           loading="eager"
         />
         <div className="absolute inset-0 vignette-overlay" />
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1600px] px-6 pb-24 md:px-10">
+        <div
+          className="absolute inset-x-0 bottom-0 mx-auto max-w-[1600px] px-6 md:px-10"
+          style={{paddingBottom: 'max(6rem, env(safe-area-inset-bottom))'}}
+        >
           <Reveal>
             <Eyebrow>The Kashmir Weaver Craft</Eyebrow>
             <h1

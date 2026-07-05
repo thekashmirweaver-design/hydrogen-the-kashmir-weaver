@@ -2,15 +2,35 @@ import {useLoaderData} from 'react-router';
 import type {Route} from './+types/journal.$slug';
 import {getArticlePage} from '~/controllers';
 import {ArticleView} from '~/views/journal/ArticleView';
+import {
+  blogPostingLd,
+  getStoreUrlFromMatches,
+  seoBundle,
+} from '~/lib/seo';
 
-import {pageMetaWithOg} from '~/lib/seo';
-
-export const meta: Route.MetaFunction = ({data}) => {
+export const meta: Route.MetaFunction = ({data, location, matches}) => {
   if (!data?.metadata) return [{title: 'Journal — The Kashmir Weaver'}];
+  const storeUrl = getStoreUrlFromMatches(matches);
   const image = data.article?.img?.startsWith('http')
     ? data.article.img
-    : undefined;
-  return pageMetaWithOg(data.metadata, image);
+    : data.article?.img;
+  return seoBundle({
+    metadata: data.metadata,
+    pathname: location.pathname,
+    storeUrl,
+    image,
+    type: 'article',
+    jsonLd: [
+      blogPostingLd({
+        title: data.article.title,
+        description: data.metadata.description,
+        url: location.pathname,
+        image,
+        datePublished: data.datePublished,
+        storeUrl,
+      }),
+    ],
+  });
 };
 
 export async function loader({params, context}: Route.LoaderArgs) {

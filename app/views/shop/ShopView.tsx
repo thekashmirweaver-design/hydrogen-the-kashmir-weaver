@@ -7,7 +7,7 @@ import type {Product} from '~/models/types';
 export function ShopView({products}: {products: Product[]}) {
   return (
     <div>
-      <section className="mx-auto max-w-[1600px] px-6 pt-32 pb-12 md:px-10">
+      <section className="mx-auto max-w-[1600px] px-6 pt-[calc(var(--header-h)+1.5rem)] pb-12 md:px-10">
         <Reveal>
           <Eyebrow>The Atelier</Eyebrow>
           <h1
@@ -30,7 +30,7 @@ export function ShopView({products}: {products: Product[]}) {
       <section className="mx-auto max-w-[1600px] px-6 pb-24 md:px-10">
         <Hairline />
         <div className="mt-10 text-center">
-          <Link to="/concierge" className="tracked text-muted-foreground hover:text-accent">
+          <Link to="/concierge" className="tracked inline-flex min-h-11 items-center justify-center text-muted-foreground hover:text-accent active:opacity-80">
             Looking for something specific? — Speak to a concierge
           </Link>
         </div>

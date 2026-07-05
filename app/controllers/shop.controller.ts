@@ -1,7 +1,8 @@
 import * as CatalogRepository from '~/models/catalog.repository';
 import type {CatalogOptions} from '~/models/catalog.repository';
-import type {Collection, Product} from '~/models/types';
+import type {CatalogSnapshot, Collection, Product} from '~/models/types';
 import type {PageMetadata} from '~/controllers/catalog.controller';
+import {resolveCatalogSnapshot} from '~/lib/shared-catalog';
 
 export type ShopPageViewModel = {
   products: Product[];
@@ -9,8 +10,10 @@ export type ShopPageViewModel = {
 
 export async function getShopPage(
   options?: CatalogOptions,
+  catalog?: CatalogSnapshot,
 ): Promise<ShopPageViewModel> {
-  return {products: await CatalogRepository.listProducts(options)};
+  const {products} = await resolveCatalogSnapshot(options, catalog);
+  return {products};
 }
 
 export type CollectionsPageViewModel = {
@@ -21,13 +24,10 @@ export type CollectionsPageViewModel = {
   featuredProducts: Product[];
 };
 
-export async function getCollectionsPage(
-  options?: CatalogOptions,
-): Promise<CollectionsPageViewModel> {
-  const [collections, products] = await Promise.all([
-    CatalogRepository.listCollections(options),
-    CatalogRepository.listProducts(options),
-  ]);
+export function buildCollectionsPageViewModel(
+  catalog: CatalogSnapshot,
+): CollectionsPageViewModel {
+  const {collections, products} = catalog;
 
   const productCountByHandle = Object.fromEntries(
     collections.map((c) => [
@@ -52,12 +52,21 @@ export async function getCollectionsPage(
   };
 }
 
+export async function getCollectionsPage(
+  options?: CatalogOptions,
+  catalog?: CatalogSnapshot,
+): Promise<CollectionsPageViewModel> {
+  const snapshot = await resolveCatalogSnapshot(options, catalog);
+  return buildCollectionsPageViewModel(snapshot);
+}
+
 export type CollectionPageViewModel = {
   collection: Collection;
   products: Product[];
   metadata: PageMetadata;
   collectionLd: Record<string, unknown>;
   breadcrumbLd: Record<string, unknown>;
+  itemListLd: Record<string, unknown>;
 };
 
 function collectionMetadata(collection: Collection): PageMetadata {
@@ -73,17 +82,20 @@ function collectionMetadata(collection: Collection): PageMetadata {
 export async function getCollectionPage(
   handle: string,
   options?: CatalogOptions,
+  catalog?: CatalogSnapshot,
 ): Promise<CollectionPageViewModel | null> {
-  const collection = await CatalogRepository.findCollectionByHandle(
-    handle,
-    options,
+  const snapshot = await resolveCatalogSnapshot(options, catalog);
+  const collectionFromSnapshot = snapshot.collections.find(
+    (item) => item.handle === handle,
   );
+  const collection =
+    collectionFromSnapshot ??
+    (await CatalogRepository.findCollectionByHandle(handle, options));
   if (!collection) return null;
 
-  const products = await CatalogRepository.listProductsByCollection(
-    handle,
-    options,
-  );
+  const products = collectionFromSnapshot
+    ? snapshot.products.filter((product) => product.collectionSlug === handle)
+    : await CatalogRepository.listProductsByCollection(handle, options);
 
   const metadata = collectionMetadata(collection);
   const url = `/collections/${handle}`;
@@ -123,6 +135,18 @@ export async function getCollectionPage(
           item: url,
         },
       ],
+    },
+    itemListLd: {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: collection.name,
+      url,
+      itemListElement: products.slice(0, 12).map((product, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: product.name,
+        url: `/products/${product.handle}`,
+      })),
     },
   };
 }

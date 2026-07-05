@@ -1,5 +1,6 @@
 import {Link, type FetcherWithComponents} from 'react-router';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {createPortal} from 'react-dom';
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,8 +13,9 @@ import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {Accordion} from '~/components/gulriza/Accordion';
 import {ProductTile} from '~/components/gulriza/ProductTile';
 import {CatalogImage} from '~/components/gulriza/CatalogImage';
-import {SolidRecolorCanvas} from '~/components/gulriza/SolidRecolorCanvas';
-import {ShadeDropdown} from '~/components/gulriza/ShadeDropdown';
+import {HorizontalScrollCue} from '~/components/gulriza/HorizontalScrollCue';
+import {TryColoursModal} from '~/components/gulriza/TryColoursModal';
+import {SelectedColourCard} from '~/components/gulriza/SelectedColourCard';
 import {ProductOptionPicker} from '~/components/gulriza/ProductOptionPicker';
 import {QuantityStepper} from '~/components/gulriza/QuantityStepper';
 import {Reveal} from '~/components/gulriza/Reveal';
@@ -26,8 +28,10 @@ import {
 } from '~/lib/product-inventory';
 import {formatOptionDisplay, isSizeOptionName} from '~/lib/parse-size-option';
 import {useFocusTrap} from '~/hooks/use-focus-trap';
-import {getProductShades, getDefaultSolidShadeCode, isSolidProduct, SOLID_COLOUR_DISCLAIMER, SOLID_RECOLOR_IMAGE_SETS} from '~/lib/solid-product';
+import {lockScroll, unlockScroll} from '~/lib/scroll-lock';
+import {getProductShades, getDefaultSolidShadeCode, isSolidProduct} from '~/lib/solid-product';
 import {buildBuyNowShadeQuery, shadeCartAttributes} from '~/lib/shade-cart';
+import {toCartSelectedVariant} from '~/lib/cart-selected-variant';
 
 function isShopifyMerchandiseId(id?: string): boolean {
   if (!id) return false;
@@ -99,6 +103,8 @@ export function ProductView({
   const [selectedShadeCode, setSelectedShadeCode] = useState(defaultShadeCode);
   const [quantity, setQuantity] = useState(1);
   const [fullOpen, setFullOpen] = useState(false);
+  const [tryColoursOpen, setTryColoursOpen] = useState(false);
+  const [recolorImgIdx, setRecolorImgIdx] = useState(0);
   const lightboxRef = useRef<HTMLDivElement>(null);
   const formatPrice = useFormatPrice();
   useFocusTrap(fullOpen, lightboxRef);
@@ -138,7 +144,6 @@ export function ProductView({
       ? !selectedVariant.availableForSale
       : product.stock === 'out';
   const solidRecolor = isSolidProduct(product);
-  const activeSolidImageSet = SOLID_RECOLOR_IMAGE_SETS[imgIdx] ?? SOLID_RECOLOR_IMAGE_SETS[0]!;
   const selectedShade = useMemo(
     () =>
       productShades.find((shade) => shade.code === selectedShadeCode) ??
@@ -152,11 +157,33 @@ export function ProductView({
     ? toMerchandiseGid(activeVariantId)
     : undefined;
 
-  const imgCount = solidRecolor
-    ? SOLID_RECOLOR_IMAGE_SETS.length
-    : displayImages.length;
+  const imgCount = displayImages.length;
   const prevImg = () => setImgIdx((i) => (i - 1 + imgCount) % imgCount);
   const nextImg = () => setImgIdx((i) => (i + 1) % imgCount);
+  const touchStartX = useRef<number | null>(null);
+
+  const handleGalleryTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0]?.clientX ?? null;
+  }, []);
+
+  const handleGalleryTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (touchStartX.current === null || imgCount <= 1) return;
+      const endX = e.changedTouches[0]?.clientX ?? touchStartX.current;
+      const diff = endX - touchStartX.current;
+      if (Math.abs(diff) > 50) {
+        if (diff < 0) nextImg();
+        else prevImg();
+      }
+      touchStartX.current = null;
+    },
+    [imgCount],
+  );
+
+  const openColourStudio = useCallback(() => {
+    setFullOpen(false);
+    setTryColoursOpen(true);
+  }, []);
 
   const buyNowQuantity = canChooseQuantity ? quantity : 1;
   const buyNowVariantId = activeVariantId?.replace(
@@ -182,11 +209,10 @@ export function ProductView({
       else if (e.key === 'ArrowRight' && imgCount > 1) nextImg();
     };
     window.addEventListener('keydown', onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    lockScroll();
     return () => {
       window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prevOverflow;
+      unlockScroll();
     };
   }, [fullOpen, imgCount]);
 
@@ -194,17 +220,17 @@ export function ProductView({
     <div>
       <div className="mx-auto max-w-[1600px] px-6 pt-[calc(var(--header-h)+1.5rem)] md:px-10">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs tracking-[0.25em] text-muted-foreground uppercase">
-          <Link to="/" className="hover:text-accent">
+          <Link to="/" className="inline-flex min-h-11 items-center hover:text-accent">
             Home
           </Link>
           <span>/</span>
-          <Link to="/collections" className="hover:text-accent">
+          <Link to="/collections" className="inline-flex min-h-11 items-center hover:text-accent">
             Collections
           </Link>
           <span>/</span>
           <Link
             to={`/collections/${product.collectionSlug}`}
-            className="hover:text-accent"
+            className="inline-flex min-h-11 items-center hover:text-accent"
           >
             {product.collectionName}
           </Link>
@@ -217,31 +243,22 @@ export function ProductView({
           <div className="mx-auto w-full max-w-sm min-w-0 lg:mx-0 lg:h-full lg:max-w-none lg:self-stretch">
             <div className="flex h-full min-h-0 flex-col gap-2 md:grid md:grid-cols-[auto_1fr] md:gap-2">
               <div
-                className={`relative aspect-[4/5] min-h-0 min-w-0 overflow-hidden md:col-start-2 md:row-start-1${solidRecolor ? '' : ' lg:aspect-auto lg:h-full'}`}
+                className="relative aspect-[4/5] min-h-0 min-w-0 overflow-hidden md:col-start-2 md:row-start-1 lg:aspect-auto lg:h-full"
                 style={{background: 'var(--surface)'}}
+                onTouchStart={handleGalleryTouchStart}
+                onTouchEnd={handleGalleryTouchEnd}
               >
-                {solidRecolor ? (
-                  <SolidRecolorCanvas
-                    hex={selectedShade?.hex}
-                    imageSetId={activeSolidImageSet.id}
-                    fit="contain"
-                    alt={`${product.name} — ${activeSolidImageSet.label}`}
-                    onClick={() => setFullOpen(true)}
-                    className="absolute inset-0 h-full w-full cursor-zoom-in"
-                  />
-                ) : (
-                  <CatalogImage
-                    image={displayImages[imgIdx]}
-                    onClick={() => setFullOpen(true)}
-                    className="absolute inset-0 h-full w-full cursor-zoom-in object-cover"
-                    loading="eager"
-                  />
-                )}
+                <CatalogImage
+                  image={displayImages[imgIdx]}
+                  onClick={() => setFullOpen(true)}
+                  className="absolute inset-0 h-full w-full cursor-zoom-in object-cover"
+                  loading="eager"
+                />
                 <div className="pointer-events-none absolute inset-0 vignette-overlay" />
                 <button
                   aria-label="View full screen"
                   onClick={() => setFullOpen(true)}
-                  className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border transition hover:text-accent md:right-4 md:top-4"
+                  className="touch-target absolute right-3 top-3 flex min-h-11 min-w-11 items-center justify-center rounded-full border transition hover:text-accent active:opacity-80 md:right-4 md:top-4"
                   style={{
                     borderColor: 'var(--border)',
                     background: 'rgba(8,16,15,0.4)',
@@ -267,14 +284,14 @@ export function ProductView({
                     <button
                       onClick={prevImg}
                       aria-label="Previous"
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/80 hover:text-accent md:left-4"
+                      className="touch-target absolute left-3 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-foreground/80 hover:text-accent active:opacity-80 md:left-4"
                     >
                       <ChevronLeft className="h-5 w-5" strokeWidth={1} />
                     </button>
                     <button
                       onClick={nextImg}
                       aria-label="Next"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/80 hover:text-accent md:right-4"
+                      className="touch-target absolute right-3 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-foreground/80 hover:text-accent active:opacity-80 md:right-4"
                     >
                       <ChevronRight className="h-5 w-5" strokeWidth={1} />
                     </button>
@@ -285,65 +302,12 @@ export function ProductView({
                 </div>
               </div>
 
-              {imgCount > 1 && solidRecolor && (
+              {imgCount > 1 && (
                 <>
-                  <div className="flex gap-2 overflow-x-auto pb-1 md:hidden">
-                    {SOLID_RECOLOR_IMAGE_SETS.map((set, i) => (
-                      <button
-                        key={set.id}
-                        onClick={() => setImgIdx(i)}
-                        aria-label={set.label}
-                        aria-current={i === imgIdx}
-                        className="relative aspect-square w-[4.5rem] shrink-0 overflow-hidden"
-                        style={{
-                          outline:
-                            i === imgIdx
-                              ? '1px solid var(--accent)'
-                              : '1px solid var(--border)',
-                        }}
-                      >
-                        <SolidRecolorCanvas
-                          hex={selectedShade?.hex}
-                          imageSetId={set.id}
-                          alt=""
-                          className="absolute inset-0 h-full w-full"
-                        />
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="relative hidden w-16 shrink-0 self-stretch md:col-start-1 md:row-start-1 md:block lg:w-[4.5rem]">
-                    <div className="absolute inset-0 flex flex-col gap-1.5 overflow-y-auto overscroll-contain">
-                      {SOLID_RECOLOR_IMAGE_SETS.map((set, i) => (
-                        <button
-                          key={set.id}
-                          onClick={() => setImgIdx(i)}
-                          aria-label={set.label}
-                          aria-current={i === imgIdx}
-                          className="relative aspect-square w-full shrink-0 overflow-hidden"
-                          style={{
-                            outline:
-                              i === imgIdx
-                                ? '1px solid var(--accent)'
-                                : '1px solid var(--border)',
-                          }}
-                        >
-                          <SolidRecolorCanvas
-                            hex={selectedShade?.hex}
-                            imageSetId={set.id}
-                            alt=""
-                            className="absolute inset-0 h-full w-full"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {imgCount > 1 && !solidRecolor && (
-                <>
-                  <div className="flex gap-2 overflow-x-auto pb-1 md:hidden">
+                  <HorizontalScrollCue
+                    cueLabel="Swipe"
+                    className="flex gap-2 overflow-x-auto pb-1 md:hidden no-scrollbar"
+                  >
                     {displayImages.map((img, i) => (
                       <button
                         key={img.src}
@@ -364,7 +328,7 @@ export function ProductView({
                         />
                       </button>
                     ))}
-                  </div>
+                  </HorizontalScrollCue>
 
                   <div className="relative hidden w-16 shrink-0 self-stretch md:col-start-1 md:row-start-1 md:block lg:w-[4.5rem]">
                     <div className="absolute inset-0 flex flex-col gap-1.5 overflow-y-auto overscroll-contain">
@@ -426,14 +390,20 @@ export function ProductView({
 
             <div className="mt-6 flex flex-col gap-4">
               {solidRecolor && productShades.length > 0 ? (
-                <div>
-                  <ShadeDropdown
-                    shades={productShades}
-                    selectedCode={selectedShadeCode}
-                    onSelect={setSelectedShadeCode}
-                  />
-                  <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                    {SOLID_COLOUR_DISCLAIMER}
+                <div className="space-y-3">
+                  {selectedShade ? (
+                    <SelectedColourCard shade={selectedShade} label="Colour" />
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={openColourStudio}
+                    className="w-full border py-3.5 tracked transition hover:border-[var(--accent)] hover:text-accent active:opacity-80"
+                    style={{borderColor: 'var(--border)'}}
+                  >
+                    Open colour studio
+                  </button>
+                  <p className="text-[0.65rem] leading-relaxed text-muted-foreground">
+                    Preview colours in studio (beta).
                   </p>
                 </div>
               ) : null}
@@ -494,6 +464,14 @@ export function ProductView({
                           {
                             merchandiseId: merchandiseGid!,
                             quantity: canChooseQuantity ? quantity : 1,
+                            ...(selectedVariant
+                              ? {
+                                  selectedVariant: toCartSelectedVariant(
+                                    selectedVariant,
+                                    product,
+                                  ),
+                                }
+                              : {}),
                             ...(shadeLineAttributes.length
                               ? {attributes: shadeLineAttributes}
                               : {}),
@@ -719,59 +697,42 @@ export function ProductView({
         </Reveal>
       </section>
 
-      {fullOpen && (
-        <div
-          ref={lightboxRef}
-          tabIndex={-1}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${product.name} — full screen gallery`}
-          onClick={() => setFullOpen(false)}
-          className="fixed inset-0 z-[100] flex flex-col outline-none md:flex-row"
-          style={{background: 'rgba(8,16,15,0.97)'}}
-        >
-          <button
-            onClick={() => setFullOpen(false)}
-            aria-label="Close full screen"
-            className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border transition hover:text-accent"
-            style={{
-              borderColor: 'var(--border)',
-              background: 'rgba(8,16,15,0.4)',
-            }}
-          >
-            <X className="h-5 w-5" strokeWidth={1} />
-          </button>
-
-          {imgCount > 1 && (
+      {fullOpen && typeof document !== 'undefined'
+        ? createPortal(
             <div
-              onClick={(e) => e.stopPropagation()}
-              className="no-scrollbar order-last flex shrink-0 gap-3 overflow-x-auto border-t p-4 md:order-first md:max-h-full md:w-28 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:border-r md:border-t-0 md:p-5"
-              style={{borderColor: 'var(--border)'}}
+              ref={lightboxRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`${product.name} — full screen gallery`}
+              onClick={() => setFullOpen(false)}
+              className="fixed inset-0 z-[100] flex flex-col outline-none md:flex-row"
+              style={{background: 'rgba(8,16,15,0.97)'}}
             >
-              {solidRecolor
-                ? SOLID_RECOLOR_IMAGE_SETS.map((set, i) => (
-                    <button
-                      key={set.id}
-                      onClick={() => setImgIdx(i)}
-                      aria-label={set.label}
-                      aria-current={i === imgIdx}
-                      className="relative aspect-square w-16 shrink-0 overflow-hidden transition md:w-full"
-                      style={{
-                        outline:
-                          i === imgIdx
-                            ? '1px solid var(--accent)'
-                            : '1px solid var(--border)',
-                      }}
-                    >
-                      <SolidRecolorCanvas
-                        hex={selectedShade?.hex}
-                        imageSetId={set.id}
-                        alt=""
-                        className="absolute inset-0 h-full w-full"
-                      />
-                    </button>
-                  ))
-                : displayImages.map((img, i) => (
+              <button
+                onClick={() => setFullOpen(false)}
+                aria-label="Close full screen"
+                className="touch-target absolute z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full border transition hover:text-accent active:opacity-80"
+                style={{
+                  borderColor: 'var(--border)',
+                  background: 'rgba(8,16,15,0.4)',
+                  top: 'max(1.25rem, env(safe-area-inset-top))',
+                  right: 'max(1.25rem, env(safe-area-inset-right))',
+                }}
+              >
+                <X className="h-5 w-5" strokeWidth={1} />
+              </button>
+
+              {imgCount > 1 && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="no-scrollbar order-last flex shrink-0 gap-3 overflow-x-auto border-t p-4 md:order-first md:max-h-full md:w-28 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:border-r md:border-t-0 md:p-5"
+                  style={{
+                    borderColor: 'var(--border)',
+                    paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+                  }}
+                >
+                  {displayImages.map((img, i) => (
                     <button
                       key={img.src}
                       onClick={() => setImgIdx(i)}
@@ -791,56 +752,67 @@ export function ProductView({
                       />
                     </button>
                   ))}
-            </div>
-          )}
-
-          <div className="relative flex min-h-0 flex-1 items-center justify-center p-4 md:p-10">
-            {solidRecolor ? (
-              <SolidRecolorCanvas
-                hex={selectedShade?.hex}
-                imageSetId={activeSolidImageSet.id}
-                fit="contain"
-                alt={`${product.name} — ${activeSolidImageSet.label}`}
-                onClick={(e) => e.stopPropagation()}
-                className="absolute inset-0 m-auto max-h-full max-w-full p-4 md:p-10"
-              />
-            ) : (
-              <CatalogImage
-                image={displayImages[imgIdx]}
-                onClick={(e) => e.stopPropagation()}
-                className="absolute inset-0 m-auto max-h-full max-w-full object-contain p-4 md:p-10"
-              />
-            )}
-            {imgCount > 1 && (
-              <>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    prevImg();
-                  }}
-                  aria-label="Previous image"
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/80 hover:text-accent md:left-8"
-                >
-                  <ChevronLeft className="h-7 w-7" strokeWidth={1} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    nextImg();
-                  }}
-                  aria-label="Next image"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/80 hover:text-accent md:right-8"
-                >
-                  <ChevronRight className="h-7 w-7" strokeWidth={1} />
-                </button>
-                <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-xs tracking-[0.25em] text-muted-foreground">
-                  {imgIdx + 1}/{imgCount}
                 </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+              )}
+
+              <div
+                className="relative flex min-h-0 flex-1 items-center justify-center p-4 md:p-10"
+                onTouchStart={handleGalleryTouchStart}
+                onTouchEnd={handleGalleryTouchEnd}
+              >
+                <CatalogImage
+                  image={displayImages[imgIdx]}
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute inset-0 m-auto max-h-full max-w-full object-contain p-4 md:p-10"
+                />
+                {imgCount > 1 && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        prevImg();
+                      }}
+                      aria-label="Previous image"
+                      className="touch-target absolute left-4 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-foreground/80 hover:text-accent active:opacity-80 md:left-8"
+                    >
+                      <ChevronLeft className="h-7 w-7" strokeWidth={1} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        nextImg();
+                      }}
+                      aria-label="Next image"
+                      className="touch-target absolute right-4 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-foreground/80 hover:text-accent active:opacity-80 md:right-8"
+                    >
+                      <ChevronRight className="h-7 w-7" strokeWidth={1} />
+                    </button>
+                    <div
+                      className="absolute left-1/2 -translate-x-1/2 text-xs tracking-[0.25em] text-muted-foreground"
+                      style={{bottom: 'max(1.25rem, env(safe-area-inset-bottom))'}}
+                    >
+                      {imgIdx + 1}/{imgCount}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+
+      {tryColoursOpen && solidRecolor && productShades.length > 0 ? (
+        <TryColoursModal
+          open={tryColoursOpen}
+          onClose={() => setTryColoursOpen(false)}
+          productName={product.name}
+          shades={productShades}
+          selectedCode={selectedShadeCode}
+          onSelectShade={setSelectedShadeCode}
+          imageIdx={recolorImgIdx}
+          onImageIdxChange={setRecolorImgIdx}
+        />
+      ) : null}
     </div>
   );
 }

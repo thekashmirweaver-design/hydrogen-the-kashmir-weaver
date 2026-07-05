@@ -6,6 +6,7 @@ type CatalogImageProps = {
   image: ProductImage;
   className?: string;
   loading?: 'eager' | 'lazy';
+  fetchPriority?: 'high' | 'low' | 'auto';
   sizes?: string;
   style?: CSSProperties;
   onClick?: (e: MouseEvent) => void;
@@ -20,10 +21,13 @@ export function CatalogImage({
   image,
   className,
   loading = 'lazy',
+  fetchPriority,
   sizes = '(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw',
   style,
   onClick,
 }: CatalogImageProps) {
+  const decoding = loading === 'eager' ? 'sync' : 'async';
+
   if (isShopifyCdn(image.src)) {
     return (
       <Image
@@ -38,6 +42,7 @@ export function CatalogImage({
         sizes={sizes}
         style={style}
         onClick={onClick}
+        {...(fetchPriority ? {fetchPriority} : {})}
       />
     );
   }
@@ -48,10 +53,42 @@ export function CatalogImage({
       alt={image.alt}
       className={className}
       loading={loading}
+      decoding={decoding}
+      {...(fetchPriority ? {fetchPriority} : {})}
       style={style}
       onClick={onClick}
       width={image.width}
       height={image.height}
+    />
+  );
+}
+
+/** Hero / editorial image with responsive Shopify srcset when on CDN. */
+export function EditorialImage({
+  src,
+  alt,
+  className,
+  loading = 'lazy',
+  fetchPriority,
+  sizes = '100vw',
+  style,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  loading?: 'eager' | 'lazy';
+  fetchPriority?: 'high' | 'low' | 'auto';
+  sizes?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <CatalogImage
+      image={{src, alt}}
+      className={className}
+      loading={loading}
+      fetchPriority={fetchPriority}
+      sizes={sizes}
+      style={style}
     />
   );
 }

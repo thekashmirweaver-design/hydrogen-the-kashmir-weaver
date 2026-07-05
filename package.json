@@ -10,6 +10,7 @@
     "preview": "shopify hydrogen preview --build",
     "lint": "eslint --no-error-on-unmatched-pattern .",
     "typecheck": "react-router typegen && tsc --noEmit",
+    "lighthouse": "lhci autorun",
     "codegen": "shopify hydrogen codegen && react-router typegen",
     "seed:shopify": "tsx scripts/seed-shopify-admin.ts",
     "seed:sizes": "tsx scripts/seed-product-sizes.ts",
@@ -26,9 +27,12 @@
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.2.11",
+    "@fontsource/inter": "^5.2.8",
     "@shopify/hydrogen": "2026.1.0",
     "@tailwindcss/postcss": "^4.3.2",
     "@tailwindcss/vite": "^4.3.2",
+    "@tanstack/react-virtual": "^3.14.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "graphql": "^16.10.0",
@@ -42,6 +46,7 @@
     "react-router-dom": "^7.12.0",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.2",
+    "web-vitals": "^5.3.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
@@ -49,6 +54,7 @@
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@graphql-codegen/cli": "5.0.2",
+    "@lhci/cli": "^0.15.1",
     "@react-router/dev": "7.12.0",
     "@react-router/fs-routes": "7.12.0",
     "@shopify/cli": "3.85.4",

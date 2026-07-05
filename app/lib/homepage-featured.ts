@@ -34,12 +34,26 @@ function parseJsonField<T>(value: string | null | undefined): T | null {
   }
 }
 
+/** Metafields may store absolute Oxygen/production URLs; serve /public assets locally. */
+function localizePublicAssetUrl(url: string | undefined): string | undefined {
+  if (!url?.trim()) return url;
+  if (url.startsWith('/assets/')) return url;
+  try {
+    const {pathname} = new URL(url);
+    if (pathname.startsWith('/assets/')) return pathname;
+  } catch {
+    // Not a URL — return as-is.
+  }
+  return url;
+}
+
 export async function loadHomepageFeatured(
   storefront: Storefront,
 ): Promise<HomepageFeatured> {
   try {
     const data = await storefront.query<HomepageFeaturedQueryResult>(
       HOMEPAGE_FEATURED_QUERY,
+      {cache: storefront.CacheLong()},
     );
     const parsed = parseJsonField<{
       productHandles?: string[];
@@ -51,7 +65,7 @@ export async function loadHomepageFeatured(
     return {
       productHandles: parsed?.productHandles?.filter(Boolean) ?? [],
       collectionHandles: parsed?.collectionHandles?.filter(Boolean) ?? [],
-      heroImageUrl: parsed?.heroImageUrl,
+      heroImageUrl: localizePublicAssetUrl(parsed?.heroImageUrl),
       heroAlt: parsed?.heroAlt,
     };
   } catch {

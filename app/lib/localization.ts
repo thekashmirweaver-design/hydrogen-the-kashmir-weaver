@@ -104,11 +104,18 @@ export function buildCurrencyOptions(
 function resolveSelectedCurrency(
   currencies: ShopCurrencyOption[],
   selectedCountry: CountryCode,
+  apiCurrencyCode?: string | null,
 ): ShopCurrencyOption {
   const byCountry = currencies.find((c) => c.countryCode === selectedCountry);
   if (byCountry) return byCountry;
 
-  return currencies[0] ?? FALLBACK_CURRENCY;
+  const normalizedApiCurrency = apiCurrencyCode?.trim();
+  if (normalizedApiCurrency) {
+    const byApiCurrency = currencies.find((c) => c.code === normalizedApiCurrency);
+    if (byApiCurrency) return byApiCurrency;
+  }
+
+  return FALLBACK_CURRENCY;
 }
 
 export async function loadLocalization(
@@ -119,18 +126,26 @@ export async function loadLocalization(
   try {
     const data = await storefront.query<LocalizationQueryResult>(
       LOCALIZATION_QUERY,
+      {cache: storefront.CacheLong()},
     );
 
     const currencies = buildCurrencyOptions(data.localization?.availableCountries);
-    const marketCountry =
-      (data.localization?.country?.isoCode?.trim() as CountryCode | undefined) ??
-      selectedCountry;
+    const apiCountry = data.localization?.country?.isoCode?.trim() as
+      | CountryCode
+      | undefined;
+    const marketCountry = apiCountry ?? selectedCountry;
+    const apiCurrencyCode = data.localization?.country?.currency?.isoCode;
+    const resolvedCurrency = resolveSelectedCurrency(
+      currencies,
+      marketCountry,
+      apiCurrencyCode,
+    );
 
     if (currencies.length) {
       return {
         currencies,
         selectedCountry: marketCountry,
-        selectedCurrency: resolveSelectedCurrency(currencies, marketCountry),
+        selectedCurrency: resolvedCurrency,
       };
     }
   } catch {

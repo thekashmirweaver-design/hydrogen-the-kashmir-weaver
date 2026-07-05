@@ -67,3 +67,9 @@ export function useRecolorAssets(imageSetId: string, enabled = true) {
 
   return {assets, error, imageSet: set};
 }
+
+/** Warm recolor assets for a single image set. */
+export function prefetchRecolorAssets(imageSetId: string): void {
+  const set = getSolidRecolorImageSet(imageSetId);
+  void loadSetAssets(set);
+}

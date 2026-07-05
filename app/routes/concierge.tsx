@@ -1,17 +1,18 @@
 import type {Route} from './+types/concierge';
 import {ConciergeView} from '~/views/content/ConciergeView';
-import {ogMeta} from '~/lib/seo';
+import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
 
 const CONCIERGE_TITLE = 'Concierge — The Kashmir Weaver';
 const CONCIERGE_DESC =
   'Private inquiries, bespoke commissions, and atelier appointments.';
 
-export const meta: Route.MetaFunction = () => {
-  return [
-    {title: CONCIERGE_TITLE},
-    {name: 'description', content: CONCIERGE_DESC},
-    ...ogMeta({title: CONCIERGE_TITLE, description: CONCIERGE_DESC}),
-  ];
+export const meta: Route.MetaFunction = ({location, matches}) => {
+  const storeUrl = getStoreUrlFromMatches(matches);
+  return seoBundle({
+    metadata: {title: CONCIERGE_TITLE, description: CONCIERGE_DESC},
+    pathname: location.pathname,
+    storeUrl,
+  });
 };
 
 export default function ConciergeRoute() {

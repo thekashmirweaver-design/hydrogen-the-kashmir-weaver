@@ -1,11 +1,13 @@
 import * as CatalogRepository from '~/models/catalog.repository';
 import type {CatalogOptions} from '~/models/catalog.repository';
-import type {Collection, Product} from '~/models/types';
+import type {CatalogSnapshot, Collection, Product} from '~/models/types';
 import {
   loadHomepageFeatured,
   pickCollectionsByHandles,
   pickProductsByHandles,
 } from '~/lib/homepage-featured';
+import {resolveCatalogSnapshot} from '~/lib/shared-catalog';
+import {truncateMetaDescription} from '~/lib/meta-description';
 
 export type PageMetadata = {
   title: string;
@@ -20,13 +22,11 @@ export type HomePageViewModel = {
 };
 
 export async function getHomePage(
-    options?: CatalogOptions,
-    featured?: Awaited<ReturnType<typeof loadHomepageFeatured>>,
+  options?: CatalogOptions,
+  featured?: Awaited<ReturnType<typeof loadHomepageFeatured>>,
+  catalog?: CatalogSnapshot,
 ): Promise<HomePageViewModel> {
-  const [products, collections] = await Promise.all([
-    CatalogRepository.listProducts(options),
-    CatalogRepository.listCollections(options),
-  ]);
+  const {products, collections} = await resolveCatalogSnapshot(options, catalog);
   const featuredProducts = pickProductsByHandles(
     products,
     featured?.productHandles ?? [],
@@ -49,12 +49,15 @@ export type ProductPageViewModel = {
 export async function getProductPage(
   handle: string,
   options?: CatalogOptions,
+  catalog?: CatalogSnapshot,
 ): Promise<ProductPageViewModel | null> {
-  const product = await CatalogRepository.findProductByHandle(handle, options);
+  const snapshot = await resolveCatalogSnapshot(options, catalog);
+  const product =
+    snapshot.products.find((item) => item.handle === handle) ??
+    (await CatalogRepository.findProductByHandle(handle, options));
   if (!product) return null;
 
-  const allProducts = await CatalogRepository.listProducts(options);
-  const relatedProducts = allProducts
+  const relatedProducts = snapshot.products
     .filter(
       (p) =>
         p.handle !== product.handle &&
@@ -64,21 +67,26 @@ export async function getProductPage(
 
   const url = `/products/${handle}`;
   const title = product.seo?.title ?? `${product.name} — The Kashmir Weaver`;
-  const description =
-    product.seo?.description ?? product.shortDescription;
+  const description = truncateMetaDescription(
+    product.seo?.description ?? product.shortDescription,
+  );
 
   const inStock =
     product.variants?.some((v) => v.availableForSale) ?? product.stock === 'in';
+
+  const primarySku =
+    product.variants?.find((v) => v.sku)?.sku ?? product.variants?.[0]?.sku;
 
   const productLd: Record<string, unknown> = {
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: product.name,
-      description: product.shortDescription,
+      description: truncateMetaDescription(product.shortDescription),
       image: product.images.map((i) => i.src),
       brand: {'@type': 'Brand', name: 'The Kashmir Weaver'},
       material: product.material,
       category: product.collectionName,
+      ...(primarySku ? {sku: primarySku} : {}),
       offers: {
         '@type': 'Offer',
         price: product.price.amount,
