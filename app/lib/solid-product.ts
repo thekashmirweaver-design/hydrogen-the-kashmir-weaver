@@ -23,14 +23,6 @@ export const SOLID_RECOLOR_IMAGE_SETS: SolidRecolorImageSet[] = [
     original: '/assets/solids-recolor/0/original.png',
     productOnly: true,
   },
-  {
-    id: '2',
-    label: 'On model',
-    grayscale: '/assets/solids-recolor/2/grayscale.jpeg',
-    mask: '/assets/solids-recolor/2/mask.jpeg',
-    original: '/assets/solids-recolor/2/original.jpeg',
-    productOnly: false,
-  },
 ];
 
 export function getSolidRecolorImageSet(id: string): SolidRecolorImageSet {

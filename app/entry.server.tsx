@@ -61,8 +61,8 @@ export default async function handleRequest(
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
-    styleSrc: ['https://fonts.googleapis.com'],
-    fontSrc: ['https://fonts.gstatic.com', "'self'"],
+    // Bundled @fontsource assets are served from Oxygen CDN, not the storefront origin.
+    fontSrc: ["'self'", 'https://cdn.shopify.com'],
     ...(extraOrigins.length || devOrigins.length || crossStorefrontImgOrigins.length
       ? {
           connectSrc: [...extraOrigins, ...devOrigins],
