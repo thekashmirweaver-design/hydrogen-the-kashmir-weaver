@@ -120,7 +120,7 @@ export const CATALOG_PRODUCT_FRAGMENT =
     featuredImage {
       ...CatalogImage
     }
-    images(first: 20) {
+    images(first: 250) {
       edges {
         node {
           ...CatalogImage

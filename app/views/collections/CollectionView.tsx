@@ -8,6 +8,7 @@ import {
   CollectionProductsScrollCue,
 } from '~/components/gulriza/CollectionProductsScrollCue';
 import {ProductCatalog} from '~/components/gulriza/ProductCatalog';
+import {CollectionHeroBanner} from '~/components/gulriza/CollectionHeroBanner';
 import type {Collection, Product} from '~/models/types';
 
 export function CollectionView({
@@ -24,14 +25,7 @@ export function CollectionView({
   return (
     <div>
       <section className="relative pt-[calc(var(--header-h)+1rem)]">
-        <div className="relative aspect-[3/4] w-full overflow-hidden md:aspect-video">
-          <img
-            src={collection.hero.src}
-            alt={collection.hero.alt}
-            className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
-            loading="eager"
-          />
-          <div className="absolute inset-0 vignette-overlay" />
+        <CollectionHeroBanner hero={collection.hero} priority>
           <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1600px] px-6 pb-10 md:px-10 md:pb-20">
             <Reveal>
               <Eyebrow>{collection.tagline}</Eyebrow>
@@ -49,7 +43,7 @@ export function CollectionView({
               </p>
             </Reveal>
           </div>
-        </div>
+        </CollectionHeroBanner>
 
         <div className="mx-auto max-w-[1600px] px-6 pt-8 md:hidden">
           <Reveal>

@@ -2,6 +2,7 @@ import {Link} from 'react-router';
 import {ArrowRight} from 'lucide-react';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {CollectionStoryMobile} from '~/components/gulriza/CollectionStoryMobile';
+import {CollectionHeroBanner} from '~/components/gulriza/CollectionHeroBanner';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {OriginMap} from '~/components/gulriza/OriginMap';
 import {ProductTile} from '~/components/gulriza/ProductTile';
@@ -206,21 +207,7 @@ function SignatureCollections({
                 </div>
               )}
               <Reveal className="relative w-full">
-                <div className="relative aspect-[3/4] w-full overflow-hidden md:aspect-video">
-                  <EditorialImage
-                    src={c.hero.src}
-                    alt={c.hero.alt}
-                    className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
-                    sizes="100vw"
-                  />
-                  <div className="vignette-overlay pointer-events-none absolute inset-0" />
-                  <div
-                    className="pointer-events-none absolute inset-0 hidden md:block"
-                    style={{
-                      background:
-                        'linear-gradient(to top, rgba(8,16,15,0.95) 0%, rgba(8,16,15,0.35) 45%, transparent 70%)',
-                    }}
-                  />
+                <CollectionHeroBanner hero={c.hero}>
                   <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1600px] px-6 pb-10 md:px-10 md:pb-16">
                     <Eyebrow>{c.tagline}</Eyebrow>
                     <h3
@@ -239,7 +226,7 @@ function SignatureCollections({
                       <ExploreCollectionCta handle={c.handle} name={c.name} />
                     </div>
                   </div>
-                </div>
+                </CollectionHeroBanner>
 
                 <div className="mx-auto max-w-[1600px] px-6 pt-8 md:hidden">
                   <CollectionStoryMobile text={c.story} />

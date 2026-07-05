@@ -67,6 +67,8 @@ export function CatalogImage({
 export function EditorialImage({
   src,
   alt,
+  width,
+  height,
   className,
   loading = 'lazy',
   fetchPriority,
@@ -75,6 +77,8 @@ export function EditorialImage({
 }: {
   src: string;
   alt: string;
+  width?: number;
+  height?: number;
   className?: string;
   loading?: 'eager' | 'lazy';
   fetchPriority?: 'high' | 'low' | 'auto';
@@ -83,7 +87,7 @@ export function EditorialImage({
 }) {
   return (
     <CatalogImage
-      image={{src, alt}}
+      image={{src, alt, width, height}}
       className={className}
       loading={loading}
       fetchPriority={fetchPriority}

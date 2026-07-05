@@ -1,5 +1,5 @@
 import {Await, Link, useLocation, useNavigation} from 'react-router';
-import {Suspense, type ReactNode} from 'react';
+import {Suspense, useMemo, type ReactNode} from 'react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CatalogSnapshot} from '~/models/types';
 import type {ShopSettings} from '~/lib/shop-settings';
@@ -54,7 +54,10 @@ export function PageLayout({
 }: PageLayoutProps) {
   const location = useLocation();
   const isHome = location.pathname === '/';
-  const layoutSession = Promise.all([catalog, cart, customerAccessToken]);
+  const layoutSession = useMemo(
+    () => Promise.all([catalog, cart, customerAccessToken]),
+    [catalog, cart, customerAccessToken],
+  );
 
   return (
     <LocalizationProvider localization={localization}>
@@ -72,7 +75,7 @@ export function PageLayout({
                 publicAccessToken={publicAccessToken}
                 customerAccessToken={null}
               />
-              <main>{children}</main>
+              <main aria-busy="true" />
               <SiteFooter shopSettings={shopSettings} />
             </>
           </CatalogProvider>
