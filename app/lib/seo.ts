@@ -4,7 +4,7 @@ export {
   truncateMetaDescription,
 } from '~/lib/meta-description';
 
-const DEFAULT_STORE_URL = 'https://thekashmirweaver.shop';
+const DEFAULT_STORE_URL = 'https://thekashmirweaver.in';
 const SITE_NAME = 'The Kashmir Weaver';
 
 export type MetaDescriptor = Record<string, string>;

@@ -28,6 +28,7 @@ import {
 } from '~/lib/product-inventory';
 import {formatOptionDisplay, isSizeOptionName} from '~/lib/parse-size-option';
 import {useFocusTrap} from '~/hooks/use-focus-trap';
+import {useHorizontalSwipe} from '~/hooks/use-horizontal-swipe';
 import {lockScroll, unlockScroll} from '~/lib/scroll-lock';
 import {getProductShades, getDefaultSolidShadeCode, isSolidProduct} from '~/lib/solid-product';
 import {buildBuyNowShadeQuery, shadeCartAttributes} from '~/lib/shade-cart';
@@ -165,27 +166,26 @@ export function ProductView({
   const activeImage = displayImages[displayIdx] ?? displayImages[0];
   const previewImage = (i: number) => setHoverImgIdx(i);
   const clearImagePreview = () => setHoverImgIdx(null);
-  const prevImg = () => setImgIdx((i) => (i - 1 + imgCount) % imgCount);
-  const nextImg = () => setImgIdx((i) => (i + 1) % imgCount);
-  const touchStartX = useRef<number | null>(null);
+  const prevImg = useCallback(() => {
+    setHoverImgIdx(null);
+    setImgIdx((i) => (i - 1 + imgCount) % imgCount);
+  }, [imgCount]);
+  const nextImg = useCallback(() => {
+    setHoverImgIdx(null);
+    setImgIdx((i) => (i + 1) % imgCount);
+  }, [imgCount]);
 
-  const handleGalleryTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0]?.clientX ?? null;
-  }, []);
+  const gallerySwipe = useHorizontalSwipe({
+    onSwipeLeft: nextImg,
+    onSwipeRight: prevImg,
+    enabled: imgCount > 1,
+  });
 
-  const handleGalleryTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
-      if (touchStartX.current === null || imgCount <= 1) return;
-      const endX = e.changedTouches[0]?.clientX ?? touchStartX.current;
-      const diff = endX - touchStartX.current;
-      if (Math.abs(diff) > 50) {
-        if (diff < 0) nextImg();
-        else prevImg();
-      }
-      touchStartX.current = null;
-    },
-    [imgCount],
-  );
+  const lightboxSwipe = useHorizontalSwipe({
+    onSwipeLeft: nextImg,
+    onSwipeRight: prevImg,
+    enabled: fullOpen && imgCount > 1,
+  });
 
   const openColourStudio = useCallback(() => {
     setFullOpen(false);
@@ -221,7 +221,7 @@ export function ProductView({
       window.removeEventListener('keydown', onKey);
       unlockScroll();
     };
-  }, [fullOpen, imgCount]);
+  }, [fullOpen, imgCount, nextImg, prevImg]);
 
   return (
     <div>
@@ -250,9 +250,8 @@ export function ProductView({
           <div className="mx-auto w-full min-w-0 lg:mx-0 lg:h-full lg:self-stretch">
             <div className="flex h-full min-h-0 flex-col gap-2 md:grid md:grid-cols-[auto_1fr] md:gap-2">
               <div
-                className="relative flex w-full min-w-0 items-center justify-center md:col-start-2 md:row-start-1"
-                onTouchStart={handleGalleryTouchStart}
-                onTouchEnd={handleGalleryTouchEnd}
+                className="relative flex w-full min-w-0 touch-pan-y select-none items-center justify-center md:col-start-2 md:row-start-1"
+                {...gallerySwipe}
               >
                 <CatalogImage
                   image={activeImage!}
@@ -786,9 +785,8 @@ export function ProductView({
               )}
 
               <div
-                className="relative flex min-h-0 flex-1 items-center justify-center p-4 md:p-10"
-                onTouchStart={handleGalleryTouchStart}
-                onTouchEnd={handleGalleryTouchEnd}
+                className="relative flex min-h-0 flex-1 touch-pan-y select-none items-center justify-center p-4 md:p-10"
+                {...lightboxSwipe}
               >
                 <CatalogImage
                   image={activeImage!}

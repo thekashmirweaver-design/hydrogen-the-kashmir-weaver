@@ -1,6 +1,6 @@
 # SEO, performance & domains
 
-How The Kashmir Weaver storefront handles search indexing, canonical URLs, and the multi-domain migration from `.shop` (now) to `.com` (later).
+How The Kashmir Weaver storefront handles search indexing, canonical URLs, and multi-domain redirects.
 
 **Related:** [deploy.md](./deploy.md) (Oxygen env, Customer Account OAuth, domain connection)
 
@@ -21,9 +21,11 @@ Do not index the same pages on two hostnames. That splits ranking signals and tr
 
 | Hostname | Role today | SEO treatment |
 | --- | --- | --- |
-| `https://thekashmirweaver.shop` | **Primary Hydrogen storefront (now)** | Index this. Submit sitemap here. |
-| `www.thekashmirweaver.shop` | Alias | Should 301 → apex `.shop` |
-| `https://thekashmirweaver.com` | Legacy app (Vercel) today; **Phase 2:** `window.redirect` → `.shop` while DNS stays on old app; **Phase 3:** DNS → Hydrogen, primary domain |
+| `https://thekashmirweaver.in` | **Primary Hydrogen storefront (now)** | Index this. Submit sitemap here. |
+| `www.thekashmirweaver.in` | Alias | 301 → apex `.in` (Hydrogen `server.ts`) |
+| `https://thekashmirweaver.shop` | Legacy / alternate TLD | 301 → `.in` (Hydrogen `server.ts`) |
+| `www.thekashmirweaver.shop` | Alias | 301 → `.in` |
+| `https://thekashmirweaver.com` | Legacy app (Vercel) today; **Phase 2:** redirect → `.in` while DNS stays on old app; **Phase 3:** DNS → Hydrogen |
 | `*.o2.myshopify.dev` | Oxygen preview | Do not submit to Google. Staff/preview only. |
 | `70yuey-sr.myshopify.com` | Password-protected Online Store | Not the headless storefront; ignore for Hydrogen SEO. |
 | `gulriza-kashmir-atelier.lovable.app` | Design prototype (separate repo) | Add `noindex` or take offline to avoid competing with production. |
@@ -32,100 +34,79 @@ Do not index the same pages on two hostnames. That splits ranking signals and tr
 
 ## Migration plan (agreed strategy)
 
-Three phases. **`.com` DNS stays on the old app until Phase 3.** Phase 2 only adds redirect logic on that old app — Hydrogen is not involved yet.
-
 ```text
-Phase 1 (now)     thekashmirweaver.shop  → Hydrogen (index here)
-Phase 2 (later)   thekashmirweaver.com   → still old app, but window.redirect → .shop
-Phase 3 (final)   thekashmirweaver.com   → DNS points to Hydrogen (primary domain)
+Phase 1 (now)     thekashmirweaver.in   → Hydrogen (index here)
+                  thekashmirweaver.shop → 301 → .in (this repo)
+Phase 2 (later)   thekashmirweaver.com  → still old app, redirect users → .in
+Phase 3 (final)   thekashmirweaver.com  → DNS points to Hydrogen (optional primary swap)
 ```
 
-### Phase 1 — Now: index on `.shop`
+### Phase 1 — Now: index on `.in`
 
-Hydrogen is live at **`thekashmirweaver.shop`**. All SEO signals should reference this origin.
+Hydrogen is live at **`thekashmirweaver.in`**. All SEO signals should reference this origin.
 
-**Configuration (already in place):**
+**Configuration:**
 
 ```bash
-PUBLIC_STORE_URL=https://thekashmirweaver.shop
+PUBLIC_STORE_URL=https://thekashmirweaver.in
 ```
 
 Set on Oxygen **Production** environment variables and in local `.env`.
 
+**Host redirects (in this repo):**
+
+`server.ts` calls `redirectNonPrimaryStoreHost()` before React Router. These hostnames 301 to `PUBLIC_STORE_URL` with the same path and query:
+
+- `thekashmirweaver.shop`, `www.thekashmirweaver.shop`
+- `www.thekashmirweaver.in`
+
+Both `.in` and `.shop` must be **connected** to the Hydrogen production environment in Shopify Admin so traffic reaches Oxygen.
+
 **Search Console (do once):**
 
-1. Add property: `thekashmirweaver.shop`
-2. Submit sitemap: `https://thekashmirweaver.shop/sitemap.xml`
+1. Add property: `thekashmirweaver.in`
+2. Submit sitemap: `https://thekashmirweaver.in/sitemap.xml`
 3. Monitor **Pages** and **Sitemap** reports for 404s
 
-**Do not point `.com` at Hydrogen yet.** The old site may still be indexed at `.com` — that is fine until Phase 2.
+**Verify redirect:**
+
+```bash
+curl -sI "https://thekashmirweaver.shop/products/example"
+# Expect: HTTP/1.1 301 → https://thekashmirweaver.in/products/example
+```
 
 ---
 
-### Phase 2 — Before `.com` moves here: old site redirects users to `.shop`
+### Phase 2 — Before `.com` moves here: old site redirects users to `.in`
 
-When you are ready, you will change the **previous `.com` website** (still on Vercel / its current host — **DNS unchanged**).
+When you are ready, change the **previous `.com` website** (still on Vercel / its current host — **DNS unchanged**).
 
-That app gets hard client-side redirect logic, for example:
+That app gets redirect logic, for example:
 
 ```javascript
 // On the legacy thekashmirweaver.com app (not this Hydrogen repo)
-const SHOP_ORIGIN = 'https://thekashmirweaver.shop';
+const PRIMARY_ORIGIN = 'https://thekashmirweaver.in';
 
-// Sitewide: send humans to the same path on .shop
-window.location.replace(SHOP_ORIGIN + window.location.pathname + window.location.search);
+window.location.replace(
+  PRIMARY_ORIGIN + window.location.pathname + window.location.search,
+);
 ```
 
-Or per-route logic if old URL paths differ — map old paths to the matching `.shop` URL.
+Prefer **301 server redirects** (Vercel `redirects`, etc.) over JS-only for crawlers.
 
-**What this phase does:**
-
-| | |
-| --- | --- |
-| **Users** | Anyone visiting `.com` lands on `.shop` (Hydrogen). |
-| **DNS** | `.com` still points at the **old app** — only the old app’s JavaScript redirects. |
-| **Hydrogen** | No changes. Still canonical/index on `.shop`. |
-| **This repo** | Nothing to deploy for Phase 2 — work happens in the legacy `.com` codebase. |
-
-**SEO note:** `window.location` redirects work for **people**, but Google passes ranking signals more reliably with **301 server redirects**. If the old app can also send a **301** (Vercel `redirects` in `vercel.json`, etc.), prefer that for crawlers — or use 301 instead of JS where possible. At minimum on the old app, consider `<link rel="canonical" href="https://thekashmirweaver.shop/...">` on indexed pages so Google consolidates on `.shop` while `.com` DNS still points elsewhere.
-
-**Before Phase 2:**
-
-1. Export top indexed `.com` URLs from Search Console.
-2. Decide path mapping (old `.com` path → same path on `.shop`, or a small redirect table in the old app).
+**Hydrogen:** No changes beyond Phase 1. Still canonical/index on `.in`.
 
 ---
 
 ### Phase 3 — When you decide: point `.com` at Hydrogen
 
-Only when you are ready for **`.com` to serve this storefront directly** (no more old app in the middle):
+Only when **`.com` should serve this storefront directly**:
 
-1. **Shopify Admin → Hydrogen → Production → Domains**  
-   Connect `thekashmirweaver.com` (+ `www`). Set **`.com` as primary**.
-
-2. **Remove** redirect logic from the old `.com` app (DNS no longer hits it).
-
-3. **301 redirects** on Shopify (domain settings):  
-   - `thekashmirweaver.shop` → `https://thekashmirweaver.com`  
-   - `www.thekashmirweaver.com` → `https://thekashmirweaver.com`  
-   - `www.thekashmirweaver.shop` → `https://thekashmirweaver.com`
-
-4. **Update env and redeploy this repo:**
-
-   ```bash
-   PUBLIC_STORE_URL=https://thekashmirweaver.com
-   ```
-
-   Also update **Customer Account API** OAuth in Admin — see [deploy.md](./deploy.md#custom-domain).
-
-5. **Update code default** in `app/lib/seo.ts` (`DEFAULT_STORE_URL`) to `.com`.
-
-6. **Search Console:**  
-   - Add / focus on `thekashmirweaver.com`  
-   - Submit `https://thekashmirweaver.com/sitemap.xml`  
-   - Use **Change of address** (`.shop` → `.com`) if `.shop` had meaningful traffic  
-
-7. **Verify:** canonicals and JSON-LD use `https://thekashmirweaver.com/...`.
+1. Connect `thekashmirweaver.com` (+ `www`) in **Hydrogen → Production → Domains**.
+2. Remove redirect logic from the old `.com` app.
+3. Add `.com` to `REDIRECT_TO_PRIMARY_HOSTS` in `app/lib/store-host-redirect.ts` if `.com` should 301 → `.in`, **or** flip primary to `.com` and update `PUBLIC_STORE_URL` if `.com` becomes canonical.
+4. Update Customer Account API OAuth — see [deploy.md](./deploy.md#custom-domain).
+5. Search Console: new property / change of address as needed.
 
 ---
 
@@ -147,7 +128,8 @@ Markets use **`?country=` + session** for currency/pricing (`app/lib/i18n.ts`), 
 | --- | --- |
 | Env var | `PUBLIC_STORE_URL` — set on Oxygen; exposed as `publicStoreUrl` from root loader |
 | SEO helpers | `app/lib/seo.ts` — `resolveStoreUrl`, `canonicalLink`, `seoBundle`, `absoluteUrl` |
-| Fallback | `DEFAULT_STORE_URL` in `seo.ts` (currently `https://thekashmirweaver.shop`) |
+| Fallback | `DEFAULT_STORE_URL` in `seo.ts` (`https://thekashmirweaver.in`) |
+| Host redirects | `app/lib/store-host-redirect.ts` — 301 `.shop` / `www.*` → primary |
 
 Route `meta` exports use `seoBundle()` so every indexable page gets:
 
@@ -187,7 +169,7 @@ Generated at `/robots.txt`. Policy pages under `/policies/*` are **allowed** (tr
 
 ### Self-hosted fonts
 
-Google Fonts blocking stylesheet was removed. Fonts load from `@fontsource/inter` and `@fontsource/cormorant-garamond` via `app/styles/globals.css`. Critical WOFF2 files are preloaded from `app/root.tsx`.
+Google Fonts blocking stylesheet was removed. Fonts load from `@fontsource/inter` and `@fontsource/cormorant-garamond` via `app/styles/globals.css`. Critical WOFF2 files are preloaded from `app/root.tsx`. CSP allows `https://cdn.shopify.com` for Oxygen-bundled font assets.
 
 ### Images
 
@@ -221,27 +203,24 @@ When adding an indexable route:
 3. Add path to `sitemap.editorial[.xml].tsx` if it is not a Shopify product/collection/page
 4. Confirm robots.txt does not disallow the path
 
-### Domain cutover checklist (Phase 3 only — `.com` on Hydrogen)
+### `.in` cutover checklist (Phase 1)
 
-- [ ] Phase 2 redirect removed from legacy `.com` app (or old app decommissioned)
-- [ ] Connect `.com` in Hydrogen Production domains; set primary
-- [ ] 301 `.shop` and all `www` variants → `.com`
-- [ ] `PUBLIC_STORE_URL=https://thekashmirweaver.com` on Oxygen + redeploy
-- [ ] Update Customer Account API OAuth URIs for `.com`
-- [ ] Update `DEFAULT_STORE_URL` in `app/lib/seo.ts`
-- [ ] GSC: new property, sitemap, change of address if applicable
+- [ ] Connect `thekashmirweaver.in` in Hydrogen Production domains; set **Primary**
+- [ ] Connect `thekashmirweaver.shop` (redirect still needs DNS → Shopify/Oxygen)
+- [ ] `PUBLIC_STORE_URL=https://thekashmirweaver.in` on Oxygen + redeploy
+- [ ] Update Customer Account API OAuth URIs for `.in`
+- [ ] GSC: add `thekashmirweaver.in`, submit sitemap
+- [ ] `curl -sI https://thekashmirweaver.shop/` → 301 to `.in`
 - [ ] Spot-check canonical, OG tags, and JSON-LD on home + one PDP
 
 ### Legacy `.com` redirect checklist (Phase 2 — old app, not this repo)
 
-- [ ] Redirect target is `https://thekashmirweaver.shop` (+ same path where possible)
-- [ ] Path mapping documented for URLs that differ between old and new site
+- [ ] Redirect target is `https://thekashmirweaver.in` (+ same path where possible)
 - [ ] Prefer server 301 in addition to (or instead of) `window.location` for SEO
-- [ ] Hydrogen `PUBLIC_STORE_URL` still `https://thekashmirweaver.shop` — no change here
 
 ### After deploy (any phase)
 
-- [ ] `curl -sI https://thekashmirweaver.shop/sitemap.xml` → 200
+- [ ] `curl -sI https://thekashmirweaver.in/sitemap.xml` → 200
 - [ ] View source on homepage: canonical href matches `PUBLIC_STORE_URL`
 - [ ] [Rich Results Test](https://search.google.com/test/rich-results) on one product URL
 - [ ] GSC Coverage: no spike in 404s
@@ -250,20 +229,14 @@ When adding an indexable route:
 
 ## FAQ
 
-**Should we index both `.shop` and `.com`?**  
-No. Phase 1–2: index **`.shop` only** (Hydrogen). Phase 2 sends `.com` **users** to `.shop` via the old app’s redirect; Google may still see `.com` until you noindex/canonical/301 from the old app. Phase 3: index **`.com` only**, with `.shop` 301 → `.com`.
+**Should we index both `.in` and `.shop`?**  
+No. Index **`.in` only**. `.shop` 301s to `.in` so Google consolidates on one origin.
 
-**Phase 2 — does anything change in this Hydrogen repo?**  
-No. Redirect logic lives in the **legacy `.com` codebase**. Hydrogen keeps serving and indexing `.shop`.
-
-**Why mention 301 if we use `window.redirect`?**  
-JS redirects move browsers; **301 server redirects** (e.g. Vercel `redirects`) pass SEO equity more reliably. Use both if you can; JS-only is acceptable for a short transition if `.shop` is already the GSC primary.
-
-**Do we need hreflang for USD / CAD / EUR?**  
-Not with the current setup. Currency is a query/session concern, not separate URLs.
-
-**What if someone links to the Oxygen preview URL?**  
-Do not use it in marketing. Preview URLs should not appear in sitemaps or Search Console.
+**Where is the `.shop` → `.in` redirect implemented?**  
+`app/lib/store-host-redirect.ts`, invoked from `server.ts` before React Router.
 
 **Where do I change the default domain in code?**  
 `app/lib/seo.ts` → `DEFAULT_STORE_URL`, and `.env.example` / Oxygen `PUBLIC_STORE_URL`.
+
+**Do we need hreflang for USD / CAD / EUR?**  
+Not with the current setup. Currency is a query/session concern, not separate URLs.

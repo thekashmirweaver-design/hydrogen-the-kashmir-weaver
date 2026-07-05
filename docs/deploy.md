@@ -1,6 +1,6 @@
 # Deploy & seed checklist
 
-**See also:** [seo-and-domains.md](./seo-and-domains.md) — indexing strategy, `.shop` → `.com` migration, sitemaps, and Search Console.
+**See also:** [seo-and-domains.md](./seo-and-domains.md) — indexing strategy, `.shop` → `.in` redirects, sitemaps, and Search Console.
 
 ## 1. Get environment variables
 
@@ -24,7 +24,7 @@ Push to Oxygen (run in your terminal — requires confirmation prompt):
 npx shopify hydrogen env push --env=production
 ```
 
-**Production URL:** https://thekashmirweaver.shop (`www` redirects to the apex)
+**Production URL:** https://thekashmirweaver.in (`www.thekashmirweaver.in` and `thekashmirweaver.shop` redirect to the apex)
 
 Legacy Oxygen URL (still works for previews): https://the-kashmir-weaver-4c08a749ba70084fdf74.o2.myshopify.dev
 
@@ -45,7 +45,7 @@ Or set vars manually in **Shopify Admin → Sales channels → Hydrogen → The 
 | `SHOP_ID` | Yes (account login) | Numeric shop ID (same as in `PUBLIC_CUSTOMER_ACCOUNT_API_URL`) |
 | `USE_STATIC_CATALOG` | No | `true` until Admin seeded; remove when live |
 | `CONCIERGE_WEBHOOK_URL` | No | Concierge form webhook |
-| `PUBLIC_STORE_URL` | Recommended | Canonical storefront origin (`https://thekashmirweaver.shop`); seed scripts + CSP cross-origin during domain migration |
+| `PUBLIC_STORE_URL` | Recommended | Canonical storefront origin (`https://thekashmirweaver.in`); seed scripts + CSP + host redirects |
 
 Customer Account API vars are created when you link the Hydrogen storefront. Confirm they exist in **Hydrogen → Production → Environment variables** (not just local `.env`).
 
@@ -60,7 +60,7 @@ redirect_uri={your-storefront-origin}/account/authorize
 For the primary custom domain that is:
 
 ```text
-https://thekashmirweaver.shop/account/authorize
+https://thekashmirweaver.in/account/authorize
 ```
 
 The legacy Oxygen URL callback still works if you serve traffic from it:
@@ -81,9 +81,9 @@ The app routes are already correct (`account_.login.tsx` → `/account/login`, `
 
    | Field | Value |
    | --- | --- |
-   | **Callback URI(s)** | `https://thekashmirweaver.shop/account/authorize` (and the Oxygen URL if still in use) |
-   | **JavaScript origin(s)** | `https://thekashmirweaver.shop` (and the Oxygen URL if still in use) |
-   | **Logout URI** | `https://thekashmirweaver.shop` (and the Oxygen URL if still in use) |
+   | **Callback URI(s)** | `https://thekashmirweaver.in/account/authorize` (and the Oxygen URL if still in use) |
+   | **JavaScript origin(s)** | `https://thekashmirweaver.in` (and the Oxygen URL if still in use) |
+   | **Logout URI** | `https://thekashmirweaver.in` (and the Oxygen URL if still in use) |
 
 6. Save. Retry **Sign in** at `/account/login`.
 
@@ -95,7 +95,7 @@ From the repo root (linked to `70yuey-sr.myshopify.com`):
 
 ```bash
 npx shopify hydrogen customer-account-push \
-  --dev-origin=https://thekashmirweaver.shop \
+  --dev-origin=https://thekashmirweaver.in \
   --storefront-id=gid://shopify/HydrogenStorefront/1000154618
 ```
 
@@ -107,11 +107,11 @@ Hydrogen deploys usually auto-register Oxygen preview URLs; if the production UR
 
 `PUBLIC_CHECKOUT_DOMAIN` does **not** change account OAuth — redirect uses the browser’s storefront origin (`request.url`).
 
-When you add a custom domain (e.g. `https://thekashmirweaver.shop`), register **that** domain in Customer Account API setup as well:
+When you add a custom domain (e.g. `https://thekashmirweaver.in`), register **that** domain in Customer Account API setup as well:
 
-- Callback: `https://thekashmirweaver.shop/account/authorize`
-- JavaScript origin: `https://thekashmirweaver.shop`
-- Logout URI: `https://thekashmirweaver.shop`
+- Callback: `https://thekashmirweaver.in/account/authorize`
+- JavaScript origin: `https://thekashmirweaver.in`
+- Logout URI: `https://thekashmirweaver.in`
 
 Keep Oxygen `.myshopify.dev` URIs if you still serve traffic from that URL.
 
@@ -121,7 +121,7 @@ Customer Account API does not support `localhost`. Use a tunnel (ngrok, Cloudfla
 
 ### Verify account login
 
-1. Open `https://thekashmirweaver.shop/account/login`
+1. Open `https://thekashmirweaver.in/account/login`
 2. You should reach Shopify’s login screen (no `redirect_uri mismatch`).
 3. After login, you land on `/account/orders` (or the page that triggered login).
 4. Header shows **Account** instead of **Sign in**; `/account/profile` loads customer details.
@@ -224,7 +224,7 @@ read_products,write_products,read_content,write_content,read_online_store_naviga
 Set `PUBLIC_STORE_URL` to the live Oxygen URL (so `/assets/*` image URLs resolve during seed):
 
 ```bash
-PUBLIC_STORE_URL=https://thekashmirweaver.shop
+PUBLIC_STORE_URL=https://thekashmirweaver.in
 ```
 
 ### Option A — `shopify store auth` (CLI, recommended)
@@ -327,7 +327,7 @@ Add the token and storefront URL to local `.env` (do not commit):
 
 ```bash
 SHOPIFY_ADMIN_ACCESS_TOKEN=<token from curl>
-PUBLIC_STORE_URL=https://thekashmirweaver.shop
+PUBLIC_STORE_URL=https://thekashmirweaver.in
 ```
 
 If client credentials returns `app_not_installed`, complete step 2 first. Tokens expire after ~24h — re-run the curl command before seeding.
@@ -423,30 +423,31 @@ Custom domains attached to the **Production** Hydrogen environment are publicly 
 
 | Domain | Status |
 | --- | --- |
-| `thekashmirweaver.shop` | **Live** — primary Hydrogen production storefront for **indexing now** (`www` → apex) |
-| `thekashmirweaver.com` / `www.thekashmirweaver.com` | Legacy app today → **Phase 2:** client redirect to `.shop` (DNS unchanged) → **Phase 3:** DNS to Hydrogen, primary — see [seo-and-domains.md](./seo-and-domains.md) |
+| `thekashmirweaver.in` | **Live** — primary Hydrogen production storefront for **indexing now** (`www` → apex) |
+| `thekashmirweaver.shop` | Connected — 301 → `.in` via `server.ts` |
+| `thekashmirweaver.com` / `www.thekashmirweaver.com` | Legacy app today → **Phase 2:** redirect to `.in` (DNS unchanged) → **Phase 3:** DNS to Hydrogen — see [seo-and-domains.md](./seo-and-domains.md) |
 | `70yuey-sr.myshopify.com` | **Password-protected** Online Store |
 
 **Steps:**
 
-1. **Settings → Domains** — confirm `thekashmirweaver.shop` is connected and set as **Primary** for the Hydrogen production environment.
+1. **Settings → Domains** — confirm `thekashmirweaver.in` is connected and set as **Primary** for the Hydrogen production environment. Also connect `thekashmirweaver.shop` so the 301 redirect in `server.ts` receives traffic.
 2. Point DNS to Shopify if not already done (A/CNAME records shown in Admin).
 3. **Hydrogen → The Kashmir Weaver → Production → Domains** — connect the domain to the production environment.
 4. Register the custom origin in **Customer Account API** setup (see [Custom domain](#custom-domain) above) and run:
 
    ```bash
    npx shopify hydrogen customer-account-push \
-     --dev-origin=https://thekashmirweaver.shop \
+     --dev-origin=https://thekashmirweaver.in \
      --storefront-id=gid://shopify/HydrogenStorefront/1000154618
    ```
 
-5. Set Oxygen env `PUBLIC_STORE_URL=https://thekashmirweaver.shop` and redeploy (CSP + seed scripts).
+5. Set Oxygen env `PUBLIC_STORE_URL=https://thekashmirweaver.in` and redeploy (CSP + seed scripts).
 6. Disable Online Store password (Option A, last step).
 
 Verify:
 
 ```bash
-curl -sI "https://thekashmirweaver.shop"
+curl -sI "https://thekashmirweaver.in"
 # Expect: HTTP/2 200, powered-by: Shopify, Oxygen
 ```
 

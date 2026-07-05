@@ -1,8 +1,9 @@
 import {Link} from "react-router";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import type {Product} from "~/models/types";
 import {useFormatPrice} from "~/lib/currency-store";
 import {CatalogImage} from "~/components/gulriza/CatalogImage";
+import {useHorizontalSwipe} from "~/hooks/use-horizontal-swipe";
 
 const TILE_CAROUSEL_MS = 1400;
 const MAX_DOT_INDICATORS = 5;
@@ -65,8 +66,26 @@ export function ProductTile({product}: {product: Product}) {
   const onSale =
     product.compareAtPrice != null && product.compareAtPrice.amount > product.price.amount;
 
-  const displayIndex = hover && loadExtras ? active : 0;
+  const goNext = useCallback(() => {
+    setLoadExtras(true);
+    setActive((i) => (i + 1) % imageCount);
+  }, [imageCount]);
+
+  const goPrev = useCallback(() => {
+    setLoadExtras(true);
+    setActive((i) => (i - 1 + imageCount) % imageCount);
+  }, [imageCount]);
+
+  const tileSwipe = useHorizontalSwipe({
+    onSwipeLeft: goNext,
+    onSwipeRight: goPrev,
+    enabled: multiImage,
+    containSwipe: true,
+  });
+
+  const displayIndex = loadExtras ? active : 0;
   const displayImage = product.images[displayIndex] ?? product.images[0];
+  const showIndicator = multiImage && loadExtras;
 
   useEffect(() => {
     if (!hover || !multiImage) return;
@@ -102,16 +121,19 @@ export function ProductTile({product}: {product: Product}) {
         onMouseLeave={() => {
           setHover(false);
           setActive(0);
+          setLoadExtras(false);
         }}
         onBlur={() => {
           setHover(false);
           setActive(0);
+          setLoadExtras(false);
         }}
         className="block"
       >
         <div
-          className="relative aspect-[4/5] w-full overflow-hidden"
+          className="relative aspect-[4/5] w-full touch-pan-y select-none overflow-hidden"
           style={{background: "var(--surface)"}}
+          {...tileSwipe}
         >
           <CatalogImage
             key={displayImage.src}
@@ -124,7 +146,7 @@ export function ProductTile({product}: {product: Product}) {
             loading={displayIndex === 0 ? "lazy" : "eager"}
           />
 
-          {hover && multiImage && loadExtras ? (
+          {showIndicator ? (
             <TileImageIndicator active={active} total={imageCount} />
           ) : null}
         </div>

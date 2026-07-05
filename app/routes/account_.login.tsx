@@ -15,7 +15,7 @@ export async function loader({request, context}: Route.LoaderArgs) {
   // accept localhost callbacks — register production (or tunnel) URIs instead.
   // See docs/deploy.md § "Fix redirect_uri mismatch on account login".
   const storeUrl = (
-    context.env.PUBLIC_STORE_URL ?? 'https://thekashmirweaver.shop'
+    context.env.PUBLIC_STORE_URL ?? 'https://thekashmirweaver.in'
   ).replace(/\/$/, '');
   if (LOCAL_HOSTS.has(url.hostname)) {
     const productionLogin = new URL('/account/login', storeUrl);

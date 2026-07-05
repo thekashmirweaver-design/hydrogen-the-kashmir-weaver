@@ -11,7 +11,7 @@ declare global {
   interface Env extends HydrogenEnv {
     USE_STATIC_CATALOG?: string;
     CONCIERGE_WEBHOOK_URL?: string;
-    /** Canonical storefront URL (e.g. https://thekashmirweaver.shop). Used by seed scripts and CSP. */
+    /** Canonical storefront URL (e.g. https://thekashmirweaver.in). Used by seed scripts and CSP. */
     PUBLIC_STORE_URL?: string;
   }
 }

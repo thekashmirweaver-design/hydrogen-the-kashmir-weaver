@@ -1,6 +1,7 @@
 import * as serverBuild from 'virtual:react-router/server-build';
 import {createRequestHandler, storefrontRedirect} from '@shopify/hydrogen';
 import {createHydrogenRouterContext} from '~/lib/context';
+import {redirectNonPrimaryStoreHost} from '~/lib/store-host-redirect';
 
 /**
  * Export a fetch handler in module format.
@@ -12,6 +13,12 @@ export default {
     executionContext: ExecutionContext,
   ): Promise<Response> {
     try {
+      const hostRedirect = redirectNonPrimaryStoreHost(
+        request,
+        env.PUBLIC_STORE_URL,
+      );
+      if (hostRedirect) return hostRedirect;
+
       const hydrogenContext = await createHydrogenRouterContext(
         request,
         env,
