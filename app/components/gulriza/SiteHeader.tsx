@@ -13,6 +13,7 @@ import { CartDrawer } from "~/components/gulriza/CartDrawer";
 import { ShopifyAccount } from "~/components/gulriza/ShopifyAccount";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
 import type {ShopSettings, NavItem} from "~/lib/shop-settings";
+import brandMark from "~/assets/brand-mark.png";
 
 const NAV = [
   { to: "/collections/all", label: "Shop" },
@@ -42,18 +43,37 @@ function useIsLgUp() {
 }
 
 // Two-line brand lockup. Sizing/tracking/alignment come from `className` so the
-// header (responsive) and the mobile menu (fixed) can share one markup.
+// header (responsive) and the mobile menu (fixed) can share one markup. Kept
+// deliberately still — no motion, no bars — just fine serif type, generous
+// tracking, and a muted gold second line, like an engraved maison plaque.
 function BrandLockup({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`font-display flex flex-col uppercase leading-[1.05] ${className}`}
+      className={`font-display flex flex-col uppercase leading-[1.2] ${className}`}
       style={{ fontWeight: 300 }}
     >
       <span className="whitespace-nowrap">The Kashmir</span>
-      <span className="whitespace-nowrap tracking-[0.2em] text-[0.85em] italic opacity-90">
+      <span
+        className="mt-1 whitespace-nowrap text-[0.72em] not-italic tracking-[0.5em] opacity-90 transition-opacity duration-500 group-hover:opacity-100"
+        style={{ color: "var(--accent)" }}
+      >
         Weaver
       </span>
     </span>
+  );
+}
+
+// The loom-knot emblem. A quiet still image — no hover motion — sized purely
+// via `className` so it can sit inline with the header lockup or stacked above
+// the mobile menu's centered wordmark.
+function BrandMark({ className = "" }: { className?: string }) {
+  return (
+    <img
+      src={brandMark}
+      alt=""
+      aria-hidden
+      className={`shrink-0 object-contain ${className}`}
+    />
   );
 }
 
@@ -167,7 +187,8 @@ export function SiteHeader({
           <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 md:h-20 md:px-6 lg:px-8 xl:px-10">
             {/* LEFT: brand (all screens) */}
             <div className="flex shrink items-center min-w-0">
-              <Link to="/" aria-label="Home" className="-ml-0.5 flex items-center">
+              <Link to="/" aria-label="Home" className="group -ml-0.5 flex items-center gap-2 md:gap-3">
+                <BrandMark className="h-7 w-7 md:h-9 md:w-9 lg:h-10 lg:w-10" />
                 <BrandLockup className="text-left text-[0.85rem] tracking-[0.08em] min-[375px]:text-[0.95rem] min-[375px]:tracking-[0.1em] md:text-[1.25rem] md:tracking-[0.15em] lg:text-[1.5rem] lg:tracking-[0.2em]" />
               </Link>
             </div>
@@ -314,8 +335,9 @@ export function SiteHeader({
                   to="/"
                   aria-label="Home"
                   onClick={requestMenuClose}
-                  className="flex items-center"
+                  className="group flex flex-col items-center gap-1.5"
                 >
+                  <BrandMark className="h-9 w-9" />
                   <BrandLockup className="items-center text-center text-xl tracking-[0.3em]" />
                 </Link>
                 <button

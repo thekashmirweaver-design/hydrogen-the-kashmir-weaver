@@ -54,6 +54,11 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     needsFullCatalog(currentUrl.pathname) !==
     needsFullCatalog(nextUrl.pathname)
   ) {
+    // /cart has its own loader; revalidating root here replaces deferred cart
+    // promises and suspends layout chrome, which blocks navigation from completing.
+    if (nextUrl.pathname === '/cart') {
+      return false;
+    }
     return true;
   }
 

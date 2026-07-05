@@ -1,11 +1,5 @@
-import {
-  Await,
-  Link,
-  useAsyncValue,
-  useLocation,
-  useNavigation,
-} from 'react-router';
-import {Suspense, useEffect, useMemo, useState, type ReactNode} from 'react';
+import {Link, useLocation, useNavigation} from 'react-router';
+import {useEffect, useState, type ReactNode} from 'react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CatalogSnapshot} from '~/models/types';
 import type {ShopSettings} from '~/lib/shop-settings';
@@ -48,41 +42,14 @@ function RouteTransitionOutlet({
     navigation.state !== 'idle' &&
     navigation.location != null &&
     navigation.location.pathname !== location.pathname;
-  const activeKey = isRouteChanging
-    ? `${navigation.location.pathname}${navigation.location.search}`
-    : routeKey;
-
   return (
     <main
-      key={activeKey}
       aria-busy={isRouteChanging || undefined}
       className="transition-opacity duration-150 ease-out"
-      style={{opacity: isMarketReload ? 0.55 : 1}}
+      style={{opacity: isRouteChanging || isMarketReload ? 0.55 : 1}}
     >
-      {isRouteChanging ? (
-        <RouteLoadingSkeleton />
-      ) : (
-        <div key={routeKey}>{children}</div>
-      )}
+      <div key={routeKey}>{children}</div>
     </main>
-  );
-}
-
-function RouteLoadingSkeleton() {
-  return (
-    <div
-      className="mx-auto max-w-[1600px] px-6 pt-[calc(var(--header-h)+1.5rem)] pb-12 md:px-10"
-      aria-hidden
-    >
-      <div
-        className="h-3 w-24 animate-pulse rounded"
-        style={{background: 'var(--surface)'}}
-      />
-      <div
-        className="mt-8 h-12 w-full max-w-lg animate-pulse rounded"
-        style={{background: 'var(--surface)'}}
-      />
-    </div>
   );
 }
 
@@ -91,16 +58,34 @@ function ChromeHeader({
   shopSettings,
   publicStoreDomain,
   publicAccessToken,
+  cart,
+  customerAccessToken,
 }: {
   isHome: boolean;
   shopSettings: ShopSettings;
   publicStoreDomain: string;
   publicAccessToken: string;
+  cart: Promise<CartApiQueryFragment | null>;
+  customerAccessToken: Promise<string | null>;
 }) {
-  const [resolvedCart, resolvedCustomerAccessToken] = useAsyncValue() as [
-    CartApiQueryFragment | null,
-    string | null,
-  ];
+  const [resolvedCart, setResolvedCart] = useState<CartApiQueryFragment | null>(
+    null,
+  );
+  const [resolvedCustomerAccessToken, setResolvedCustomerAccessToken] =
+    useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void Promise.all([cart, customerAccessToken]).then(([nextCart, token]) => {
+      if (!active) return;
+      setResolvedCart(nextCart);
+      setResolvedCustomerAccessToken(token);
+    });
+    return () => {
+      active = false;
+    };
+  }, [cart, customerAccessToken]);
+
   const liveCart = useLiveCart(resolvedCart);
   const cartQuantity = liveCart?.totalQuantity ?? 0;
 
@@ -132,10 +117,6 @@ export function PageLayout({
   const isHome = location.pathname === '/';
   const [resolvedCatalog, setResolvedCatalog] =
     useState<CatalogSnapshot>(EMPTY_CATALOG);
-  const chromeSession = useMemo(
-    () => Promise.all([cart, customerAccessToken]),
-    [cart, customerAccessToken],
-  );
 
   useEffect(() => {
     let active = true;
@@ -151,28 +132,14 @@ export function PageLayout({
     <LocalizationProvider localization={localization}>
       <ScrollToTop />
       <CatalogProvider catalog={resolvedCatalog}>
-        <Suspense
-          fallback={
-            <SiteHeader
-              transparent={isHome}
-              cart={null}
-              cartQuantity={0}
-              shopSettings={shopSettings}
-              publicStoreDomain={publicStoreDomain}
-              publicAccessToken={publicAccessToken}
-              customerAccessToken={null}
-            />
-          }
-        >
-          <Await resolve={chromeSession}>
-            <ChromeHeader
-              isHome={isHome}
-              shopSettings={shopSettings}
-              publicStoreDomain={publicStoreDomain}
-              publicAccessToken={publicAccessToken}
-            />
-          </Await>
-        </Suspense>
+        <ChromeHeader
+          isHome={isHome}
+          shopSettings={shopSettings}
+          publicStoreDomain={publicStoreDomain}
+          publicAccessToken={publicAccessToken}
+          cart={cart}
+          customerAccessToken={customerAccessToken}
+        />
         <RouteTransitionOutlet routeKey={routeKey}>{children}</RouteTransitionOutlet>
         <CartFabWithCart cart={cart} />
         <SiteFooter shopSettings={shopSettings} />
@@ -186,17 +153,20 @@ function CartFabWithCart({
 }: {
   cart: Promise<CartApiQueryFragment | null>;
 }) {
-  return (
-    <Suspense fallback={<CartFab cartQuantity={0} />}>
-      <Await resolve={cart}>
-        <CartFabLive />
-      </Await>
-    </Suspense>
+  const [resolvedCart, setResolvedCart] = useState<CartApiQueryFragment | null>(
+    null,
   );
-}
 
-function CartFabLive() {
-  const resolvedCart = useAsyncValue() as CartApiQueryFragment | null;
+  useEffect(() => {
+    let active = true;
+    void cart.then((nextCart) => {
+      if (active) setResolvedCart(nextCart);
+    });
+    return () => {
+      active = false;
+    };
+  }, [cart]);
+
   const liveCart = useLiveCart(resolvedCart);
   return <CartFab cartQuantity={liveCart?.totalQuantity ?? 0} />;
 }
