@@ -137,6 +137,8 @@ export function SiteHeader({
   // Close the mobile menu whenever the route changes (instant unmount is fine).
   useEffect(() => {
     setOpen(false);
+    setSearchOpen(false);
+    setCartOpen(false);
   }, [pathname]);
 
   const solid = !transparent || scrolled;

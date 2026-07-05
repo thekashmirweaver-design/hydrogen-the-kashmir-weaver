@@ -27,3 +27,12 @@ export function unlockScroll() {
     document.body.style.overscrollBehavior = scrollLockSaved.overscroll;
   }
 }
+
+/** Clears any orphaned overlay scroll locks after client-side navigation. */
+export function resetScrollLock() {
+  if (typeof document === 'undefined') return;
+  scrollLockCount = 0;
+  document.body.style.overflow = scrollLockSaved.body;
+  document.documentElement.style.overflow = scrollLockSaved.html;
+  document.body.style.overscrollBehavior = scrollLockSaved.overscroll;
+}

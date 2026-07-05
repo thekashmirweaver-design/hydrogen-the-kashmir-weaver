@@ -1,7 +1,6 @@
-import {Await, useRouteLoaderData} from 'react-router';
 import type {Route} from './+types/collections.all';
-import type {RootLoader} from '~/root';
 import {ShopView} from '~/views/shop/ShopView';
+import {useCatalog} from '~/contexts/catalog-context';
 import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
 
 const SHOP_TITLE = 'Shop — The Kashmir Weaver';
@@ -22,12 +21,6 @@ export async function loader() {
 }
 
 export default function ShopRoute() {
-  const root = useRouteLoaderData<RootLoader>('root');
-  if (!root) return null;
-
-  return (
-    <Await resolve={root.catalog}>
-      {(catalog) => <ShopView products={catalog.products} />}
-    </Await>
-  );
+  const catalog = useCatalog();
+  return <ShopView products={catalog.products} />;
 }

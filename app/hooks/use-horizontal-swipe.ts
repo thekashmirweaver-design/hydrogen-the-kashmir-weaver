@@ -47,9 +47,8 @@ export function useHorizontalSwipe({
       if (!touch) return;
       const dx = touch.clientX - startRef.current.x;
       const dy = touch.clientY - startRef.current.y;
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 12) {
-        swipedRef.current = true;
-        if (containSwipe) e.stopPropagation();
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 12 && containSwipe) {
+        e.stopPropagation();
       }
     },
     [containSwipe, enabled],
@@ -61,6 +60,7 @@ export function useHorizontalSwipe({
       const touch = e.changedTouches[0];
       if (!touch) {
         reset();
+        swipedRef.current = false;
         return;
       }
 
@@ -75,6 +75,8 @@ export function useHorizontalSwipe({
         if (containSwipe) e.stopPropagation();
         if (dx < 0) onSwipeLeft();
         else onSwipeRight();
+      } else {
+        swipedRef.current = false;
       }
 
       reset();
@@ -84,6 +86,7 @@ export function useHorizontalSwipe({
 
   const onTouchCancel = useCallback(() => {
     reset();
+    swipedRef.current = false;
   }, [reset]);
 
   const onClickCapture = useCallback((e: React.MouseEvent) => {

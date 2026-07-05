@@ -84,7 +84,8 @@ export function ProductTile({product}: {product: Product}) {
   });
 
   const displayIndex = loadExtras ? active : 0;
-  const displayImage = product.images[displayIndex] ?? product.images[0];
+  const imagesToRender =
+    loadExtras && multiImage ? product.images : [product.images[0]];
   const showIndicator = multiImage && loadExtras;
 
   useEffect(() => {
@@ -135,16 +136,27 @@ export function ProductTile({product}: {product: Product}) {
           style={{background: "var(--surface)"}}
           {...tileSwipe}
         >
-          <CatalogImage
-            key={displayImage.src}
-            image={displayImage}
-            wrapperClassName="absolute inset-0"
-            className="h-full w-full object-cover transition-opacity duration-700 motion-reduce:transition-none"
-            style={{
-              filter: soldOut ? "grayscale(0.6)" : undefined,
-            }}
-            loading={displayIndex === 0 ? "lazy" : "eager"}
-          />
+          {imagesToRender.map((img, i) => (
+            <div
+              key={img.src}
+              className={`absolute inset-0 transition-opacity duration-700 ease-in-out motion-reduce:transition-none ${
+                i === displayIndex
+                  ? "z-[1] opacity-100"
+                  : "pointer-events-none z-0 opacity-0"
+              }`}
+              aria-hidden={i !== displayIndex}
+            >
+              <CatalogImage
+                image={img}
+                wrapperClassName="absolute inset-0"
+                className="h-full w-full object-cover"
+                style={{
+                  filter: soldOut ? "grayscale(0.6)" : undefined,
+                }}
+                loading={i === 0 ? "lazy" : "eager"}
+              />
+            </div>
+          ))}
 
           {showIndicator ? (
             <TileImageIndicator active={active} total={imageCount} />

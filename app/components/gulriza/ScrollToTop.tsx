@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import {useLocation} from "react-router";
+import {resetScrollLock} from "~/lib/scroll-lock";
 
 export function ScrollToTop() {
   const pathname = useLocation().pathname;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    resetScrollLock();
     if (window.location.hash) return;
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pathname]);

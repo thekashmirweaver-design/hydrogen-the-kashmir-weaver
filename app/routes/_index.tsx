@@ -1,12 +1,12 @@
-import {Await, useLoaderData, useRouteLoaderData} from 'react-router';
+import {useLoaderData} from 'react-router';
 import type {Route} from './+types/_index';
-import type {RootLoader} from '~/root';
 import {getHomePage} from '~/controllers';
 import {getCatalogOptions} from '~/lib/catalog-options';
 import {loadSharedCatalog} from '~/lib/shared-catalog';
 import {HomeView} from '~/views/home/HomeView';
 import {getJournalPage} from '~/controllers/journal.controller';
 import {loadHomepageFeatured} from '~/lib/homepage-featured';
+import {useCatalog} from '~/contexts/catalog-context';
 import {
   getStoreUrlFromMatches,
   organizationLd,
@@ -47,18 +47,13 @@ export async function loader({context, request}: Route.LoaderArgs) {
 
 export default function HomeRoute() {
   const data = useLoaderData<typeof loader>();
-  const root = useRouteLoaderData<RootLoader>('root');
-  if (!root) return null;
+  const catalog = useCatalog();
 
   return (
-    <Await resolve={root.catalog}>
-      {(catalog) => (
-        <HomeView
-          products={catalog.products}
-          collections={catalog.collections}
-          {...data}
-        />
-      )}
-    </Await>
+    <HomeView
+      products={catalog.products}
+      collections={catalog.collections}
+      {...data}
+    />
   );
 }

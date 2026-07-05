@@ -1,5 +1,11 @@
-import {Await, Link, useLocation, useNavigation} from 'react-router';
-import {Suspense, useMemo, type ReactNode} from 'react';
+import {
+  Await,
+  Link,
+  useAsyncValue,
+  useLocation,
+  useNavigation,
+} from 'react-router';
+import {Suspense, useEffect, useMemo, useState, type ReactNode} from 'react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CatalogSnapshot} from '~/models/types';
 import type {ShopSettings} from '~/lib/shop-settings';
@@ -15,6 +21,7 @@ import {useLiveCart} from '~/lib/use-live-cart';
 const EMPTY_CATALOG: CatalogSnapshot = {products: [], collections: []};
 
 interface PageLayoutProps {
+  routeKey: string;
   cart: Promise<CartApiQueryFragment | null>;
   catalog: Promise<CatalogSnapshot>;
   shopSettings: ShopSettings;
@@ -25,24 +32,93 @@ interface PageLayoutProps {
   children?: React.ReactNode;
 }
 
-function MarketAwareMain({children}: {children: ReactNode}) {
+function RouteTransitionOutlet({
+  children,
+  routeKey,
+}: {
+  children: ReactNode;
+  routeKey: string;
+}) {
   const navigation = useNavigation();
   const location = useLocation();
   const isMarketReload =
     navigation.state !== 'idle' &&
     navigation.location?.search !== location.search;
+  const isRouteChanging =
+    navigation.state !== 'idle' &&
+    navigation.location != null &&
+    navigation.location.pathname !== location.pathname;
+  const activeKey = isRouteChanging
+    ? `${navigation.location.pathname}${navigation.location.search}`
+    : routeKey;
 
   return (
     <main
+      key={activeKey}
+      aria-busy={isRouteChanging || undefined}
       className="transition-opacity duration-150 ease-out"
       style={{opacity: isMarketReload ? 0.55 : 1}}
     >
-      {children}
+      {isRouteChanging ? (
+        <RouteLoadingSkeleton />
+      ) : (
+        <div key={routeKey}>{children}</div>
+      )}
     </main>
   );
 }
 
+function RouteLoadingSkeleton() {
+  return (
+    <div
+      className="mx-auto max-w-[1600px] px-6 pt-[calc(var(--header-h)+1.5rem)] pb-12 md:px-10"
+      aria-hidden
+    >
+      <div
+        className="h-3 w-24 animate-pulse rounded"
+        style={{background: 'var(--surface)'}}
+      />
+      <div
+        className="mt-8 h-12 w-full max-w-lg animate-pulse rounded"
+        style={{background: 'var(--surface)'}}
+      />
+    </div>
+  );
+}
+
+function ChromeHeader({
+  isHome,
+  shopSettings,
+  publicStoreDomain,
+  publicAccessToken,
+}: {
+  isHome: boolean;
+  shopSettings: ShopSettings;
+  publicStoreDomain: string;
+  publicAccessToken: string;
+}) {
+  const [resolvedCart, resolvedCustomerAccessToken] = useAsyncValue() as [
+    CartApiQueryFragment | null,
+    string | null,
+  ];
+  const liveCart = useLiveCart(resolvedCart);
+  const cartQuantity = liveCart?.totalQuantity ?? 0;
+
+  return (
+    <SiteHeader
+      transparent={isHome}
+      cart={liveCart}
+      cartQuantity={cartQuantity}
+      shopSettings={shopSettings}
+      publicStoreDomain={publicStoreDomain}
+      publicAccessToken={publicAccessToken}
+      customerAccessToken={resolvedCustomerAccessToken}
+    />
+  );
+}
+
 export function PageLayout({
+  routeKey,
   cart,
   catalog,
   shopSettings,
@@ -54,90 +130,75 @@ export function PageLayout({
 }: PageLayoutProps) {
   const location = useLocation();
   const isHome = location.pathname === '/';
-  const layoutSession = useMemo(
-    () => Promise.all([catalog, cart, customerAccessToken]),
-    [catalog, cart, customerAccessToken],
+  const [resolvedCatalog, setResolvedCatalog] =
+    useState<CatalogSnapshot>(EMPTY_CATALOG);
+  const chromeSession = useMemo(
+    () => Promise.all([cart, customerAccessToken]),
+    [cart, customerAccessToken],
   );
+
+  useEffect(() => {
+    let active = true;
+    void catalog.then((snapshot) => {
+      if (active) setResolvedCatalog(snapshot);
+    });
+    return () => {
+      active = false;
+    };
+  }, [catalog]);
 
   return (
     <LocalizationProvider localization={localization}>
       <ScrollToTop />
-      <Suspense
-        fallback={
-          <CatalogProvider catalog={EMPTY_CATALOG}>
-            <>
-              <SiteHeader
-                transparent={isHome}
-                cart={null}
-                cartQuantity={0}
-                shopSettings={shopSettings}
-                publicStoreDomain={publicStoreDomain}
-                publicAccessToken={publicAccessToken}
-                customerAccessToken={null}
-              />
-              <main aria-busy="true" />
-              <SiteFooter shopSettings={shopSettings} />
-            </>
-          </CatalogProvider>
-        }
-      >
-        <Await resolve={layoutSession}>
-          {([resolvedCatalog, resolvedCart, resolvedCustomerAccessToken]) => (
-            <CatalogProvider catalog={resolvedCatalog}>
-              <CartAwareChrome
-                isHome={isHome}
-                resolvedCart={resolvedCart}
-                resolvedCustomerAccessToken={resolvedCustomerAccessToken}
-                shopSettings={shopSettings}
-                publicStoreDomain={publicStoreDomain}
-                publicAccessToken={publicAccessToken}
-              >
-                {children}
-              </CartAwareChrome>
-            </CatalogProvider>
-          )}
-        </Await>
-      </Suspense>
+      <CatalogProvider catalog={resolvedCatalog}>
+        <Suspense
+          fallback={
+            <SiteHeader
+              transparent={isHome}
+              cart={null}
+              cartQuantity={0}
+              shopSettings={shopSettings}
+              publicStoreDomain={publicStoreDomain}
+              publicAccessToken={publicAccessToken}
+              customerAccessToken={null}
+            />
+          }
+        >
+          <Await resolve={chromeSession}>
+            <ChromeHeader
+              isHome={isHome}
+              shopSettings={shopSettings}
+              publicStoreDomain={publicStoreDomain}
+              publicAccessToken={publicAccessToken}
+            />
+          </Await>
+        </Suspense>
+        <RouteTransitionOutlet routeKey={routeKey}>{children}</RouteTransitionOutlet>
+        <CartFabWithCart cart={cart} />
+        <SiteFooter shopSettings={shopSettings} />
+      </CatalogProvider>
     </LocalizationProvider>
   );
 }
 
-function CartAwareChrome({
-  isHome,
-  resolvedCart,
-  resolvedCustomerAccessToken,
-  shopSettings,
-  publicStoreDomain,
-  publicAccessToken,
-  children,
+function CartFabWithCart({
+  cart,
 }: {
-  isHome: boolean;
-  resolvedCart: CartApiQueryFragment | null;
-  resolvedCustomerAccessToken: string | null;
-  shopSettings: ShopSettings;
-  publicStoreDomain: string;
-  publicAccessToken: string;
-  children?: React.ReactNode;
+  cart: Promise<CartApiQueryFragment | null>;
 }) {
-  const cart = useLiveCart(resolvedCart);
-  const cartQuantity = cart?.totalQuantity ?? 0;
-
   return (
-    <>
-      <SiteHeader
-        transparent={isHome}
-        cart={cart}
-        cartQuantity={cartQuantity}
-        shopSettings={shopSettings}
-        publicStoreDomain={publicStoreDomain}
-        publicAccessToken={publicAccessToken}
-        customerAccessToken={resolvedCustomerAccessToken}
-      />
-      <MarketAwareMain>{children}</MarketAwareMain>
-      <CartFab cartQuantity={cartQuantity} />
-      <SiteFooter shopSettings={shopSettings} />
-    </>
+    <Suspense fallback={<CartFab cartQuantity={0} />}>
+      <Await resolve={cart}>
+        <CartFabLive />
+      </Await>
+    </Suspense>
   );
+}
+
+function CartFabLive() {
+  const resolvedCart = useAsyncValue() as CartApiQueryFragment | null;
+  const liveCart = useLiveCart(resolvedCart);
+  return <CartFab cartQuantity={liveCart?.totalQuantity ?? 0} />;
 }
 
 export function NotFoundView() {

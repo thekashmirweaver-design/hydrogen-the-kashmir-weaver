@@ -9,6 +9,7 @@ import {
   Scripts,
   ScrollRestoration,
   useRouteLoaderData,
+  useLocation,
 } from 'react-router';
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
@@ -47,6 +48,14 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   }
 
   if (formMethod && formMethod !== 'GET') return true;
+
+  // Reload catalog when crossing routes that need different snapshot depth.
+  if (
+    needsFullCatalog(currentUrl.pathname) !==
+    needsFullCatalog(nextUrl.pathname)
+  ) {
+    return true;
+  }
 
   return false;
 };
@@ -186,6 +195,8 @@ export function Layout({children}: {children?: React.ReactNode}) {
 
 export default function App() {
   const data = useRouteLoaderData<RootLoader>('root');
+  const location = useLocation();
+  const routeKey = `${location.pathname}${location.search}`;
 
   if (!data) {
     return <Outlet />;
@@ -198,6 +209,7 @@ export default function App() {
       consent={data.consent}
     >
       <PageLayout
+        routeKey={routeKey}
         cart={data.cart}
         catalog={data.catalog}
         shopSettings={data.shopSettings}
