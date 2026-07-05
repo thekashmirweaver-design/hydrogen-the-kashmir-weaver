@@ -2,7 +2,7 @@ import type {I18nBase} from '@shopify/hydrogen';
 import type {AppSession} from '~/lib/session';
 
 const DEFAULT_I18N: I18nBase = {language: 'EN', country: 'US'};
-const SESSION_COUNTRY_KEY = 'buyerCountry';
+const SESSION_COUNTRY_KEY = 'buyerMarketCountry';
 const SESSION_LANGUAGE_KEY = 'buyerLanguage';
 
 function isCountryCode(value: string): value is I18nBase['country'] {
@@ -20,10 +20,10 @@ function persistI18n(session: AppSession | undefined, i18n: I18nBase) {
 
 /**
  * Resolve buyer locale for Storefront API `@inContext(country, language)`.
- * Priority: URL params → session → Accept-Language → default (US/EN).
+ * Priority: URL `?country=` (explicit picker) → session → default US/EN (USD).
  *
- * Hydrogen injects the result into every storefront.query that declares
- * `$country` / `$language` with `@inContext`.
+ * Browser Accept-Language is intentionally ignored for market/country so the
+ * storefront always opens in USD unless the buyer chooses another currency.
  */
 export function getI18nFromRequest(
   request: Request,
@@ -47,15 +47,6 @@ export function getI18nFromRequest(
     return i18n;
   }
 
-  if (languageParam && isLanguageCode(languageParam)) {
-    const i18n: I18nBase = {
-      country: DEFAULT_I18N.country,
-      language: languageParam,
-    };
-    persistI18n(session, i18n);
-    return i18n;
-  }
-
   const sessionCountry = session?.get(SESSION_COUNTRY_KEY)?.toUpperCase();
   const sessionLanguage = session?.get(SESSION_LANGUAGE_KEY)?.toUpperCase();
   if (sessionCountry && isCountryCode(sessionCountry)) {
@@ -66,27 +57,6 @@ export function getI18nFromRequest(
           ? sessionLanguage
           : DEFAULT_I18N.language,
     };
-  }
-
-  const acceptLanguage = request.headers.get('Accept-Language');
-  if (acceptLanguage) {
-    const primary = acceptLanguage.split(',')[0]?.trim();
-    const parts = primary?.split('-');
-    const language = parts?.[0]?.toUpperCase();
-    const country = parts?.[1]?.toUpperCase();
-
-    // curl and some clients send `Accept-Language: *` which is not a valid LanguageCode
-    if (language && language !== '*' && isLanguageCode(language)) {
-      const i18n: I18nBase = {
-        language,
-        country:
-          country && isCountryCode(country)
-            ? country
-            : DEFAULT_I18N.country,
-      };
-      persistI18n(session, i18n);
-      return i18n;
-    }
   }
 
   return DEFAULT_I18N;

@@ -1,5 +1,6 @@
 import {Link, useLocation, useNavigate, useNavigation} from "react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import { Search, ShoppingBag, Menu, X, ChevronDown, Check, Globe } from "lucide-react";
 import type { CartApiQueryFragment } from "storefrontapi.generated";
 import { CartForm, useAnalytics } from "@shopify/hydrogen";
@@ -22,6 +23,22 @@ const NAV = [
 ] as const;
 
 const MENU_CLOSE_MS = 300;
+const CURRENCY_SHEET_CLOSE_MS = 220;
+const LG_MEDIA_QUERY = "(min-width: 1024px)";
+
+function subscribeMediaQuery(query: string, callback: () => void) {
+  const media = window.matchMedia(query);
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+}
+
+function useIsLgUp() {
+  return useSyncExternalStore(
+    (callback) => subscribeMediaQuery(LG_MEDIA_QUERY, callback),
+    () => window.matchMedia(LG_MEDIA_QUERY).matches,
+    () => true,
+  );
+}
 
 // Two-line brand lockup. Sizing/tracking/alignment come from `className` so the
 // header (responsive) and the mobile menu (fixed) can share one markup.
@@ -334,14 +351,33 @@ function CurrencyDropdown() {
   const {currencies, selectedCurrency} = useLocalization();
   const {pathname, search} = useLocation();
   const navigation = useNavigation();
+  const isLgUp = useIsLgUp();
   const [open, setOpen] = useState(false);
+  const [sheetVisible, setSheetVisible] = useState(false);
   const [pendingCode, setPendingCode] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const wrapRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const sheetClosingRef = useRef(false);
   const displayCode = pendingCode ?? selectedCurrency.code;
   const isUpdating = pendingCode != null || navigation.state !== "idle";
+
+  const requestClose = useCallback(() => {
+    if (sheetClosingRef.current) return;
+    sheetClosingRef.current = true;
+    setSheetVisible(false);
+    window.setTimeout(() => {
+      setOpen(false);
+      sheetClosingRef.current = false;
+    }, CURRENCY_SHEET_CLOSE_MS);
+  }, []);
+
+  const handleOpen = useCallback(() => {
+    sheetClosingRef.current = false;
+    setOpen(true);
+  }, []);
 
   useEffect(() => {
     if (navigation.state === "idle") {
@@ -350,9 +386,40 @@ function CurrencyDropdown() {
   }, [navigation.state, selectedCurrency.code]);
 
   useEffect(() => {
-    if (!open) return;
+    setOpen(false);
+  }, [pathname]);
+
+  // Mobile sheet: scroll lock, entrance animation, Escape.
+  useEffect(() => {
+    if (!open || isLgUp) return;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        requestClose();
+        triggerRef.current?.focus();
+      }
+    };
+
+    lockScroll();
+    window.addEventListener("keydown", onKey);
+    const raf = requestAnimationFrame(() => setSheetVisible(true));
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      unlockScroll();
+      cancelAnimationFrame(raf);
+      setSheetVisible(false);
+    };
+  }, [open, isLgUp, requestClose]);
+
+  // Desktop popover: click outside + Escape.
+  useEffect(() => {
+    if (!open || !isLgUp) return;
+
     const onPointerDown = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -360,13 +427,14 @@ function CurrencyDropdown() {
         triggerRef.current?.focus();
       }
     };
+
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open]);
+  }, [open, isLgUp]);
 
   useEffect(() => {
     if (open) {
@@ -376,6 +444,8 @@ function CurrencyDropdown() {
     }
   }, [open]);
 
+  useFocusTrap(open && !isLgUp, sheetRef, inputRef);
+
   const q = query.trim().toLowerCase();
   const results = q
     ? currencies.filter((c) =>
@@ -383,92 +453,197 @@ function CurrencyDropdown() {
       )
     : currencies;
 
-  return (
-    <div ref={wrapRef} className="relative">
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label={`Select currency, current ${displayCode}`}
-        onClick={() => setOpen((o) => !o)}
-        className="flex h-11 w-auto min-w-11 items-center justify-center gap-1.5 px-1.5 text-xs uppercase tracking-[0.25em] text-foreground/90 transition hover:text-accent focus:outline-none lg:justify-start"
-        style={{opacity: isUpdating ? 0.65 : 1}}
-      >
-        <Globe className="h-3.5 w-3.5 shrink-0" strokeWidth={1} aria-hidden />
-        <span>{displayCode}</span>
-        <ChevronDown
-          className="hidden h-3.5 w-3.5 shrink-0 transition-transform lg:block"
-          strokeWidth={1}
-          style={{ transform: open ? "rotate(180deg)" : undefined }}
-        />
-      </button>
+  const handleSelect = (code: string) => {
+    setPendingCode(code);
+    if (isLgUp) {
+      setOpen(false);
+    } else {
+      requestClose();
+    }
+  };
 
-      <div
-        className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-72 max-w-[calc(100vw-2rem)] rounded-xl border py-2 shadow-2xl transition-all duration-300 ease-out origin-top-right"
-        style={{
-          background: "var(--surface)",
-          borderColor: "var(--border)",
-          opacity: open ? 1 : 0,
-          transform: open ? "scale(1) translateY(0)" : "scale(0.95) translateY(-8px)",
-          pointerEvents: open ? "auto" : "none",
-          visibility: open ? "visible" : "hidden",
-        }}
-      >
-        <div
-          className="mx-2 mb-2 flex items-center gap-2 rounded-md border px-3 pb-2 pt-2"
-          style={{ borderColor: "var(--border)", background: "var(--background)" }}
+  const pickerPanel = (
+    <CurrencyPickerPanel
+      query={query}
+      setQuery={setQuery}
+      inputRef={inputRef}
+      results={results}
+      displayCode={displayCode}
+      pathname={pathname}
+      search={search}
+      onSelect={handleSelect}
+      listClassName={isLgUp ? "max-h-[60vh]" : "max-h-none flex-1 min-h-0"}
+    />
+  );
+
+  const mobileSheet =
+    open && !isLgUp && typeof document !== "undefined"
+      ? createPortal(
+          <>
+            <button
+              type="button"
+              aria-label="Close currency picker"
+              className="fixed inset-0 z-[80] bg-black/50 transition-opacity duration-300 ease-out motion-reduce:transition-none"
+              style={{opacity: sheetVisible ? 1 : 0}}
+              onClick={requestClose}
+            />
+            <div
+              ref={sheetRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Select currency"
+              className="fixed inset-x-0 bottom-0 z-[81] flex max-h-[min(85dvh,640px)] flex-col rounded-t-2xl border-t shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none lg:hidden"
+              style={{
+                background: "var(--surface)",
+                borderColor: "var(--border)",
+                paddingBottom: "env(safe-area-inset-bottom)",
+                transform: sheetVisible ? "translateY(0)" : "translateY(100%)",
+              }}
+            >
+              <div
+                className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3"
+                style={{borderColor: "var(--border)"}}
+              >
+                <div className="min-w-0">
+                  <p className="text-[0.65rem] uppercase tracking-[0.25em] text-muted-foreground">
+                    Currency
+                  </p>
+                  <p className="font-display text-lg tracking-wide">{displayCode}</p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Close"
+                  onClick={requestClose}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition hover:text-accent"
+                >
+                  <X className="h-5 w-5" strokeWidth={1} />
+                </button>
+              </div>
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden py-2">
+                {pickerPanel}
+              </div>
+            </div>
+          </>,
+          document.body,
+        )
+      : null;
+
+  return (
+    <>
+      <div ref={wrapRef} className="relative">
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-label={`Select currency, current ${displayCode}`}
+          onClick={() => (open ? (isLgUp ? setOpen(false) : requestClose()) : handleOpen())}
+          className="flex h-11 w-11 min-w-11 items-center justify-center gap-1 px-1 text-[0.65rem] uppercase tracking-[0.15em] text-foreground/90 transition hover:text-accent focus:outline-none min-[420px]:w-auto min-[420px]:gap-1.5 min-[420px]:px-1.5 min-[420px]:text-xs min-[420px]:tracking-[0.25em] lg:justify-start"
+          style={{opacity: isUpdating ? 0.65 : 1}}
         >
-          <Search
-            className="h-3.5 w-3.5 shrink-0"
+          <Globe className="h-3.5 w-3.5 shrink-0" strokeWidth={1} aria-hidden />
+          <span className="hidden min-[420px]:inline">{displayCode}</span>
+          <ChevronDown
+            className="h-3 w-3 shrink-0 transition-transform min-[420px]:h-3.5 min-[420px]:w-3.5"
             strokeWidth={1}
-            style={{ color: "var(--muted-foreground)" }}
-            aria-hidden
+            style={{transform: open ? "rotate(180deg)" : undefined}}
           />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            role="combobox"
-            aria-expanded={open}
-            aria-controls="currency-listbox"
-            aria-label="Search currency"
-            placeholder="Search currency…"
-            className="w-full bg-transparent text-xs tracking-wide text-foreground placeholder:text-[var(--muted-foreground)] focus:outline-none"
-          />
-        </div>
-        {results.length === 0 ? (
-          <p
-            className="px-3 py-6 text-center text-[0.7rem] tracking-wide"
-            style={{ color: "var(--muted-foreground)" }}
+        </button>
+
+        {isLgUp && (
+          <div
+            className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-72 max-w-[calc(100vw-2rem)] rounded-xl border py-2 shadow-2xl transition-all duration-300 ease-out origin-top-right"
+            style={{
+              background: "var(--surface)",
+              borderColor: "var(--border)",
+              opacity: open ? 1 : 0,
+              transform: open ? "scale(1) translateY(0)" : "scale(0.95) translateY(-8px)",
+              pointerEvents: open ? "auto" : "none",
+              visibility: open ? "visible" : "hidden",
+            }}
           >
-            No currencies found
-          </p>
-        ) : (
-          <ul
-            id="currency-listbox"
-            role="listbox"
-            aria-label="Currency"
-            className="max-h-[60vh] overflow-y-auto px-2 pb-1"
-          >
-            {results.map((c) => (
-              <CurrencyOption
-                key={c.code}
-                option={c}
-                active={c.code === displayCode}
-                pathname={pathname}
-                search={search}
-                onSelect={() => {
-                  setPendingCode(c.code);
-                  setOpen(false);
-                }}
-              />
-            ))}
-          </ul>
+            {pickerPanel}
+          </div>
         )}
       </div>
-    </div>
+      {mobileSheet}
+    </>
+  );
+}
+
+function CurrencyPickerPanel({
+  query,
+  setQuery,
+  inputRef,
+  results,
+  displayCode,
+  pathname,
+  search,
+  onSelect,
+  listClassName,
+}: {
+  query: string;
+  setQuery: (value: string) => void;
+  inputRef: RefObject<HTMLInputElement>;
+  results: ShopCurrencyOption[];
+  displayCode: string;
+  pathname: string;
+  search: string;
+  onSelect: (code: string) => void;
+  listClassName?: string;
+}) {
+  return (
+    <>
+      <div
+        className="mx-2 mb-2 flex items-center gap-2 rounded-md border px-3 pb-2 pt-2"
+        style={{borderColor: "var(--border)", background: "var(--background)"}}
+      >
+        <Search
+          className="h-3.5 w-3.5 shrink-0"
+          strokeWidth={1}
+          style={{color: "var(--muted-foreground)"}}
+          aria-hidden
+        />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          role="combobox"
+          aria-expanded
+          aria-controls="currency-listbox"
+          aria-label="Search currency"
+          placeholder="Search currency…"
+          className="w-full bg-transparent text-base tracking-wide text-foreground placeholder:text-[var(--muted-foreground)] focus:outline-none lg:text-xs"
+        />
+      </div>
+      {results.length === 0 ? (
+        <p
+          className="px-3 py-6 text-center text-[0.7rem] tracking-wide"
+          style={{color: "var(--muted-foreground)"}}
+        >
+          No currencies found
+        </p>
+      ) : (
+        <ul
+          id="currency-listbox"
+          role="listbox"
+          aria-label="Currency"
+          className={`overflow-y-auto overscroll-contain px-2 pb-1 ${listClassName ?? "max-h-[60vh]"}`}
+        >
+          {results.map((c) => (
+            <CurrencyOption
+              key={c.code}
+              option={c}
+              active={c.code === displayCode}
+              pathname={pathname}
+              search={search}
+              onSelect={() => onSelect(c.code)}
+            />
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 
@@ -508,7 +683,7 @@ function CurrencyOption({
               onSelect();
               navigate(redirectTo, {replace: true, preventScrollReset: true});
             }}
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-all duration-200 hover:bg-[var(--surface-2)] focus:bg-[var(--surface-2)] focus:outline-none disabled:opacity-50"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left transition-all duration-200 hover:bg-[var(--surface-2)] focus:bg-[var(--surface-2)] focus:outline-none disabled:opacity-50 lg:py-2.5"
             style={{
               color: active ? "var(--accent)" : "var(--foreground)",
               backgroundColor: active ? "var(--surface-2)" : "transparent",
