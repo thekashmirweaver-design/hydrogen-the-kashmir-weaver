@@ -397,6 +397,64 @@
   }
 }
 
+@keyframes hero-rotate-word {
+  0% {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+  }
+  12% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  82% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, -100%, 0);
+    opacity: 0;
+  }
+}
+
+.hero-rotating-slot {
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+  overflow: hidden;
+  line-height: inherit;
+}
+
+.hero-rotating-slot__sizer {
+  visibility: hidden;
+  display: inline-block;
+  white-space: nowrap;
+  font-style: italic;
+  font-weight: 400;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hero-rotating-slot__word {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent);
+  animation: hero-rotate-word 2.8s cubic-bezier(0.33, 1, 0.68, 1) both;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rotating-slot__word {
+    animation: none;
+    transform: none;
+    opacity: 1;
+  }
+}
+
 .animate-word-1 {
   animation: word-slide 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
   animation-delay: 0s;

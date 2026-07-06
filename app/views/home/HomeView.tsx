@@ -3,6 +3,7 @@ import {ArrowRight} from 'lucide-react';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {CollectionStoryMobile} from '~/components/gulriza/CollectionStoryMobile';
 import {CollectionHeroBanner} from '~/components/gulriza/CollectionHeroBanner';
+import {HeroDeliveryLine} from '~/components/gulriza/HeroDeliveryLine';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {OriginMap} from '~/components/gulriza/OriginMap';
 import {ProductTile} from '~/components/gulriza/ProductTile';
@@ -99,9 +100,11 @@ function Hero({
             <span style={{fontStyle: 'italic'}}>A story of Kashmir.</span>
           </h1>
 
+          <HeroDeliveryLine />
+
           <Link
             to="/collections"
-            className="mt-10 md:mt-12 inline-flex items-center gap-6 rounded-full border px-8 py-4 text-foreground backdrop-blur-md transition-all duration-300 hover:bg-white/10 hover:border-white/30 group animate-glass-glaze"
+            className="mt-8 md:mt-10 inline-flex items-center gap-6 rounded-full border px-8 py-4 text-foreground backdrop-blur-md transition-all duration-300 hover:bg-white/10 hover:border-white/30 group animate-glass-glaze"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
               borderColor: 'rgba(255, 255, 255, 0.15)',
