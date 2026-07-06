@@ -1,4 +1,4 @@
-import {Link, type FetcherWithComponents} from 'react-router';
+import {Link, useFetcher, type FetcherWithComponents} from 'react-router';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {
@@ -34,6 +34,7 @@ import {lockScroll, unlockScroll} from '~/lib/scroll-lock';
 import {getProductShades, getDefaultSolidShadeCode, isSolidProduct} from '~/lib/solid-product';
 import {buildBuyNowShadeQuery, shadeCartAttributes} from '~/lib/shade-cart';
 import {toCartSelectedVariant} from '~/lib/cart-selected-variant';
+import {useCartDrawer} from '~/contexts/cart-drawer-context';
 
 function isShopifyMerchandiseId(id?: string): boolean {
   if (!id) return false;
@@ -110,7 +111,29 @@ export function ProductView({
   const [recolorImgIdx, setRecolorImgIdx] = useState(0);
   const lightboxRef = useRef<HTMLDivElement>(null);
   const formatPrice = useFormatPrice();
+  const {open: openCartDrawer} = useCartDrawer();
+  const addToBagFetcher = useFetcher({key: 'add-to-bag'});
+  const wasAddingRef = useRef(false);
   useFocusTrap(fullOpen, lightboxRef);
+
+  // When a shopper adds to bag from inside the colour studio, close it and
+  // reveal the cart drawer so the purchase feels completed in one flow.
+  useEffect(() => {
+    const busy =
+      addToBagFetcher.state === 'submitting' ||
+      addToBagFetcher.state === 'loading';
+    if (busy) {
+      wasAddingRef.current = true;
+      return;
+    }
+    if (wasAddingRef.current && addToBagFetcher.state === 'idle') {
+      wasAddingRef.current = false;
+      if (tryColoursOpen) {
+        setTryColoursOpen(false);
+        openCartDrawer();
+      }
+    }
+  }, [addToBagFetcher.state, tryColoursOpen, openCartDrawer]);
 
   useEffect(() => {
     setImgIdx(0);
@@ -223,6 +246,84 @@ export function ProductView({
       unlockScroll();
     };
   }, [fullOpen, imgCount, nextImg, prevImg]);
+
+  // Shared purchase actions — reused on the PDP and inside the colour studio so
+  // the cart wiring (fetcherKey, shade attributes, quantity) lives in one place.
+  const purchaseActions = soldOut ? (
+    <>
+      <button
+        disabled
+        className="btn-secondary w-full cursor-not-allowed py-3.5 tracked"
+      >
+        Sold Out
+      </button>
+      <Link
+        to="/concierge"
+        className="btn-secondary btn-secondary-accent block w-full py-3.5 text-center tracked touch-manipulation"
+      >
+        Commission a Similar Piece
+      </Link>
+    </>
+  ) : isShopifyVariant ? (
+    <>
+      <CartForm
+        fetcherKey="add-to-bag"
+        route="/cart"
+        inputs={{
+          lines: [
+            {
+              merchandiseId: merchandiseGid!,
+              quantity: canChooseQuantity ? quantity : 1,
+              ...(selectedVariant
+                ? {
+                    selectedVariant: toCartSelectedVariant(
+                      selectedVariant,
+                      product,
+                    ),
+                  }
+                : {}),
+              ...(shadeLineAttributes.length
+                ? {attributes: shadeLineAttributes}
+                : {}),
+            },
+          ],
+        }}
+        action={CartForm.ACTIONS.LinesAdd}
+      >
+        {(fetcher: FetcherWithComponents<unknown>) => (
+          <button
+            type="submit"
+            disabled={fetcher.state !== 'idle'}
+            className="w-full py-3.5 tracked transition disabled:opacity-70"
+            style={{
+              background: 'var(--accent)',
+              color: 'var(--background)',
+            }}
+          >
+            Add to Bag
+          </button>
+        )}
+      </CartForm>
+      <Link
+        to={buyNowHref}
+        reloadDocument
+        className="btn-secondary block w-full py-3.5 text-center tracked touch-manipulation"
+      >
+        Buy Now
+      </Link>
+    </>
+  ) : (
+    <Link
+      to="/concierge"
+      className="block w-full py-3.5 text-center tracked transition hover:opacity-90"
+      style={{
+        background: 'var(--accent)',
+        color: 'var(--background)',
+      }}
+    >
+      Inquire via Concierge
+    </Link>
+  );
 
   return (
     <div>
@@ -461,83 +562,7 @@ export function ProductView({
                 />
               ) : null}
 
-              <div className="space-y-2.5">
-                {soldOut ? (
-                  <>
-                    <button
-                      disabled
-                      className="btn-secondary w-full cursor-not-allowed py-3.5 tracked"
-                    >
-                      Sold Out
-                    </button>
-                    <Link
-                      to="/concierge"
-                      className="btn-secondary btn-secondary-accent block w-full py-3.5 text-center tracked touch-manipulation"
-                    >
-                      Commission a Similar Piece
-                    </Link>
-                  </>
-                ) : isShopifyVariant ? (
-                  <>
-                    <CartForm
-                      fetcherKey="add-to-bag"
-                      route="/cart"
-                      inputs={{
-                        lines: [
-                          {
-                            merchandiseId: merchandiseGid!,
-                            quantity: canChooseQuantity ? quantity : 1,
-                            ...(selectedVariant
-                              ? {
-                                  selectedVariant: toCartSelectedVariant(
-                                    selectedVariant,
-                                    product,
-                                  ),
-                                }
-                              : {}),
-                            ...(shadeLineAttributes.length
-                              ? {attributes: shadeLineAttributes}
-                              : {}),
-                          },
-                        ],
-                      }}
-                      action={CartForm.ACTIONS.LinesAdd}
-                    >
-                      {(fetcher: FetcherWithComponents<unknown>) => (
-                        <button
-                          type="submit"
-                          disabled={fetcher.state !== 'idle'}
-                          className="w-full py-3.5 tracked transition disabled:opacity-70"
-                          style={{
-                            background: 'var(--accent)',
-                            color: 'var(--background)',
-                          }}
-                        >
-                          Add to Bag
-                        </button>
-                      )}
-                    </CartForm>
-                    <Link
-                      to={buyNowHref}
-                      reloadDocument
-                      className="btn-secondary block w-full py-3.5 text-center tracked touch-manipulation"
-                    >
-                      Buy Now
-                    </Link>
-                  </>
-                ) : (
-                  <Link
-                    to="/concierge"
-                    className="block w-full py-3.5 text-center tracked transition hover:opacity-90"
-                    style={{
-                      background: 'var(--accent)',
-                      color: 'var(--background)',
-                    }}
-                  >
-                    Inquire via Concierge
-                  </Link>
-                )}
-              </div>
+              <div className="space-y-2.5">{purchaseActions}</div>
             </div>
 
             <div className="mt-8">
@@ -841,6 +866,8 @@ export function ProductView({
           onSelectShade={setSelectedShadeCode}
           imageIdx={recolorImgIdx}
           onImageIdxChange={setRecolorImgIdx}
+          priceLabel={formatPrice(displayPrice)}
+          purchaseControls={purchaseActions}
         />
       ) : null}
     </div>

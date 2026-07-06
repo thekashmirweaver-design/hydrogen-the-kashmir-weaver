@@ -4,6 +4,8 @@ import {SOLID_RECOLOR_IMAGE_SETS} from '~/lib/solid-product';
 const SIZE_CLASS = {
   thumb: 'relative h-20 w-20 shrink-0',
   mini: 'relative mx-auto h-[min(22dvh,9rem)] w-full max-w-[9rem]',
+  stage: 'relative mx-auto h-full min-h-[9rem] w-full max-w-[15rem]',
+  hero: 'relative mx-auto h-[min(42dvh,400px)] min-h-[12rem] w-full max-w-sm',
   full: 'relative mx-auto h-[min(68dvh,720px)] min-h-[18rem] w-full max-w-md',
   desktop:
     'relative mx-auto aspect-[4/5] w-full max-w-lg lg:min-h-[20rem] lg:max-h-[calc(100dvh-14rem)] xl:max-w-xl',

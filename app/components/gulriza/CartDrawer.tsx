@@ -175,7 +175,7 @@ export function CartDrawer({
           </div>
         ) : (
           <>
-            {/* Scrollable items — promo lives here on mobile so the list keeps maximum height */}
+            {/* Scrollable line items */}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5 sm:py-4 md:px-6 md:py-5">
               <ul className="flex flex-col">
                 {lines.map((line) => (
@@ -189,24 +189,26 @@ export function CartDrawer({
                   </li>
                 ))}
               </ul>
-
-              <div className="mt-4 md:hidden">
-                {promotion.hasAdjustments && (
-                  <CartTotals cart={cart} formatPrice={formatPrice} compact />
-                )}
-                <CartPromoForms cart={cart} compact collapsible />
-              </div>
             </div>
 
-            {/* Mobile: slim sticky checkout bar */}
+            {/* Mobile: sticky footer — promo, total, checkout */}
             <div
-              className="shrink-0 border-t px-4 py-3 md:hidden"
+              className="shrink-0 border-t px-4 pt-3 md:hidden"
               style={{
                 borderColor: "var(--border)",
                 paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
               }}
             >
-              <div className="flex items-center gap-3">
+              {promotion.hasAdjustments && (
+                <div className="mb-3">
+                  <CartTotals cart={cart} formatPrice={formatPrice} compact />
+                </div>
+              )}
+              <CartPromoForms cart={cart} variant="drawer" collapsible />
+              <div
+                className="mt-3 flex items-center gap-3 border-t pt-3"
+                style={{borderColor: "var(--border)"}}
+              >
                 <div className="min-w-0 flex-1">
                   <p className="text-[0.6rem] uppercase tracking-[0.2em] text-muted-foreground">
                     Total
@@ -242,7 +244,7 @@ export function CartDrawer({
               style={{ borderColor: "var(--border)" }}
             >
               <CartTotals cart={cart} formatPrice={formatPrice} compact />
-              <CartPromoForms cart={cart} compact collapsible />
+              <CartPromoForms cart={cart} variant="drawer" collapsible />
               <p className="text-[0.65rem] leading-relaxed text-muted-foreground">
                 Shipping and taxes calculated at checkout.
               </p>
