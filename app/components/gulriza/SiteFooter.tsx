@@ -1,5 +1,6 @@
 import {Link} from "react-router";
 import { Hairline } from "./Eyebrow";
+import { BrandLockup } from "~/components/gulriza/BrandLockup";
 import {useCatalog} from "~/contexts/catalog-context";
 import type {ShopSettings} from "~/lib/shop-settings";
 
@@ -15,7 +16,7 @@ const CARE_LINKS = [
   { to: "/care-guide", label: "Care Guide" },
 ] as const;
 
-const POLICY_LINKS = [
+const LEGAL_LINKS = [
   { to: '/terms', label: 'Terms' },
   { to: '/privacy', label: 'Privacy' },
   { to: '/shipping', label: 'Shipping' },
@@ -50,19 +51,11 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
     <footer className="mt-32 pt-20" style={{ background: "var(--background)" }}>
       <div className="mx-auto max-w-[1600px] px-6 md:px-10">
         <Hairline />
-        <div className="grid grid-cols-2 gap-12 py-20 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-12 py-20 md:grid-cols-6">
           <div className="col-span-2 md:col-span-2">
-            <div
-              className="font-display flex flex-col uppercase leading-[1.05]"
-              style={{ fontWeight: 300 }}
-            >
-              <span className="text-3xl tracking-[0.15em] md:text-4xl md:tracking-[0.2em]">
-                The Kashmir
-              </span>
-              <span className="text-xl tracking-[0.3em] italic opacity-90 md:text-2xl md:tracking-[0.4em]">
-                Weaver
-              </span>
-            </div>
+            <Link to="/" className="group inline-block">
+              <BrandLockup className="text-left text-[1.75rem] tracking-[0.12em] md:text-[2rem] md:tracking-[0.15em]" />
+            </Link>
             <p
               className="mt-8 max-w-sm font-display text-xl leading-snug md:text-2xl"
               style={{ fontStyle: "italic", fontWeight: 300 }}
@@ -82,10 +75,11 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
           <FootCol title="Shop" links={shopLinks} />
           <FootCol title="Our World" links={ourWorldLinks} />
           <FootCol title="Care" links={[...CARE_LINKS]} />
+          <FootCol title="Legal" links={[...LEGAL_LINKS]} />
         </div>
 
         <Hairline />
-        <div className="flex flex-col items-center gap-6 py-8 md:grid md:grid-cols-3 md:items-center">
+        <div className="flex flex-col items-center gap-6 py-8 md:flex-row md:justify-between">
           <div className="flex items-center justify-center gap-5 text-muted-foreground md:justify-start">
             {social.instagram && (
               <a href={social.instagram} aria-label="Instagram" target="_blank" rel="noreferrer">
@@ -106,13 +100,6 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
           <p className="text-center text-[0.65rem] uppercase tracking-widest text-muted-foreground md:text-xs">
             © 2026 The Kashmir Weaver
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 text-[0.65rem] uppercase tracking-widest text-muted-foreground md:justify-end md:gap-6 md:text-xs">
-            {POLICY_LINKS.map((link) => (
-              <Link key={link.to} to={link.to} className="transition hover:text-accent">
-                {link.label}
-              </Link>
-            ))}
-          </div>
         </div>
       </div>
     </footer>

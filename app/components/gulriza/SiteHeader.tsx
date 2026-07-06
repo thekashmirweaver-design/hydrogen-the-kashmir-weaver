@@ -15,7 +15,7 @@ import { syncLiveCartCache } from "~/lib/use-live-cart";
 import { ShopifyAccount } from "~/components/gulriza/ShopifyAccount";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
 import type {ShopSettings, NavItem} from "~/lib/shop-settings";
-import brandMark from "~/assets/brand-mark.png";
+import {BrandLockup, BrandMark} from "~/components/gulriza/BrandLockup";
 
 const NAV = [
   { to: "/collections/all", label: "Shop" },
@@ -44,41 +44,8 @@ function useIsLgUp() {
   );
 }
 
-// Two-line brand lockup. Sizing/tracking/alignment come from `className` so the
-// header (responsive) and the mobile menu (fixed) can share one markup. Kept
-// deliberately still — no motion, no bars — just fine serif type, generous
-// tracking, and a muted gold second line, like an engraved maison plaque.
-function BrandLockup({ className = "" }: { className?: string }) {
-  return (
-    <span
-      className={`font-display flex flex-col uppercase leading-[1.15] font-semibold ${className}`}
-    >
-      <span className="whitespace-nowrap">The Kashmir</span>
-      <span
-        className="mt-0.5 whitespace-nowrap text-[0.72em] font-semibold not-italic tracking-[0.42em] opacity-95 transition-opacity duration-500 group-hover:opacity-100"
-        style={{ color: "var(--accent)" }}
-      >
-        Weaver
-      </span>
-    </span>
-  );
-}
-
-// The loom-knot emblem. A quiet still image — sized purely via `className` so it
-// can sit inline with the header lockup.
-function BrandMark({ className = "" }: { className?: string }) {
-  return (
-    <img
-      src={brandMark}
-      alt=""
-      aria-hidden
-      className={`shrink-0 object-contain ${className}`}
-    />
-  );
-}
-
-// Wordmark ↔ emblem on desktop scroll. Mobile header stays emblem-only so the
-// icon rail keeps clear space; full lockup lives in the mobile menu panel.
+// Brand name at scroll top (mobile + desktop). On mobile only, scroll crossfades
+// the wordmark into the loom emblem; desktop keeps the name at all scroll positions.
 function AnimatedHeaderBrand({
   condensed,
   homeHref = "/",
@@ -91,42 +58,43 @@ function AnimatedHeaderBrand({
 
   return (
     <>
+      {/* Mobile: brand name at top → logo on scroll */}
       <Link
         to={homeHref}
         aria-label="The Kashmir Weaver"
-        className="flex shrink-0 items-center lg:hidden"
-      >
-        <BrandMark className="h-8 w-8" />
-      </Link>
-
-      <Link
-        to={homeHref}
-        aria-label="The Kashmir Weaver"
-        className={`relative hidden shrink-0 items-center lg:flex ${
-          condensed ? "h-9 w-9 overflow-hidden xl:h-10 xl:w-10" : "h-10 overflow-visible"
+        className={`relative flex shrink-0 items-center lg:hidden ${
+          condensed ? "h-8 w-8" : "min-h-[2.35rem] min-w-[6.75rem]"
         }`}
       >
+        <span
+          aria-hidden={condensed}
+          className={`absolute inset-0 flex items-center ${brandMotion} ${
+            condensed
+              ? "pointer-events-none scale-95 opacity-0 -translate-y-1"
+              : "scale-100 opacity-100 translate-y-0"
+          }`}
+        >
+          <BrandLockup className="text-left text-[0.82rem] tracking-[0.08em] min-[420px]:text-[0.9rem] min-[420px]:tracking-[0.1em]" />
+        </span>
         <span
           aria-hidden={!condensed}
           className={`absolute inset-0 flex items-center ${brandMotion} ${
             condensed
-              ? "scale-100 opacity-100"
-              : "pointer-events-none scale-90 opacity-0"
+              ? "scale-100 opacity-100 translate-y-0"
+              : "pointer-events-none scale-90 opacity-0 translate-y-1"
           }`}
         >
-          <BrandMark className="h-9 w-9 xl:h-10 xl:w-10" />
+          <BrandMark className="h-8 w-8" />
         </span>
-        <span
-          aria-hidden={condensed}
-          className={`flex items-center gap-3 overflow-visible ${brandMotion} ${
-            condensed
-              ? "pointer-events-none max-w-0 opacity-0 -translate-x-2 overflow-hidden"
-              : "max-w-[20rem] opacity-100 translate-x-0 xl:max-w-[22rem]"
-          }`}
-        >
-          <BrandMark className="h-10 w-10 shrink-0" />
-          <BrandLockup className="w-max shrink-0 text-left text-[1.25rem] tracking-[0.12em] xl:text-[1.5rem] xl:tracking-[0.15em]" />
-        </span>
+      </Link>
+
+      {/* Desktop: brand name always (scroll does not swap to logo) */}
+      <Link
+        to={homeHref}
+        aria-label="The Kashmir Weaver"
+        className="hidden shrink-0 items-center lg:flex"
+      >
+        <BrandLockup className="w-max shrink-0 text-left text-[1.25rem] tracking-[0.12em] xl:text-[1.5rem] xl:tracking-[0.15em]" />
       </Link>
     </>
   );
