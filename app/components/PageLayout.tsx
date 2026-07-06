@@ -10,6 +10,7 @@ import {SiteHeader} from '~/components/gulriza/SiteHeader';
 import {SiteFooter} from '~/components/gulriza/SiteFooter';
 import {ScrollToTop} from '~/components/gulriza/ScrollToTop';
 import {CartFab} from '~/components/gulriza/CartFab';
+import {WebMcpTools} from '~/components/gulriza/WebMcpTools';
 import {useLiveCart} from '~/lib/use-live-cart';
 
 const EMPTY_CATALOG: CatalogSnapshot = {products: [], collections: []};
@@ -132,6 +133,7 @@ export function PageLayout({
     <LocalizationProvider localization={localization}>
       <ScrollToTop />
       <CatalogProvider catalog={resolvedCatalog}>
+        <WebMcpTools />
         <ChromeHeader
           isHome={isHome}
           shopSettings={shopSettings}

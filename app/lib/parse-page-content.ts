@@ -27,6 +27,11 @@ export function parsePageJson<T>(body: string | null | undefined): T | null {
   return null;
 }
 
+export function htmlToPlainText(html: string | null | undefined): string {
+  if (!html?.trim()) return '';
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 export function htmlToParagraphs(html: string): string[] {
   const paragraphs = html.match(/<p[^>]*>([\s\S]*?)<\/p>/gi);
   if (paragraphs?.length) {

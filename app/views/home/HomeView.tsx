@@ -14,7 +14,7 @@ import type {JournalPost} from '~/models/static/journal';
 
 const heroPortrait = '/assets/hero-portrait.jpg';
 const himalayas = '/assets/himalayas.jpg';
-const artisan = '/assets/artisan-hands.jpg';
+const artisan = '/assets/craft-artisan.png';
 const journalCraft = '/assets/journal-craft.jpg';
 const journalGoat = '/assets/changthangi-goat.jpg';
 

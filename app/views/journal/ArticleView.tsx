@@ -40,27 +40,35 @@ export function ArticleView({article}: {article: JournalArticle}) {
       </section>
 
       <article className="mx-auto max-w-2xl px-6 py-24 md:px-0">
-        {article.body.map((p, i) => (
-          <p
-            key={i}
-            className="font-display text-xl leading-[1.7] text-foreground/90 first:mt-0 mt-8"
+        {article.bodyHtml ? (
+          <div
+            className="journal-article-body font-display text-xl leading-[1.7] text-foreground/90 [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-4 [&_blockquote]:my-8 [&_blockquote]:border-l [&_blockquote]:border-accent [&_blockquote]:pl-6 [&_blockquote]:italic [&_h2]:mt-12 [&_h2]:text-3xl [&_h3]:mt-10 [&_h3]:text-2xl [&_img]:my-10 [&_img]:w-full [&_li]:my-2 [&_ol]:my-8 [&_ol]:list-decimal [&_ol]:pl-6 [&_p+p]:mt-8 [&_p:first-of-type::first-letter]:float-left [&_p:first-of-type::first-letter]:mr-3 [&_p:first-of-type::first-letter]:font-display [&_p:first-of-type::first-letter]:text-5xl [&_p:first-of-type::first-letter]:leading-[0.85] [&_p:first-of-type::first-letter]:text-accent sm:[&_p:first-of-type::first-letter]:text-7xl [&_strong]:font-medium [&_ul]:my-8 [&_ul]:list-disc [&_ul]:pl-6"
             style={{fontWeight: 300}}
-          >
-            {i === 0 ? (
-              <>
-                <span
-                  className="font-display float-left mr-3 text-5xl leading-[0.85] text-accent sm:text-7xl"
-                  style={{fontWeight: 400}}
-                >
-                  {p[0]}
-                </span>
-                {p.slice(1)}
-              </>
-            ) : (
-              p
-            )}
-          </p>
-        ))}
+            dangerouslySetInnerHTML={{__html: article.bodyHtml}}
+          />
+        ) : (
+          (article.body ?? []).map((p, i) => (
+            <p
+              key={i}
+              className="font-display text-xl leading-[1.7] text-foreground/90 first:mt-0 mt-8"
+              style={{fontWeight: 300}}
+            >
+              {i === 0 ? (
+                <>
+                  <span
+                    className="font-display float-left mr-3 text-5xl leading-[0.85] text-accent sm:text-7xl"
+                    style={{fontWeight: 400}}
+                  >
+                    {p[0]}
+                  </span>
+                  {p.slice(1)}
+                </>
+              ) : (
+                p
+              )}
+            </p>
+          ))
+        )}
         <div className="mt-16 border-t pt-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <Link to="/journal" className="tracked inline-flex min-h-11 items-center text-muted-foreground hover:text-accent active:opacity-80">
             ← Return to the Journal

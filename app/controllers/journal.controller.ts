@@ -12,10 +12,7 @@ import {
   JOURNAL_BLOG_HANDLE,
   JOURNAL_BLOG_QUERY,
 } from '~/models/shopify/journal.queries';
-import {
-  estimateReadMinutes,
-  htmlToParagraphs,
-} from '~/lib/parse-page-content';
+import {estimateReadMinutes, htmlToPlainText} from '~/lib/parse-page-content';
 import type {PageMetadata} from '~/controllers/catalog.controller';
 
 export type JournalPageViewModel = {
@@ -47,7 +44,7 @@ function mapShopifyArticleToPost(article: {
   tags?: string[] | null;
   image?: {url?: string | null} | null;
 }): JournalPost {
-  const bodyText = article.contentHtml?.replace(/<[^>]+>/g, ' ') ?? '';
+  const bodyText = htmlToPlainText(article.contentHtml);
   return {
     slug: article.handle,
     cat: mapCategory(article.tags),
@@ -66,13 +63,14 @@ function mapShopifyArticleToArticle(article: {
   tags?: string[] | null;
   image?: {url?: string | null} | null;
 }): JournalArticle {
-  const bodyText = article.contentHtml ?? '';
+  const bodyHtml = article.contentHtml?.trim() || undefined;
+  const bodyText = htmlToPlainText(bodyHtml);
   return {
     title: article.title,
     cat: mapCategory(article.tags),
-    minutes: estimateReadMinutes(bodyText.replace(/<[^>]+>/g, ' ')),
+    minutes: estimateReadMinutes(bodyText),
     img: article.image?.url ?? '/assets/journal-craft.jpg',
-    body: htmlToParagraphs(bodyText),
+    bodyHtml,
   };
 }
 
@@ -166,7 +164,9 @@ export async function getArticlePage(
               article.seo?.title ??
               `${article.title} — Journal — The Kashmir Weaver`,
             description:
-              article.seo?.description ?? mapped.body[0] ?? article.title,
+              article.seo?.description ??
+              (htmlToPlainText(article.contentHtml).slice(0, 160) ||
+                article.title),
           },
         };
       }
@@ -186,7 +186,7 @@ export async function getArticlePage(
     datePublished: post?.date,
     metadata: {
       title: `${article.title} — Journal — The Kashmir Weaver`,
-      description: article.body[0],
+      description: article.body?.[0] ?? article.title,
     },
   };
 }

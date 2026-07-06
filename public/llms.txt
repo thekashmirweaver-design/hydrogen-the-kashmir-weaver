@@ -1,0 +1,38 @@
+# The Kashmir Weaver
+
+> Luxury hand-woven Kashmiri pashmina shawls and accessories. Each piece is crafted by a single master artisan in Srinagar from Changthangi goat fleece. Primary storefront: https://thekashmirweaver.in
+
+The Kashmir Weaver is a headless Shopify Hydrogen storefront. Product catalog, pricing, inventory, and checkout are live from Shopify. Editorial pages (Heritage, Craft, Journal) describe provenance and technique. Use the Concierge page for bespoke commissions, gifting, and press inquiries — not the standard cart flow.
+
+Currency and market can be selected in the site header. Customer accounts support order history and login via Shopify Customer Account API.
+
+## Shop
+
+- [All products](https://thekashmirweaver.in/collections/all): Full catalog — Jamawar, Kani, Sozni, solid pashmina, and more
+- [Collections](https://thekashmirweaver.in/collections): Browse by weave, technique, and collection story
+- [Search](https://thekashmirweaver.in/search): Find products by name or collection
+
+## Heritage & craft
+
+- [Heritage](https://thekashmirweaver.in/heritage): Origin story — Himalayas, Changthangi goat, Srinagar atelier
+- [The craft](https://thekashmirweaver.in/craft): Five stages from fleece to finished pashmina
+- [Journal](https://thekashmirweaver.in/journal): Editorial articles on craft, provenance, and care
+- [Care guide](https://thekashmirweaver.in/care-guide): How to preserve pashmina
+
+## Customer service
+
+- [Concierge](https://thekashmirweaver.in/concierge): Custom orders, bespoke commissions, wedding and corporate gifting, wholesale, press
+- [FAQ](https://thekashmirweaver.in/faq): Authenticity, shipping, returns, care, and commissions
+- [Contact](https://thekashmirweaver.in/concierge#contact): Email, WhatsApp, and phone channels
+
+## Policies
+
+- [Shipping & returns](https://thekashmirweaver.in/policies/shipping-policy): Delivery and return policy
+- [Privacy policy](https://thekashmirweaver.in/privacy): Data handling
+- [Terms of service](https://thekashmirweaver.in/terms): Purchase terms
+
+## Optional
+
+- [Full catalog (llms-full.txt)](https://thekashmirweaver.in/llms-full.txt): Every product, collection, and journal article with descriptions
+- [Sitemap](https://thekashmirweaver.in/sitemap.xml): Machine-readable index of all indexable URLs
+- [Cart](https://thekashmirweaver.in/cart): Current shopping bag (session-specific; not useful without user context)

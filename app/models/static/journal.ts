@@ -25,7 +25,10 @@ export type JournalArticle = {
   cat: JournalCategory;
   minutes: number;
   img: string;
-  body: string[];
+  /** Static fallback — plain-text paragraphs */
+  body?: string[];
+  /** Shopify blog body — rich HTML from the admin editor */
+  bodyHtml?: string;
 };
 
 export const JOURNAL_CATEGORIES = [

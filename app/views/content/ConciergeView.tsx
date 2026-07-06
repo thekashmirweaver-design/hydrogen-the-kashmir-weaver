@@ -6,8 +6,6 @@ import {
   Phone,
   Calendar,
   ArrowRight,
-  ChevronDown,
-  Check,
   type LucideIcon,
 } from 'lucide-react';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
@@ -18,6 +16,7 @@ import {
   contactWhatsappHref,
   resolveContact,
 } from '~/lib/contact';
+import {CONCIERGE_INQUIRY_TYPES} from '~/lib/webmcp';
 import type {RootLoader} from '~/root';
 
 type ContactChannel = {
@@ -29,36 +28,23 @@ type ContactChannel = {
   external?: boolean;
 };
 
-const INQUIRY_TYPES = [
-  {
-    label: 'Custom Orders',
-    description: 'Personalise an existing design — colour, size, or monogram.',
-  },
-  {
-    label: 'Bespoke Pashmina',
-    description: 'Commission a one-of-one piece woven to your vision.',
-  },
-  {
-    label: 'Wedding Gifting',
-    description: 'Curated trousseau and bridal-party gifting.',
-  },
-  {
-    label: 'Corporate Gifting',
-    description: 'Branded or bulk gifting for clients and teams.',
-  },
-  {
-    label: 'Wholesale Inquiries',
-    description: 'Stock The Kashmir Weaver in your boutique or store.',
-  },
-  {
-    label: 'Personal Shopping',
-    description: 'One-to-one guidance from our atelier team.',
-  },
-  {
-    label: 'Press & Collaborations',
-    description: 'Media, partnerships, and editorial requests.',
-  },
-];
+const INQUIRY_TYPES = CONCIERGE_INQUIRY_TYPES.map((label) => ({
+  label,
+  description:
+    label === 'Custom Orders'
+      ? 'Personalise an existing design — colour, size, or monogram.'
+      : label === 'Bespoke Pashmina'
+        ? 'Commission a one-of-one piece woven to your vision.'
+        : label === 'Wedding Gifting'
+          ? 'Curated trousseau and bridal-party gifting.'
+          : label === 'Corporate Gifting'
+            ? 'Branded or bulk gifting for clients and teams.'
+            : label === 'Wholesale Inquiries'
+              ? 'Stock The Kashmir Weaver in your boutique or store.'
+              : label === 'Personal Shopping'
+                ? 'One-to-one guidance from our atelier team.'
+                : 'Media, partnerships, and editorial requests.',
+}));
 
 export function ConciergeView() {
   const rootData = useRouteLoaderData<RootLoader>('root');
@@ -191,11 +177,45 @@ export function ConciergeView() {
 }
 
 function InquiryForm() {
-  const [type, setType] = useState(INQUIRY_TYPES[0].label);
+  const [type, setType] = useState<string>(INQUIRY_TYPES[0].label);
   const fetcher = useFetcher<{success?: boolean; errors?: Record<string, string>}>();
+  const formRef = useRef<HTMLFormElement>(null);
   const sent = fetcher.data?.success === true;
   const errors = fetcher.data?.errors ?? {};
   const isSubmitting = fetcher.state !== 'idle';
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+
+    const onSubmit = (event: Event) => {
+      const submitEvent = event as SubmitEvent & {
+        agentInvoked?: boolean;
+        respondWith?: (promise: Promise<unknown>) => void;
+      };
+      if (!submitEvent.agentInvoked || !submitEvent.respondWith) return;
+
+      submitEvent.preventDefault();
+      const body = new FormData(form);
+      const promise = fetch('/api/concierge', {method: 'POST', body})
+        .then((response) => response.json())
+        .then((data) => {
+          const result = data as {success?: boolean; errors?: Record<string, string>};
+          if (result.success) {
+            return 'Inquiry submitted. Our atelier will respond personally within 24 hours.';
+          }
+          if (result.errors) {
+            return `Validation failed: ${Object.values(result.errors).join(' ')}`;
+          }
+          return 'Unable to submit inquiry.';
+        });
+
+      submitEvent.respondWith(promise);
+    };
+
+    form.addEventListener('submit', onSubmit);
+    return () => form.removeEventListener('submit', onSubmit);
+  }, []);
 
   if (sent)
     return (
@@ -206,27 +226,68 @@ function InquiryForm() {
 
   return (
     <fetcher.Form
+      ref={formRef}
       method="post"
       action="/api/concierge"
       className="grid grid-cols-1 gap-6 md:grid-cols-2"
+      toolname="submit_concierge_inquiry"
+      tooldescription="Send a personal inquiry to The Kashmir Weaver atelier for custom orders, bespoke pashmina, wedding or corporate gifting, wholesale, personal shopping, or press."
     >
-      <input type="hidden" name="inquiryType" value={type} />
       <div className="md:col-span-2">
-        <TypeDropdown value={type} onChange={setType} />
+        <label className="block">
+          <span className="tracked text-muted-foreground">Type of inquiry</span>
+          <select
+            name="inquiryType"
+            required
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            toolparamdescription="Reason for contacting the atelier."
+            className="mt-3 block min-h-11 w-full cursor-pointer appearance-none border-0 border-b bg-transparent py-3 text-base text-foreground outline-none transition focus:border-accent"
+            style={{borderBottom: '1px solid var(--border)'}}
+          >
+            {INQUIRY_TYPES.map((option) => (
+              <option key={option.label} value={option.label}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
         {errors.inquiryType && (
           <p className="mt-2 text-xs text-accent">{errors.inquiryType}</p>
         )}
       </div>
-      <Field label="Your name" name="name" error={errors.name} />
-      <Field label="Email" name="email" type="email" error={errors.email} />
-      <Field label="Country / City" name="location" error={errors.location} />
-      <Field label="Phone (optional)" name="phone" type="tel" />
+      <Field
+        label="Your name"
+        name="name"
+        error={errors.name}
+        toolparamdescription="Full name of the inquirer."
+      />
+      <Field
+        label="Email"
+        name="email"
+        type="email"
+        error={errors.email}
+        toolparamdescription="Contact email address."
+      />
+      <Field
+        label="Country / City"
+        name="location"
+        error={errors.location}
+        toolparamdescription="Country or city."
+      />
+      <Field
+        label="Phone (optional)"
+        name="phone"
+        type="tel"
+        toolparamdescription="Optional phone number with country code."
+      />
       <div className="md:col-span-2">
         <Field
           label="How may we assist you?"
           name="message"
           textarea
           error={errors.message}
+          toolparamdescription="Describe how the atelier may assist."
         />
       </div>
       <div className="md:col-span-2">
@@ -246,109 +307,20 @@ function InquiryForm() {
   );
 }
 
-function TypeDropdown({value, onChange}: {value: string; onChange: (value: string) => void}) {
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open]);
-
-  return (
-    <div className="block">
-      <span className="tracked text-muted-foreground">Type of inquiry</span>
-      <div ref={wrapRef} className="relative mt-3">
-        <button
-          ref={triggerRef}
-          type="button"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          onClick={() => setOpen((o) => !o)}
-          className="flex min-h-11 w-full items-center justify-between gap-3 bg-transparent py-3 text-left text-base text-foreground outline-none transition touch-manipulation"
-          style={{
-            borderBottom: open ? '1px solid var(--accent)' : '1px solid var(--border)',
-          }}
-        >
-          <span>{value}</span>
-          <ChevronDown
-            className="h-4 w-4 shrink-0 transition-transform"
-            strokeWidth={1}
-            style={{transform: open ? 'rotate(180deg)' : undefined}}
-          />
-        </button>
-
-        {open && (
-          <ul
-            role="listbox"
-            aria-label="Type of inquiry"
-            className="absolute left-0 top-[calc(100%+0.375rem)] z-50 max-h-72 w-full overflow-auto border py-1 shadow-2xl"
-            style={{background: 'var(--surface)', borderColor: 'var(--border)'}}
-          >
-            {INQUIRY_TYPES.map((option) => {
-              const active = option.label === value;
-              return (
-                <li key={option.label} role="option" aria-selected={active}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onChange(option.label);
-                      setOpen(false);
-                    }}
-                    className="group flex w-full items-start justify-between gap-4 px-4 py-3 text-left transition-colors focus:outline-none"
-                  >
-                    <span className="block">
-                      <span
-                        className="block text-sm transition-colors group-hover:text-accent group-focus:text-accent"
-                        style={{color: active ? 'var(--accent)' : 'var(--foreground)'}}
-                      >
-                        {option.label}
-                      </span>
-                      <span className="mt-1 block text-xs text-muted-foreground">
-                        {option.description}
-                      </span>
-                    </span>
-                    {active && (
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={1.25} />
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function Field({
   label,
   name,
   type = 'text',
   textarea = false,
   error,
+  toolparamdescription,
 }: {
   label: string;
   name: string;
   type?: string;
   textarea?: boolean;
   error?: string;
+  toolparamdescription?: string;
 }) {
   const inputProps: React.InputHTMLAttributes<HTMLInputElement> = {};
   if (type === 'email') {
@@ -374,6 +346,7 @@ function Field({
           name={name}
           required
           rows={4}
+          toolparamdescription={toolparamdescription}
           className={fieldClass}
           style={{borderBottom: '1px solid var(--border)'}}
         />
@@ -382,6 +355,7 @@ function Field({
           name={name}
           type={type}
           required={name !== 'phone'}
+          toolparamdescription={toolparamdescription}
           className={fieldClass}
           style={{borderBottom: '1px solid var(--border)'}}
           {...inputProps}
