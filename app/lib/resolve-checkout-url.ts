@@ -1,3 +1,5 @@
+import type {CartApiQueryFragment} from 'storefrontapi.generated';
+
 /**
  * Normalize Storefront API checkout URLs for headless Hydrogen stores.
  *
@@ -5,6 +7,8 @@
  * - Strips `_cs` (Hydrogen/AMPS) which otherwise redirects to /cart/c/ on Oxygen → 404
  * - Maps /cart/c/:token handoff URLs to /checkouts/cn/:token/:locale
  */
+const OXYGEN_PREVIEW_HOST = /\.o2\.myshopify\.dev$/i;
+
 export function resolveCheckoutUrl(
   checkoutUrl: string,
   checkoutDomain?: string | null,
@@ -13,13 +17,12 @@ export function resolveCheckoutUrl(
 
   try {
     const url = new URL(checkoutUrl);
+    const host = checkoutHost(checkoutDomain);
 
-    if (checkoutDomain?.trim()) {
-      const host = checkoutDomain
-        .replace(/^https?:\/\//, '')
-        .replace(/\/.*$/, '')
-        .trim();
-      if (host) url.hostname = host;
+    if (host) {
+      url.hostname = host;
+    } else if (OXYGEN_PREVIEW_HOST.test(url.hostname)) {
+      // PUBLIC_CHECKOUT_DOMAIN must be set to rewrite Oxygen preview checkout hosts.
     }
 
     url.searchParams.delete('_cs');
@@ -81,4 +84,21 @@ export function checkoutUrlFromCartToken(
   params.delete('_cs');
   params.forEach((value, key) => checkout.searchParams.set(key, value));
   return checkout.toString();
+}
+
+/** Apply storefront checkout URL normalization to a cart fragment (server or client). */
+export function cartWithStorefrontCheckoutUrl(
+  cart: CartApiQueryFragment | null | undefined,
+  checkoutDomain: string | null | undefined,
+  locale: string,
+): CartApiQueryFragment | null {
+  if (!cart?.checkoutUrl) return cart ?? null;
+  return {
+    ...cart,
+    checkoutUrl: toStorefrontCheckoutUrl(
+      cart.checkoutUrl,
+      checkoutDomain,
+      locale,
+    ),
+  };
 }

@@ -72,7 +72,7 @@ function applyOptimisticCartFromFetchers(
 ): CartApiQueryFragment | null {
   const optimisticCart = cart?.lines
     ? structuredClone(cart)
-    : ({lines: {nodes: []}} as CartApiQueryFragment);
+    : ({lines: {nodes: []}} as unknown as CartApiQueryFragment);
   const cartLines = (optimisticCart.lines?.nodes ??
     []) as OptimisticCartLine[];
 
@@ -93,10 +93,14 @@ function applyOptimisticCartFromFetchers(
         : [];
 
       for (const input of lines) {
-        if (!input.selectedVariant) continue;
+        const selectedVariant = input.selectedVariant as
+          | {id: string}
+          | null
+          | undefined;
+        if (!selectedVariant?.id) continue;
 
         const existingLine = cartLines.find(
-          (line) => line.merchandise.id === input.selectedVariant?.id,
+          (line) => line.merchandise.id === selectedVariant.id,
         );
         isOptimistic = true;
 
@@ -106,7 +110,7 @@ function applyOptimisticCartFromFetchers(
           existingLine.isOptimistic = true;
         } else {
           cartLines.unshift({
-            id: getOptimisticLineId(input.selectedVariant.id),
+            id: getOptimisticLineId(selectedVariant.id),
             merchandise: input.selectedVariant,
             isOptimistic: true,
             quantity: input.quantity || 1,
@@ -136,7 +140,7 @@ function applyOptimisticCartFromFetchers(
         );
         if (index === -1) continue;
         if (isOptimisticLineId(cartLines[index].id)) continue;
-        cartLines[index].quantity = line.quantity;
+        cartLines[index].quantity = line.quantity ?? cartLines[index].quantity;
         if (cartLines[index].quantity === 0) {
           cartLines.splice(index, 1);
         }

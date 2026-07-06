@@ -1,3 +1,4 @@
+import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {Analytics, getShopAnalytics, Script, useNonce} from '@shopify/hydrogen';
 import {
   Outlet,
@@ -22,6 +23,10 @@ import {loadLocalization} from '~/lib/localization';
 import {persistBuyerMarket} from '~/lib/i18n';
 import {isCartFormAction} from '~/lib/cart-form-action';
 import {isCompleteCart} from '~/lib/use-live-cart';
+import {
+  cartWithStorefrontCheckoutUrl,
+  checkoutLocale,
+} from '~/lib/resolve-checkout-url';
 import {loadSharedCatalog, loadSharedCatalogMenu} from '~/lib/shared-catalog';
 import {needsFullCatalog} from '~/lib/catalog-routes';
 import {resolveStoreUrl} from '~/lib/seo';
@@ -152,6 +157,18 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
   return {shopSettings, localization};
 }
 
+function normalizeDeferredCart(
+  cartData: CartApiQueryFragment | null,
+  context: Route.LoaderArgs['context'],
+) {
+  const {language, country} = context.storefront.i18n;
+  return cartWithStorefrontCheckoutUrl(
+    cartData,
+    context.env.PUBLIC_CHECKOUT_DOMAIN,
+    checkoutLocale(language, country),
+  );
+}
+
 function loadDeferredData({context, request}: Route.LoaderArgs) {
   const {customerAccount, cart, storefront} = context;
   const countryCode = storefront.i18n.country;
@@ -175,10 +192,10 @@ function loadDeferredData({context, request}: Route.LoaderArgs) {
 
   return {
     catalog: catalogPromise,
-    cart: cart.get().then(async (cartData) => {
-      if (!cartData?.id) return cartData;
+    cart: cart.get().then(async (cartData: CartApiQueryFragment | null) => {
+      if (!cartData?.id) return normalizeDeferredCart(cartData, context);
       if (cartData.buyerIdentity?.countryCode === countryCode) {
-        return cartData;
+        return normalizeDeferredCart(cartData, context);
       }
 
       const result = await cart.updateBuyerIdentity({countryCode});
@@ -187,7 +204,7 @@ function loadDeferredData({context, request}: Route.LoaderArgs) {
         (isCompleteCart(refreshed) ? refreshed : null) ??
         (isCompleteCart(result.cart) ? result.cart : null) ??
         cartData;
-      return nextCart;
+      return normalizeDeferredCart(nextCart, context);
     }),
     isLoggedIn: customerAccount.isLoggedIn(),
     customerAccessToken: loadCustomerAccessToken(),

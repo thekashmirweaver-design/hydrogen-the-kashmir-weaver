@@ -1,6 +1,7 @@
-import {Link} from 'react-router';
+import {Link, useRouteLoaderData} from 'react-router';
 import {ArrowRight} from 'lucide-react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
+import type {RootLoader} from '~/root';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {CartLineItem} from '~/components/gulriza/CartLineItem';
@@ -10,14 +11,22 @@ import {formatShopifyMoney} from '~/lib/format-money';
 import {getCartPromotionSummary} from '~/lib/cart-promotions';
 import {useLocalization} from '~/contexts/localization-context';
 import {useLiveCart} from '~/lib/use-live-cart';
+import {checkoutLocale, toStorefrontCheckoutUrl} from '~/lib/resolve-checkout-url';
 
 export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}) {
+  const root = useRouteLoaderData<RootLoader>('root');
   const {selectedCurrency} = useLocalization();
   const cart = useLiveCart(loaderCart, {
     marketCountry: selectedCurrency.countryCode,
   });
   const lines = cart?.lines?.nodes ?? [];
-  const checkoutUrl = cart?.checkoutUrl;
+  const rawCheckoutUrl = cart?.checkoutUrl;
+  const checkoutDomain = root?.consent?.checkoutDomain;
+  const locale = checkoutLocale(root?.consent?.language, root?.consent?.country);
+  const checkoutUrl = rawCheckoutUrl
+    ? toStorefrontCheckoutUrl(rawCheckoutUrl, checkoutDomain, locale)
+    : undefined;
+
   const {subtotal, total, hasAdjustments} = getCartPromotionSummary(cart);
   const subtotalLabel = subtotal
     ? formatShopifyMoney(subtotal.amount, subtotal.currencyCode)

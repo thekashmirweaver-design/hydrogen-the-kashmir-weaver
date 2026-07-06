@@ -8,4 +8,5 @@ node_modules
 .env
 .shopify
 .react-router
+pnpm-lock.yaml
 tsconfig.tsbuildinfo

@@ -1,6 +1,6 @@
 import type {Storefront} from '@shopify/hydrogen';
 import type {CountryCode} from '@shopify/hydrogen/storefront-api-types';
-import type {AppSession} from '~/lib/session';
+import type {HydrogenSession} from '@shopify/hydrogen';
 import {getPersistedMarketCurrency} from '~/lib/i18n';
 
 export type ShopCurrencyOption = {
@@ -129,7 +129,7 @@ function resolveSelectedCurrency(
 
 export async function loadLocalization(
   storefront: Storefront,
-  session?: AppSession,
+  session?: HydrogenSession,
 ): Promise<LocalizationSnapshot> {
   const selectedCountry = storefront.i18n.country;
   const sessionCurrencyCode = getPersistedMarketCurrency(session);

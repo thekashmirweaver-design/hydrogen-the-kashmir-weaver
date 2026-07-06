@@ -1,5 +1,4 @@
-import type {I18nBase} from '@shopify/hydrogen';
-import type {AppSession} from '~/lib/session';
+import type {HydrogenSession, I18nBase} from '@shopify/hydrogen';
 
 const DEFAULT_I18N: I18nBase = {language: 'EN', country: 'US'};
 const SESSION_COUNTRY_KEY = 'buyerMarketCountry';
@@ -14,13 +13,13 @@ function isLanguageCode(value: string): value is I18nBase['language'] {
   return /^[A-Z]{2}$/.test(value);
 }
 
-function persistI18n(session: AppSession | undefined, i18n: I18nBase) {
+function persistI18n(session: HydrogenSession | undefined, i18n: I18nBase) {
   session?.set(SESSION_COUNTRY_KEY, i18n.country);
   session?.set(SESSION_LANGUAGE_KEY, i18n.language);
 }
 
 export function getPersistedMarketCurrency(
-  session: AppSession | undefined,
+  session: HydrogenSession | undefined,
 ): string | null {
   const code = session?.get(SESSION_CURRENCY_KEY)?.trim();
   return code || null;
@@ -28,7 +27,7 @@ export function getPersistedMarketCurrency(
 
 /** Persist buyer market in session (survives refresh without `?country=` in URL). */
 export function persistBuyerMarket(
-  session: AppSession | undefined,
+  session: HydrogenSession | undefined,
   country: string,
   language?: string,
   currencyCode?: string,
@@ -59,7 +58,7 @@ export function persistBuyerMarket(
  */
 export function getI18nFromRequest(
   request: Request,
-  session?: AppSession,
+  session?: HydrogenSession,
 ): I18nBase {
   const url = new URL(request.url);
   const countryParam = url.searchParams.get('country')?.toUpperCase();

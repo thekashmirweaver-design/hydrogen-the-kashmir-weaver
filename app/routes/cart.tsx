@@ -7,8 +7,8 @@ import type {Route} from './+types/cart';
 import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartForm} from '@shopify/hydrogen';
 import {
+  cartWithStorefrontCheckoutUrl,
   checkoutLocale,
-  toStorefrontCheckoutUrl,
 } from '~/lib/resolve-checkout-url';
 import {CartView} from '~/views/cart/CartView';
 import {persistBuyerMarket} from '~/lib/i18n';
@@ -95,6 +95,12 @@ export async function action({request, context}: Route.ActionArgs) {
   const cartId = result?.cart?.id;
   const headers = cartId ? cart.setCartId(result.cart.id) : new Headers();
   const {cart: cartResult, errors, warnings} = result;
+  const {language, country} = context.storefront.i18n;
+  const normalizedCart = cartWithStorefrontCheckoutUrl(
+    cartResult,
+    context.env.PUBLIC_CHECKOUT_DOMAIN,
+    checkoutLocale(language, country),
+  );
 
   const redirectTo = formData.get('redirectTo') ?? null;
   if (typeof redirectTo === 'string') {
@@ -104,7 +110,7 @@ export async function action({request, context}: Route.ActionArgs) {
 
   return data(
     {
-      cart: cartResult,
+      cart: normalizedCart,
       errors,
       warnings,
       analytics: {cartId},
@@ -116,18 +122,13 @@ export async function action({request, context}: Route.ActionArgs) {
 export async function loader({context}: Route.LoaderArgs) {
   const {cart, storefront} = context;
   const cartData = await cart.get();
-  if (!cartData?.checkoutUrl) return cartData;
-
   const {language, country} = storefront.i18n;
 
-  return {
-    ...cartData,
-    checkoutUrl: toStorefrontCheckoutUrl(
-      cartData.checkoutUrl,
-      context.env.PUBLIC_CHECKOUT_DOMAIN,
-      checkoutLocale(language, country),
-    ),
-  };
+  return cartWithStorefrontCheckoutUrl(
+    cartData,
+    context.env.PUBLIC_CHECKOUT_DOMAIN,
+    checkoutLocale(language, country),
+  );
 }
 
 export default function CartRoute() {
