@@ -3,13 +3,22 @@ import type {Product, ProductVariant} from '~/models/types';
 /** Max qty in UI when Shopify inventory is not tracked (checkout may enforce its own limit). */
 export const UNTRACKED_MAX_QTY = 99;
 
+/**
+ * A variant is only meaningfully "tracked" when Shopify reports a positive
+ * quantity. `0` or negative `quantityAvailable` with `availableForSale: true`
+ * means "Continue selling when out of stock" is enabled in Admin — i.e. the
+ * variant is effectively unlimited, not capped at 1.
+ */
 function isTrackedInventory(variant: ProductVariant): boolean {
-  return typeof variant.quantityAvailable === 'number';
+  return (
+    typeof variant.quantityAvailable === 'number' && variant.quantityAvailable > 0
+  );
 }
 
 /**
  * Quantity +/- rules:
- * - Not tracked (quantityAvailable is null/undefined): always show increment
+ * - Not tracked (quantityAvailable is null/undefined, or <= 0 with oversell
+ *   allowed): always show increment
  * - Tracked qty === 1: hide increment
  * - Tracked qty > 1: show increment, capped at available qty
  */

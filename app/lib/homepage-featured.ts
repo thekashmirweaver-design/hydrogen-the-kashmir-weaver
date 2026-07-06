@@ -76,15 +76,29 @@ export async function loadHomepageFeatured(
   }
 }
 
+/**
+ * Curated handles (from the shop's `homepage_featured` metafield) come first,
+ * in the order listed. Any product with its own `custom.featured` metafield
+ * set to true is appended after, so merchants can flag a product as featured
+ * directly on the product without editing the shop-level JSON. Falls back to
+ * the first N catalog products only when neither source yields anything.
+ */
 export function pickProductsByHandles(
   products: Product[],
   handles: string[],
   fallbackCount = 8,
 ): Product[] {
-  if (!handles.length) return products.slice(0, fallbackCount);
-  return handles
+  const curated = handles
     .map((handle) => products.find((p) => p.handle === handle))
     .filter((p): p is Product => p != null);
+
+  const curatedHandles = new Set(curated.map((p) => p.handle));
+  const flagged = products.filter(
+    (p) => p.featured && !curatedHandles.has(p.handle),
+  );
+
+  const combined = [...curated, ...flagged];
+  return combined.length ? combined : products.slice(0, fallbackCount);
 }
 
 export function pickCollectionsByHandles(

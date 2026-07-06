@@ -12,7 +12,6 @@ import {
   useLocation,
 } from 'react-router';
 import type {Route} from './+types/root';
-import favicon from '~/assets/favicon.svg';
 import inter400Woff2 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
 import cormorant400Woff2 from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-400-normal.woff2?url';
 import '~/styles/globals.css';
@@ -91,7 +90,7 @@ export function links() {
       rel: 'preconnect',
       href: 'https://cdn.shopify.com',
     },
-    {rel: 'icon', type: 'image/svg+xml', href: favicon},
+    {rel: 'icon', type: 'image/x-icon', href: '/favicon.ico'},
   ];
 };
 

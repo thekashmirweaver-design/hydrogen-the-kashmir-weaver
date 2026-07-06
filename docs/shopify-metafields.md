@@ -15,6 +15,7 @@ Each definition must have **Storefront API access** enabled so the Storefront AP
 | `weave` | Weave | Single line text | Weave or embroidery technique |
 | `limited` | Limited edition | True or false | Marks one-of-a-kind or limited pieces |
 | `stock_qty` | Stock quantity | Integer | Display stock count; used with variant availability |
+| `featured` | Featured | True or false | Adds this product to the homepage featured list (appended after any curated `homepage_featured` handles) |
 
 **Owner:** Product
 
@@ -54,7 +55,7 @@ Each definition must have **Storefront API access** enabled so the Storefront AP
 }
 ```
 
-When empty, the homepage falls back to the first eight products and all collections in catalog order.
+Selection order: curated `productHandles` first (in the order listed), then any product with `custom.featured` set to true, then — only if both are empty — the first eight products in catalog order. Collections fall back to all collections in catalog order when `collectionHandles` is empty.
 
 ## Product reviews (optional)
 

@@ -331,6 +331,7 @@ export function mapProduct(node: ShopifyProductNode): Product {
   const story =
     getMetafield(fields, PRODUCT_METAFIELDS.story) ?? description ?? node.title;
   const limited = parseBoolean(getMetafield(fields, PRODUCT_METAFIELDS.limited));
+  const featured = parseBoolean(getMetafield(fields, PRODUCT_METAFIELDS.featured)) ?? false;
   const stockQty = parseInteger(getMetafield(fields, PRODUCT_METAFIELDS.stockQty));
   const reviewRating = parseReviewRating(node.reviewRating?.value);
   const reviewCount = parseInteger(node.reviewCount?.value ?? undefined);
@@ -384,6 +385,7 @@ export function mapProduct(node: ShopifyProductNode): Product {
     stock: inStock ? 'in' : 'out',
     limited: limited ?? (stockQty === 1),
     stockQty,
+    featured,
     productType: node.productType ?? undefined,
     vendor: node.vendor ?? undefined,
     tags: node.tags,

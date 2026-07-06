@@ -278,6 +278,7 @@ async function ensureMetafieldDefinitions() {
     {key: 'weave', name: 'Weave', type: 'single_line_text_field', owner: 'PRODUCT'},
     {key: 'limited', name: 'Limited edition', type: 'boolean', owner: 'PRODUCT'},
     {key: 'stock_qty', name: 'Stock quantity', type: 'number_integer', owner: 'PRODUCT'},
+    {key: 'featured', name: 'Featured', type: 'boolean', owner: 'PRODUCT'},
     {key: 'care', name: 'Care instructions', type: 'single_line_text_field', owner: 'PRODUCT'},
     {key: 'guarantees_delivery', name: 'Guarantees and delivery', type: 'json', owner: 'PRODUCT'},
     {key: 'returns_care', name: 'Returns and care', type: 'json', owner: 'PRODUCT'},

@@ -224,7 +224,7 @@ export function organizationLd(storeUrl: string) {
     '@type': 'Organization',
     name: SITE_NAME,
     url: storeUrl,
-    logo: absoluteUrl('/assets/favicon.svg', storeUrl),
+    logo: absoluteUrl('/assets/brand-mark.png', storeUrl),
     sameAs: [],
   };
 }
@@ -269,7 +269,7 @@ export function blogPostingLd(options: {
       name: SITE_NAME,
       logo: {
         '@type': 'ImageObject',
-        url: absoluteUrl('/assets/favicon.svg', storeUrl),
+        url: absoluteUrl('/assets/brand-mark.png', storeUrl),
       },
     },
   };
