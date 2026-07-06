@@ -1,4 +1,5 @@
 import {data} from 'react-router';
+import {sendConciergeInquiryEmail} from '~/lib/concierge-email';
 import type {Route} from './+types/api.concierge';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,21 +39,12 @@ export async function action({request, context}: Route.ActionArgs) {
     submittedAt: new Date().toISOString(),
   };
 
-  const webhookUrl = (context.env as Env & {CONCIERGE_WEBHOOK_URL?: string})
-    .CONCIERGE_WEBHOOK_URL;
-  if (webhookUrl) {
-    try {
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        console.error('Concierge webhook failed:', response.status, await response.text());
-      }
-    } catch (error) {
-      console.error('Concierge webhook error:', error);
-    }
+  const emailResult = await sendConciergeInquiryEmail(payload, context.env);
+  if (!emailResult.ok) {
+    return data(
+      {success: false, errors: {form: emailResult.error}},
+      {status: 503},
+    );
   }
 
   return data({success: true});

@@ -291,6 +291,9 @@ function InquiryForm() {
         />
       </div>
       <div className="md:col-span-2">
+        {errors.form && (
+          <p className="mb-4 text-sm text-accent">{errors.form}</p>
+        )}
         <button
           type="submit"
           disabled={isSubmitting}
