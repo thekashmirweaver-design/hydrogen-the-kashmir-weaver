@@ -34,7 +34,7 @@ export function HeroDeliveryLine({className = ''}: {className?: string}) {
 
   return (
     <p
-  className={`mt-6 flex flex-wrap items-baseline gap-x-2 text-pretty font-display text-[1.0625rem] leading-relaxed text-muted-foreground md:mt-8 md:text-xl ${className}`}
+  className={`mt-6 flex flex-wrap items-baseline gap-x-3 text-pretty font-display text-[1.0625rem] leading-relaxed text-muted-foreground md:mt-8 md:text-xl ${className}`}
   style={{ fontWeight: 300 }}
 >
   <span>Delivering Pashmina</span>
