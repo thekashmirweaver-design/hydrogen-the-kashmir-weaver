@@ -65,6 +65,30 @@ function isOptimisticLineId(lineId: string) {
   return lineId.startsWith('optimistic-');
 }
 
+type OptimisticMerchandise = {
+  price?: {amount: string; currencyCode: string};
+};
+
+function buildOptimisticLineCost(
+  merchandise: OptimisticMerchandise,
+  quantity: number,
+): OptimisticCartLine['cost'] {
+  const unitAmount = Number(merchandise.price?.amount ?? 0);
+  const currencyCode = merchandise.price?.currencyCode ?? 'USD';
+  const unit = {
+    amount: String(unitAmount),
+    currencyCode,
+  };
+  const total = {
+    amount: String(unitAmount * quantity),
+    currencyCode,
+  };
+  return {
+    totalAmount: total,
+    amountPerQuantity: unit,
+  };
+}
+
 /** Mirror Hydrogen's optimistic cart, but only for in-flight fetchers. */
 function applyOptimisticCartFromFetchers(
   cart: CartApiQueryFragment | null,
@@ -104,17 +128,31 @@ function applyOptimisticCartFromFetchers(
         );
         isOptimistic = true;
 
+        const addQty = input.quantity || 1;
+
         if (existingLine) {
-          existingLine.quantity =
-            (existingLine.quantity || 1) + (input.quantity || 1);
+          existingLine.quantity = (existingLine.quantity || 1) + addQty;
           existingLine.isOptimistic = true;
+          existingLine.cost = buildOptimisticLineCost(
+            existingLine.merchandise as OptimisticMerchandise,
+            existingLine.quantity,
+          );
         } else {
-          cartLines.unshift({
+          const optimisticLine = {
             id: getOptimisticLineId(selectedVariant.id),
             merchandise: input.selectedVariant,
             isOptimistic: true,
-            quantity: input.quantity || 1,
-          } as OptimisticCartLine);
+            quantity: addQty,
+            ...((input as {attributes?: OptimisticCartLine['attributes']})
+              .attributes?.length
+              ? {attributes: (input as {attributes: OptimisticCartLine['attributes']}).attributes}
+              : {}),
+            cost: buildOptimisticLineCost(
+              input.selectedVariant as OptimisticMerchandise,
+              addQty,
+            ),
+          } as OptimisticCartLine;
+          cartLines.unshift(optimisticLine);
         }
       }
     } else if (cartFormData.action === CartForm.ACTIONS.LinesRemove) {
@@ -197,10 +235,11 @@ export function useLiveCart(
   for (let i = cartFetchers.length - 1; i >= 0; i--) {
     const fetcher = cartFetchers[i];
     const data = fetcher.data as CartActionData | undefined;
-    if (fetcher.state === 'idle' && data?.cart) {
-      if (shouldSkipMarketFetcher(fetcher.key, marketCountry, data.cart)) continue;
-      if (!isCompleteCart(data.cart)) continue;
-      return syncCachedCart(data.cart);
+    if (fetcher.state === 'idle' && data && 'cart' in data) {
+      const nextCart = data.cart ?? null;
+      if (shouldSkipMarketFetcher(fetcher.key, marketCountry, nextCart)) continue;
+      // Prefer the server response over stale optimistic cache once the fetcher settles.
+      return syncCachedCart(nextCart);
     }
   }
 

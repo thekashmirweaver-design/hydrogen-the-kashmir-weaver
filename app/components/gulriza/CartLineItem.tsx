@@ -44,11 +44,22 @@ export function CartLineItem({
     ? 'font-display line-clamp-2 min-w-0 text-[0.95rem] leading-snug transition-colors hover:text-accent sm:text-base lg:text-lg'
     : 'font-display line-clamp-3 min-w-0 text-base leading-snug transition-colors hover:text-accent sm:text-lg sm:leading-snug';
 
-  const lineTotal = formatLineMoney(
-    cost.totalAmount.amount,
-    cost.totalAmount.currencyCode,
-    formatPrice,
-  );
+  const lineTotalAmount =
+    cost?.totalAmount ??
+    (merchandise.price
+      ? {
+          amount: String(Number(merchandise.price.amount) * quantity),
+          currencyCode: merchandise.price.currencyCode,
+        }
+      : null);
+
+  const lineTotal = lineTotalAmount
+    ? formatLineMoney(
+        lineTotalAmount.amount,
+        lineTotalAmount.currencyCode,
+        formatPrice,
+      )
+    : '—';
 
   const unitPrice = formatLineMoney(
     merchandise.price.amount,
