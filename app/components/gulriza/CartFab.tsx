@@ -1,19 +1,20 @@
-import {Link} from "react-router";
 import {useLocation} from "react-router";
 import { ShoppingBag } from "lucide-react";
+import { useCartDrawer } from "~/contexts/cart-drawer-context";
 
-// Floating bag shortcut: links to /cart when the bag has items, hidden on cart
-// and checkout pages.
-export function CartFab({ cartQuantity = 0 }: { cartQuantity?: number }) {
+// Floating bag shortcut — opens the same cart drawer as the header icon.
+export function CartFab() {
   const pathname = useLocation().pathname;
+  const {cartQuantity, open} = useCartDrawer();
   const count = cartQuantity;
 
   if (count === 0) return null;
   if (pathname === "/cart" || pathname === "/checkout") return null;
 
   return (
-    <Link
-      to="/cart"
+    <button
+      type="button"
+      onClick={open}
       aria-label={`View bag (${count} item${count === 1 ? "" : "s"})`}
       className="fixed z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 hover:shadow-xl"
       style={{
@@ -34,6 +35,6 @@ export function CartFab({ cartQuantity = 0 }: { cartQuantity?: number }) {
       >
         {count}
       </span>
-    </Link>
+    </button>
   );
 }

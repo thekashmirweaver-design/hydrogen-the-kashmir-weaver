@@ -265,6 +265,9 @@ export type CartApiQueryFragment = Pick<
   discountCodes: Array<
     Pick<StorefrontAPI.CartDiscountCode, 'code' | 'applicable'>
   >;
+  discountAllocations: Array<{
+    discountedAmount: Pick<StorefrontAPI.MoneyV2, 'currencyCode' | 'amount'>;
+  }>;
 };
 
 export type MenuItemFragment = Pick<
@@ -464,6 +467,8 @@ export type ShopPolicyQueryVariables = StorefrontAPI.Exact<{
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
   privacyPolicy: StorefrontAPI.Scalars['Boolean']['input'];
   termsOfService: StorefrontAPI.Scalars['Boolean']['input'];
+  shippingPolicy: StorefrontAPI.Scalars['Boolean']['input'];
+  refundPolicy: StorefrontAPI.Scalars['Boolean']['input'];
 }>;
 
 export type ShopPolicyQuery = {
@@ -472,6 +477,12 @@ export type ShopPolicyQuery = {
       Pick<StorefrontAPI.ShopPolicy, 'body' | 'handle' | 'id' | 'title' | 'url'>
     >;
     termsOfService?: StorefrontAPI.Maybe<
+      Pick<StorefrontAPI.ShopPolicy, 'body' | 'handle' | 'id' | 'title' | 'url'>
+    >;
+    shippingPolicy?: StorefrontAPI.Maybe<
+      Pick<StorefrontAPI.ShopPolicy, 'body' | 'handle' | 'id' | 'title' | 'url'>
+    >;
+    refundPolicy?: StorefrontAPI.Maybe<
       Pick<StorefrontAPI.ShopPolicy, 'body' | 'handle' | 'id' | 'title' | 'url'>
     >;
   };
@@ -865,7 +876,7 @@ interface GeneratedQueryTypes {
     return: ContentPageQuery;
     variables: ContentPageQueryVariables;
   };
-  '#graphql\n  fragment PolicyFields on ShopPolicy {\n    body\n    handle\n    id\n    title\n    url\n  }\n  query ShopPolicy(\n    $country: CountryCode\n    $language: LanguageCode\n    $privacyPolicy: Boolean!\n    $termsOfService: Boolean!\n  ) @inContext(language: $language, country: $country) {\n    shop {\n      privacyPolicy @include(if: $privacyPolicy) {\n        ...PolicyFields\n      }\n      termsOfService @include(if: $termsOfService) {\n        ...PolicyFields\n      }\n    }\n  }\n': {
+  '#graphql\n  fragment PolicyFields on ShopPolicy {\n    body\n    handle\n    id\n    title\n    url\n  }\n  query ShopPolicy(\n    $country: CountryCode\n    $language: LanguageCode\n    $privacyPolicy: Boolean!\n    $termsOfService: Boolean!\n    $shippingPolicy: Boolean!\n    $refundPolicy: Boolean!\n  ) @inContext(language: $language, country: $country) {\n    shop {\n      privacyPolicy @include(if: $privacyPolicy) {\n        ...PolicyFields\n      }\n      termsOfService @include(if: $termsOfService) {\n        ...PolicyFields\n      }\n      shippingPolicy @include(if: $shippingPolicy) {\n        ...PolicyFields\n      }\n      refundPolicy @include(if: $refundPolicy) {\n        ...PolicyFields\n      }\n    }\n  }\n': {
     return: ShopPolicyQuery;
     variables: ShopPolicyQueryVariables;
   };

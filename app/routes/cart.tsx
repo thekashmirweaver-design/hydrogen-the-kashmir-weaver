@@ -6,7 +6,12 @@ import {
 import type {Route} from './+types/cart';
 import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartForm} from '@shopify/hydrogen';
+import {
+  checkoutLocale,
+  toStorefrontCheckoutUrl,
+} from '~/lib/resolve-checkout-url';
 import {CartView} from '~/views/cart/CartView';
+import {persistBuyerMarket} from '~/lib/i18n';
 import {seoBundle} from '~/lib/seo';
 
 export const meta: Route.MetaFunction = () => {
@@ -64,9 +69,23 @@ export async function action({request, context}: Route.ActionArgs) {
       break;
     }
     case CartForm.ACTIONS.BuyerIdentityUpdate: {
+      const countryCode = inputs.buyerIdentity?.countryCode as string | undefined;
+      const marketCurrencyCode = formData.get('marketCurrencyCode');
       result = await cart.updateBuyerIdentity({
         ...inputs.buyerIdentity,
       });
+      const refreshed = await cart.get();
+      if (refreshed) {
+        result = {...result, cart: refreshed};
+      }
+      if (countryCode) {
+        persistBuyerMarket(
+          context.session,
+          countryCode,
+          context.storefront.i18n.language,
+          typeof marketCurrencyCode === 'string' ? marketCurrencyCode : undefined,
+        );
+      }
       break;
     }
     default:
@@ -95,8 +114,20 @@ export async function action({request, context}: Route.ActionArgs) {
 }
 
 export async function loader({context}: Route.LoaderArgs) {
-  const {cart} = context;
-  return await cart.get();
+  const {cart, storefront} = context;
+  const cartData = await cart.get();
+  if (!cartData?.checkoutUrl) return cartData;
+
+  const {language, country} = storefront.i18n;
+
+  return {
+    ...cartData,
+    checkoutUrl: toStorefrontCheckoutUrl(
+      cartData.checkoutUrl,
+      context.env.PUBLIC_CHECKOUT_DOMAIN,
+      checkoutLocale(language, country),
+    ),
+  };
 }
 
 export default function CartRoute() {

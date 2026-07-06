@@ -1,15 +1,17 @@
-import {Link, useLocation, useNavigate, useNavigation} from "react-router";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import {Link, useLocation, useNavigate, useNavigation, useFetchers, type FetcherWithComponents} from "react-router";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Search, ShoppingBag, Menu, X, ChevronDown, Check, Globe } from "lucide-react";
-import type { CartApiQueryFragment } from "storefrontapi.generated";
 import { CartForm, useAnalytics } from "@shopify/hydrogen";
 import { useLocalization } from "~/contexts/localization-context";
 import type { ShopCurrencyOption } from "~/lib/localization";
+import { marketHref } from "~/lib/market-url";
 import { Marquee } from "~/components/gulriza/Marquee";
 import { SearchModal } from "~/components/gulriza/SearchModal";
 import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
-import { CartDrawer } from "~/components/gulriza/CartDrawer";
+import { useCartDrawer } from "~/contexts/cart-drawer-context";
+import type { CartApiQueryFragment } from "storefrontapi.generated";
+import { syncLiveCartCache } from "~/lib/use-live-cart";
 import { ShopifyAccount } from "~/components/gulriza/ShopifyAccount";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
 import type {ShopSettings, NavItem} from "~/lib/shop-settings";
@@ -53,7 +55,7 @@ function BrandLockup({ className = "" }: { className?: string }) {
     >
       <span className="whitespace-nowrap">The Kashmir</span>
       <span
-        className="mt-0.5 whitespace-nowrap text-[0.72em] font-bold not-italic tracking-[0.5em] opacity-95 transition-opacity duration-500 group-hover:opacity-100"
+        className="mt-0.5 whitespace-nowrap text-[0.72em] font-semibold not-italic tracking-[0.42em] opacity-95 transition-opacity duration-500 group-hover:opacity-100"
         style={{ color: "var(--accent)" }}
       >
         Weaver
@@ -75,83 +77,86 @@ function BrandMark({ className = "" }: { className?: string }) {
   );
 }
 
-// Wordmark ↔ emblem on mobile; emblem + sliding lockup on desktop.
-function AnimatedHeaderBrand({ condensed }: { condensed: boolean }) {
+// Wordmark ↔ emblem on desktop scroll. Mobile header stays emblem-only so the
+// icon rail keeps clear space; full lockup lives in the mobile menu panel.
+function AnimatedHeaderBrand({
+  condensed,
+  homeHref = "/",
+}: {
+  condensed: boolean;
+  homeHref?: string;
+}) {
   const brandMotion =
     "transition-[opacity,transform,max-width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
 
   return (
-    <Link
-      to="/"
-      aria-label="The Kashmir Weaver"
-      className={`relative flex shrink-0 items-center overflow-hidden transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
-        condensed
-          ? "h-7 w-7 md:h-8 md:w-8 lg:h-9 lg:w-9"
-          : "h-9 w-[7.25rem] min-[390px]:w-[8rem] md:h-10 md:w-[10rem] lg:h-11 lg:w-auto"
-      }`}
-    >
-      <span
-        aria-hidden={!condensed}
-        className={`absolute inset-0 flex items-center lg:hidden ${brandMotion} ${
-          condensed
-            ? "scale-100 opacity-100"
-            : "pointer-events-none scale-90 opacity-0"
-        }`}
+    <>
+      <Link
+        to={homeHref}
+        aria-label="The Kashmir Weaver"
+        className="flex shrink-0 items-center lg:hidden"
       >
-        <BrandMark className="h-7 w-7 md:h-8 md:w-8" />
-      </span>
-      <span
-        aria-hidden={condensed}
-        className={`absolute inset-0 flex items-center lg:hidden ${brandMotion} ${
-          condensed
-            ? "pointer-events-none translate-y-1 opacity-0"
-            : "translate-y-0 opacity-100"
-        }`}
-      >
-        <BrandLockup className="w-max text-left text-[0.8rem] tracking-[0.06em] min-[390px]:text-[0.92rem] min-[390px]:tracking-[0.08em] md:text-[1.1rem] md:tracking-[0.12em]" />
-      </span>
+        <BrandMark className="h-8 w-8" />
+      </Link>
 
-      <span className="hidden min-w-0 items-center gap-3 lg:flex">
-        <BrandMark className="h-10 w-10 shrink-0" />
+      <Link
+        to={homeHref}
+        aria-label="The Kashmir Weaver"
+        className={`relative hidden shrink-0 items-center lg:flex ${
+          condensed ? "h-9 w-9 overflow-hidden xl:h-10 xl:w-10" : "h-10 overflow-visible"
+        }`}
+      >
         <span
-          aria-hidden={condensed}
-          className={`overflow-hidden ${brandMotion} ${
+          aria-hidden={!condensed}
+          className={`absolute inset-0 flex items-center ${brandMotion} ${
             condensed
-              ? "max-w-0 opacity-0 -translate-x-2"
-              : "max-w-[15rem] opacity-100 translate-x-0"
+              ? "scale-100 opacity-100"
+              : "pointer-events-none scale-90 opacity-0"
           }`}
         >
-          <BrandLockup className="w-max text-left text-[1.35rem] tracking-[0.15em] xl:text-[1.65rem] xl:tracking-[0.2em]" />
+          <BrandMark className="h-9 w-9 xl:h-10 xl:w-10" />
         </span>
-      </span>
-    </Link>
+        <span
+          aria-hidden={condensed}
+          className={`flex items-center gap-3 overflow-visible ${brandMotion} ${
+            condensed
+              ? "pointer-events-none max-w-0 opacity-0 -translate-x-2 overflow-hidden"
+              : "max-w-[20rem] opacity-100 translate-x-0 xl:max-w-[22rem]"
+          }`}
+        >
+          <BrandMark className="h-10 w-10 shrink-0" />
+          <BrandLockup className="w-max shrink-0 text-left text-[1.25rem] tracking-[0.12em] xl:text-[1.5rem] xl:tracking-[0.15em]" />
+        </span>
+      </Link>
+    </>
   );
 }
 
 export function SiteHeader({
   transparent = false,
-  cart = null,
-  cartQuantity = 0,
   shopSettings,
   publicStoreDomain,
   publicAccessToken,
   customerAccessToken = null,
 }: {
   transparent?: boolean;
-  cart?: CartApiQueryFragment | null;
-  cartQuantity?: number;
   shopSettings?: ShopSettings;
   publicStoreDomain: string;
   publicAccessToken: string;
   customerAccessToken?: string | null;
 }) {
   const {publish} = useAnalytics();
+  const {cartQuantity, open: openCart} = useCartDrawer();
+  const {selectedCurrency} = useLocalization();
+  const {pathname, search} = useLocation();
+  const marketTo = useCallback(
+    (path: string) => marketHref(path, search, selectedCurrency.countryCode),
+    [search, selectedCurrency.countryCode],
+  );
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [cartOpen, setCartOpen] = useState(false);
-  const pathname = useLocation().pathname;
   const count = cartQuantity;
   const menuRef = useRef<HTMLDivElement>(null);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
@@ -222,7 +227,6 @@ export function SiteHeader({
   useEffect(() => {
     setOpen(false);
     setSearchOpen(false);
-    setCartOpen(false);
   }, [pathname]);
 
   const solid = !transparent || scrolled;
@@ -248,10 +252,10 @@ export function SiteHeader({
             paddingTop: scrolled ? "env(safe-area-inset-top)" : "0px",
           }}
         >
-          <div className="mx-auto flex h-[4.5rem] max-w-[1600px] items-center justify-between gap-3 px-5 md:h-20 md:gap-4 md:px-6 lg:gap-6 lg:px-8 xl:px-10">
-            {/* LEFT: brand (all screens) */}
-            <div className="flex shrink-0 items-center lg:min-w-0 lg:flex-1">
-              <AnimatedHeaderBrand condensed={scrolled} />
+          <div className="mx-auto flex h-[4.75rem] max-w-[1600px] items-center justify-between gap-3 px-4 min-[420px]:gap-4 min-[420px]:px-5 md:h-20 md:px-6 lg:gap-6 lg:px-8 xl:px-10">
+            {/* LEFT: brand */}
+            <div className="flex shrink-0 items-center lg:mr-2">
+              <AnimatedHeaderBrand condensed={scrolled} homeHref={marketTo("/")} />
             </div>
 
             {/* RIGHT: all nav (desktop) · control clusters */}
@@ -262,7 +266,7 @@ export function SiteHeader({
                   return (
                     <Link
                       key={n.to}
-                      to={n.to}
+                      to={marketTo(n.to)}
                       className={
                         isShop
                           ? "tracked animate-shimmer relative flex items-center justify-center rounded-full px-5 py-1.5 text-xs font-medium transition hover:opacity-80"
@@ -283,7 +287,7 @@ export function SiteHeader({
               </nav>
 
               {/* Mobile/tablet cluster: Search → Currency → Account → Cart → Hamburger */}
-              <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 lg:hidden">
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:hidden">
                 <button
                   aria-label="Search"
                   className="flex h-10 w-10 min-h-10 min-w-10 items-center justify-center touch-manipulation text-foreground/80 transition hover:text-accent active:opacity-80"
@@ -303,7 +307,7 @@ export function SiteHeader({
                 />
                 <button
                   type="button"
-                  onClick={() => setCartOpen(true)}
+                  onClick={openCart}
                   aria-label={count > 0 ? `Bag, ${count} item${count === 1 ? "" : "s"}` : "Bag"}
                   className="relative flex h-10 w-10 min-h-10 min-w-10 items-center justify-center touch-manipulation text-foreground/80 transition hover:text-accent active:opacity-80"
                 >
@@ -348,7 +352,7 @@ export function SiteHeader({
                 />
                 <button
                   type="button"
-                  onClick={() => setCartOpen(true)}
+                  onClick={openCart}
                   aria-label={count > 0 ? `Bag, ${count} item${count === 1 ? "" : "s"}` : "Bag"}
                   className="relative touch-target flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent active:opacity-80"
                 >
@@ -386,11 +390,11 @@ export function SiteHeader({
               }}
             >
               <div
-                className="flex h-[4.5rem] shrink-0 items-center justify-between gap-4 border-b px-5"
+                className="flex h-[4.75rem] shrink-0 items-center justify-between gap-4 border-b px-4 min-[420px]:px-5"
                 style={{ borderColor: "var(--border)" }}
               >
                 <Link
-                  to="/"
+                  to={marketTo("/")}
                   aria-label="Home"
                   onClick={requestMenuClose}
                   className="group flex min-w-0 items-center gap-2.5"
@@ -410,7 +414,7 @@ export function SiteHeader({
                 {navItems.map((n) => (
                   <Link
                     key={n.to}
-                    to={n.to}
+                    to={marketTo(n.to)}
                     onClick={requestMenuClose}
                     className="font-display flex min-h-11 items-center py-2 text-3xl tracking-wide transition hover:text-accent active:opacity-80"
                     style={pathname === n.to ? { color: "var(--accent)" } : undefined}
@@ -423,7 +427,6 @@ export function SiteHeader({
           )}
 
           <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
-          <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} />
         </header>
       </div>
     </>
@@ -433,19 +436,91 @@ export function SiteHeader({
 function CurrencyDropdown({compact = false}: {compact?: boolean}) {
   const {currencies, selectedCurrency} = useLocalization();
   const {pathname, search} = useLocation();
+  const navigate = useNavigate();
   const navigation = useNavigation();
+  const fetchers = useFetchers();
   const isLgUp = useIsLgUp();
   const [open, setOpen] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
-  const [pendingCode, setPendingCode] = useState<string | null>(null);
+  const [pendingMarketCountry, setPendingMarketCountry] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const wrapRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sheetClosingRef = useRef(false);
-  const displayCode = pendingCode ?? selectedCurrency.code;
-  const isUpdating = pendingCode != null || navigation.state !== "idle";
+
+  const pendingCurrency = useMemo(() => {
+    if (!pendingMarketCountry) return null;
+    return (
+      currencies.find((c) => c.countryCode === pendingMarketCountry) ?? null
+    );
+  }, [pendingMarketCountry, currencies]);
+
+  const pendingFetcher = useMemo(() => {
+    if (!pendingMarketCountry) return null;
+    return (
+      fetchers.find((f) => f.key === `market-${pendingMarketCountry}`) ?? null
+    );
+  }, [fetchers, pendingMarketCountry]);
+
+  const isSwitching = pendingFetcher != null && pendingFetcher.state !== "idle";
+  const displayCode =
+    isSwitching && pendingCurrency
+      ? pendingCurrency.code
+      : selectedCurrency.code;
+  const activeCountryCode = selectedCurrency.countryCode;
+  const isUpdating =
+    isSwitching ||
+    navigation.state !== "idle" ||
+    fetchers.some(
+      (f) => f.key?.startsWith("market-") && f.state !== "idle",
+    );
+
+  const handledMarketSwitchRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const urlCountry = new URLSearchParams(search).get("country")?.toUpperCase() ?? null;
+
+    for (const fetcher of fetchers) {
+      if (!fetcher.key?.startsWith("market-")) continue;
+      if (fetcher.state !== "idle" || !fetcher.data) continue;
+
+      const targetCountry = fetcher.key.slice("market-".length);
+      const data = fetcher.data as MarketCartActionData;
+      const cart = data.cart;
+      const handledKey = `${targetCountry}:${cart?.buyerIdentity?.countryCode ?? "none"}`;
+      if (handledMarketSwitchRef.current === handledKey) continue;
+
+      if (data.errors?.length) {
+        handledMarketSwitchRef.current = handledKey;
+        setPendingMarketCountry((current) =>
+          current === targetCountry ? null : current,
+        );
+        continue;
+      }
+
+      const identityMatched = cart?.buyerIdentity?.countryCode === targetCountry;
+      const hasPrices = Boolean(cart?.cost?.subtotalAmount?.currencyCode);
+      if (!identityMatched && !hasPrices) continue;
+
+      handledMarketSwitchRef.current = handledKey;
+      if (cart) syncLiveCartCache(cart as CartApiQueryFragment);
+
+      if (urlCountry !== targetCountry) {
+        navigate(marketHref(pathname, search, targetCountry), {
+          replace: true,
+          preventScrollReset: true,
+        });
+      }
+
+      setPendingMarketCountry((current) =>
+        current === targetCountry ? null : current,
+      );
+      setOpen(false);
+      setSheetVisible(false);
+    }
+  }, [fetchers, navigate, pathname, search]);
 
   const requestClose = useCallback(() => {
     if (sheetClosingRef.current) return;
@@ -461,12 +536,6 @@ function CurrencyDropdown({compact = false}: {compact?: boolean}) {
     sheetClosingRef.current = false;
     setOpen(true);
   }, []);
-
-  useEffect(() => {
-    if (navigation.state === "idle") {
-      setPendingCode(null);
-    }
-  }, [navigation.state, selectedCurrency.code]);
 
   useEffect(() => {
     setOpen(false);
@@ -536,13 +605,10 @@ function CurrencyDropdown({compact = false}: {compact?: boolean}) {
       )
     : currencies;
 
-  const handleSelect = (code: string) => {
-    setPendingCode(code);
-    if (isLgUp) {
-      setOpen(false);
-    } else {
-      requestClose();
-    }
+  const handleSelect = (_code: string, countryCode: string) => {
+    if (isUpdating) return;
+    setPendingMarketCountry(countryCode);
+    // Keep picker mounted until the CartForm POST completes — closing unmounts the form.
   };
 
   const pickerPanel = (
@@ -552,9 +618,11 @@ function CurrencyDropdown({compact = false}: {compact?: boolean}) {
       inputRef={inputRef}
       results={results}
       displayCode={displayCode}
+      activeCountryCode={activeCountryCode}
       pathname={pathname}
       search={search}
       onSelect={handleSelect}
+      marketSwitchBusy={isUpdating}
       listClassName={isLgUp ? "max-h-[60vh]" : "max-h-none flex-1 min-h-0"}
     />
   );
@@ -621,17 +689,17 @@ function CurrencyDropdown({compact = false}: {compact?: boolean}) {
           aria-expanded={open}
           aria-label={`Select currency, current ${displayCode}`}
           onClick={() => (open ? (isLgUp ? setOpen(false) : requestClose()) : handleOpen())}
-          className={`flex items-center justify-center gap-1 px-1 text-[0.65rem] uppercase tracking-[0.15em] text-foreground/90 transition hover:text-accent focus:outline-none min-[420px]:gap-1.5 min-[420px]:px-1.5 min-[420px]:text-xs min-[420px]:tracking-[0.25em] lg:justify-start ${
+          className={`flex items-center justify-center gap-1 px-1 text-[0.65rem] uppercase tracking-[0.15em] text-foreground/90 transition hover:text-accent focus:outline-none min-[480px]:gap-1.5 min-[480px]:px-1.5 min-[480px]:text-xs min-[480px]:tracking-[0.25em] lg:justify-start ${
             compact
-              ? "h-10 w-10 min-w-10 min-[420px]:w-auto"
-              : "h-11 w-11 min-w-11 min-[420px]:w-auto"
+              ? "h-10 w-10 min-w-10 min-[480px]:w-auto"
+              : "h-11 w-11 min-w-11 min-[480px]:w-auto"
           }`}
           style={{opacity: isUpdating ? 0.65 : 1}}
         >
           <Globe className="h-3.5 w-3.5 shrink-0" strokeWidth={1} aria-hidden />
-          <span className="hidden min-[420px]:inline">{displayCode}</span>
+          <span className="hidden min-[480px]:inline">{displayCode}</span>
           <ChevronDown
-            className="h-3 w-3 shrink-0 transition-transform min-[420px]:h-3.5 min-[420px]:w-3.5"
+            className="hidden h-3 w-3 shrink-0 transition-transform min-[480px]:block min-[480px]:h-3.5 min-[480px]:w-3.5"
             strokeWidth={1}
             style={{transform: open ? "rotate(180deg)" : undefined}}
           />
@@ -664,9 +732,11 @@ function CurrencyPickerPanel({
   inputRef,
   results,
   displayCode,
+  activeCountryCode,
   pathname,
   search,
   onSelect,
+  marketSwitchBusy = false,
   listClassName,
 }: {
   query: string;
@@ -674,9 +744,11 @@ function CurrencyPickerPanel({
   inputRef: RefObject<HTMLInputElement>;
   results: ShopCurrencyOption[];
   displayCode: string;
+  activeCountryCode: string;
   pathname: string;
   search: string;
-  onSelect: (code: string) => void;
+  onSelect: (code: string, countryCode: string) => void;
+  marketSwitchBusy?: boolean;
   listClassName?: string;
 }) {
   return (
@@ -722,10 +794,9 @@ function CurrencyPickerPanel({
             <CurrencyOption
               key={c.code}
               option={c}
-              active={c.code === displayCode}
-              pathname={pathname}
-              search={search}
-              onSelect={() => onSelect(c.code)}
+              active={c.countryCode === activeCountryCode}
+              disabled={marketSwitchBusy}
+              onSelect={() => onSelect(c.code, c.countryCode)}
             />
           ))}
         </ul>
@@ -734,22 +805,22 @@ function CurrencyPickerPanel({
   );
 }
 
+type MarketCartActionData = {
+  cart?: CartApiQueryFragment | null;
+  errors?: Array<{message?: string}>;
+};
+
 function CurrencyOption({
   option,
   active,
-  pathname,
-  search,
+  disabled = false,
   onSelect,
 }: {
   option: ShopCurrencyOption;
   active: boolean;
-  pathname: string;
-  search: string;
+  disabled?: boolean;
   onSelect: () => void;
 }) {
-  const navigate = useNavigate();
-  const redirectTo = buildMarketRedirect(pathname, search, option.countryCode);
-
   return (
     <li role="option" aria-selected={active}>
       <CartForm
@@ -763,48 +834,68 @@ function CurrencyOption({
         }}
       >
         {(fetcher) => (
-          <button
-            type="submit"
-            disabled={active || fetcher.state !== "idle"}
-            onClick={() => {
-              onSelect();
-              navigate(redirectTo, {replace: true, preventScrollReset: true});
-            }}
-            className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left transition-all duration-200 hover:bg-[var(--surface-2)] focus:bg-[var(--surface-2)] focus:outline-none disabled:opacity-50 lg:py-2.5"
-            style={{
-              color: active ? "var(--accent)" : "var(--foreground)",
-              backgroundColor: active ? "var(--surface-2)" : "transparent",
-            }}
-          >
-            <span className="w-5 shrink-0 text-center text-sm font-light">{option.symbol}</span>
-            <span className="flex min-w-0 flex-1 flex-col leading-tight">
-              <span
-                className="text-xs font-medium tracking-[0.1em]"
-                style={{ color: active ? "var(--accent)" : "var(--foreground)" }}
-              >
-                {option.code}
-              </span>
-              <span
-                className="truncate text-[0.7rem]"
-                style={{
-                  color: active ? "var(--accent)" : "var(--muted-foreground)",
-                  opacity: active ? 0.8 : 1,
-                }}
-              >
-                {option.name}
-              </span>
-            </span>
-            {active && <Check className="h-4 w-4 shrink-0 text-accent" strokeWidth={1.5} />}
-          </button>
+          <>
+            <input type="hidden" name="marketCurrencyCode" value={option.code} />
+            <CurrencyOptionButton
+              option={option}
+              active={active}
+              disabled={disabled}
+              onSelect={onSelect}
+              fetcher={fetcher}
+            />
+          </>
         )}
       </CartForm>
     </li>
   );
 }
 
-function buildMarketRedirect(pathname: string, search: string, countryCode: string) {
-  const params = new URLSearchParams(search);
-  params.set("country", countryCode);
-  const query = params.toString();
-  return query ? `${pathname}?${query}` : pathname;
+function CurrencyOptionButton({
+  option,
+  active,
+  disabled = false,
+  onSelect,
+  fetcher,
+}: {
+  option: ShopCurrencyOption;
+  active: boolean;
+  disabled?: boolean;
+  onSelect: () => void;
+  fetcher: FetcherWithComponents<MarketCartActionData>;
+}) {
+  return (
+    <button
+      type="submit"
+      disabled={disabled || active || fetcher.state !== "idle"}
+      onClick={() => {
+        if (active) return;
+        onSelect();
+      }}
+      className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left transition-all duration-200 hover:bg-[var(--surface-2)] focus:bg-[var(--surface-2)] focus:outline-none disabled:opacity-50 lg:py-2.5"
+      style={{
+        color: active ? "var(--accent)" : "var(--foreground)",
+        backgroundColor: active ? "var(--surface-2)" : "transparent",
+      }}
+    >
+      <span className="w-5 shrink-0 text-center text-sm font-light">{option.symbol}</span>
+      <span className="flex min-w-0 flex-1 flex-col leading-tight">
+        <span
+          className="text-xs font-medium tracking-[0.1em]"
+          style={{ color: active ? "var(--accent)" : "var(--foreground)" }}
+        >
+          {option.code}
+        </span>
+        <span
+          className="truncate text-[0.7rem]"
+          style={{
+            color: active ? "var(--accent)" : "var(--muted-foreground)",
+            opacity: active ? 0.8 : 1,
+          }}
+        >
+          {option.name}
+        </span>
+      </span>
+      {active && <Check className="h-4 w-4 shrink-0 text-accent" strokeWidth={1.5} />}
+    </button>
+  );
 }

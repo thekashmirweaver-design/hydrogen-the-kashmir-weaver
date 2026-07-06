@@ -1,5 +1,5 @@
-import {useOptimisticCart} from '@shopify/hydrogen';
-import {useFetchers} from 'react-router';
+import {CartForm} from '@shopify/hydrogen';
+import {useFetchers, useSearchParams} from 'react-router';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {isCartFormAction} from '~/lib/cart-form-action';
 
@@ -7,42 +7,202 @@ type CartActionData = {
   cart?: CartApiQueryFragment | null;
 };
 
+type OptimisticCartLine = CartApiQueryFragment['lines']['nodes'][number] & {
+  isOptimistic?: boolean;
+};
+
 /** Keeps cart in sync across client navigations when root loader is not revalidated. */
 let cachedCart: CartApiQueryFragment | null | undefined;
+
+export function clearLiveCartCache() {
+  cachedCart = undefined;
+}
+
+export function syncLiveCartCache(cart: CartApiQueryFragment | null) {
+  cachedCart = cart;
+}
+
+export function isCompleteCart(
+  cart: CartApiQueryFragment | null | undefined,
+): boolean {
+  return Boolean(cart?.id && cart.cost?.subtotalAmount?.currencyCode);
+}
+
+function marketCountryFromFetcherKey(
+  fetcherKey: string | undefined,
+): string | null {
+  if (!fetcherKey?.startsWith('market-')) return null;
+  return fetcherKey.slice('market-'.length).toUpperCase();
+}
+
+/** Skip old market fetchers, but keep a just-finished switch before localization catches up. */
+function shouldSkipMarketFetcher(
+  fetcherKey: string | undefined,
+  marketCountry: string | null,
+  cart: CartApiQueryFragment | null | undefined,
+): boolean {
+  const targetCountry = marketCountryFromFetcherKey(fetcherKey);
+  if (!targetCountry) return false;
+
+  if (cart?.buyerIdentity?.countryCode?.toUpperCase() === targetCountry) {
+    return false;
+  }
+
+  if (!marketCountry) return false;
+  return targetCountry !== marketCountry;
+}
 
 function syncCachedCart(cart: CartApiQueryFragment | null | undefined) {
   cachedCart = cart ?? null;
   return cachedCart;
 }
 
+function getOptimisticLineId(variantId: string) {
+  return `optimistic-${variantId}`;
+}
+
+function isOptimisticLineId(lineId: string) {
+  return lineId.startsWith('optimistic-');
+}
+
+/** Mirror Hydrogen's optimistic cart, but only for in-flight fetchers. */
+function applyOptimisticCartFromFetchers(
+  cart: CartApiQueryFragment | null,
+  fetchers: ReturnType<typeof useFetchers>,
+): CartApiQueryFragment | null {
+  const optimisticCart = cart?.lines
+    ? structuredClone(cart)
+    : ({lines: {nodes: []}} as CartApiQueryFragment);
+  const cartLines = (optimisticCart.lines?.nodes ??
+    []) as OptimisticCartLine[];
+
+  if (!optimisticCart.lines) {
+    optimisticCart.lines = {nodes: cartLines};
+  }
+
+  let isOptimistic = false;
+
+  for (const {formData} of fetchers) {
+    if (!formData) continue;
+
+    const cartFormData = CartForm.getFormInput(formData);
+
+    if (cartFormData.action === CartForm.ACTIONS.LinesAdd) {
+      const lines = Array.isArray(cartFormData.inputs.lines)
+        ? cartFormData.inputs.lines
+        : [];
+
+      for (const input of lines) {
+        if (!input.selectedVariant) continue;
+
+        const existingLine = cartLines.find(
+          (line) => line.merchandise.id === input.selectedVariant?.id,
+        );
+        isOptimistic = true;
+
+        if (existingLine) {
+          existingLine.quantity =
+            (existingLine.quantity || 1) + (input.quantity || 1);
+          existingLine.isOptimistic = true;
+        } else {
+          cartLines.unshift({
+            id: getOptimisticLineId(input.selectedVariant.id),
+            merchandise: input.selectedVariant,
+            isOptimistic: true,
+            quantity: input.quantity || 1,
+          } as OptimisticCartLine);
+        }
+      }
+    } else if (cartFormData.action === CartForm.ACTIONS.LinesRemove) {
+      const lineIds = Array.isArray(cartFormData.inputs.lineIds)
+        ? cartFormData.inputs.lineIds
+        : [];
+
+      for (const lineId of lineIds) {
+        const index = cartLines.findIndex((line) => line.id === lineId);
+        if (index === -1) continue;
+        if (isOptimisticLineId(cartLines[index].id)) continue;
+        cartLines.splice(index, 1);
+        isOptimistic = true;
+      }
+    } else if (cartFormData.action === CartForm.ACTIONS.LinesUpdate) {
+      const lines = Array.isArray(cartFormData.inputs.lines)
+        ? cartFormData.inputs.lines
+        : [];
+
+      for (const line of lines) {
+        const index = cartLines.findIndex(
+          (optimisticLine) => line.id === optimisticLine.id,
+        );
+        if (index === -1) continue;
+        if (isOptimisticLineId(cartLines[index].id)) continue;
+        cartLines[index].quantity = line.quantity;
+        if (cartLines[index].quantity === 0) {
+          cartLines.splice(index, 1);
+        }
+        isOptimistic = true;
+      }
+    }
+  }
+
+  if (isOptimistic) {
+    (optimisticCart as CartApiQueryFragment & {isOptimistic?: boolean}).isOptimistic =
+      true;
+  }
+
+  optimisticCart.totalQuantity = cartLines.reduce(
+    (sum, line) => sum + (line.quantity || 0),
+    0,
+  );
+
+  return optimisticCart;
+}
+
 /**
- * Instant cart UI during mutations: optimistic deltas while a fetcher is
- * in-flight, then the cart returned by the /cart action (without reloading
- * the heavy root loader).
+ * Instant cart UI during mutations without re-running the root loader.
+ * Only in-flight fetchers affect optimistic state — idle fetchers are ignored
+ * so completed adds are not applied multiple times.
  */
 export function useLiveCart(
   cart: CartApiQueryFragment | null | undefined,
+  options?: {marketCountry?: string},
 ): CartApiQueryFragment | null {
   const fetchers = useFetchers();
-  const baseCart =
-    cachedCart !== undefined ? cachedCart : syncCachedCart(cart ?? null);
-  const optimisticCart = useOptimisticCart(baseCart);
+  const [searchParams] = useSearchParams();
+  const marketCountry =
+    searchParams.get('country')?.toUpperCase() ??
+    options?.marketCountry?.toUpperCase() ??
+    null;
 
   const cartFetchers = fetchers.filter(
     (fetcher) => fetcher.formData && isCartFormAction(fetcher.formAction),
   );
 
-  const hasPending = cartFetchers.some((fetcher) => fetcher.state !== 'idle');
-  if (hasPending) {
+  const pendingFetchers = cartFetchers.filter(
+    (fetcher) => fetcher.state !== 'idle',
+  );
+
+  if (pendingFetchers.length > 0) {
+    const base =
+      (isCompleteCart(cart) ? cart : null) ?? cachedCart ?? null;
     return syncCachedCart(
-      (optimisticCart ?? baseCart ?? null) as CartApiQueryFragment | null,
+      applyOptimisticCartFromFetchers(base, pendingFetchers),
     );
   }
 
   for (let i = cartFetchers.length - 1; i >= 0; i--) {
-    const data = cartFetchers[i].data as CartActionData | undefined;
-    if (data?.cart) return syncCachedCart(data.cart);
+    const fetcher = cartFetchers[i];
+    const data = fetcher.data as CartActionData | undefined;
+    if (fetcher.state === 'idle' && data?.cart) {
+      if (shouldSkipMarketFetcher(fetcher.key, marketCountry, data.cart)) continue;
+      if (!isCompleteCart(data.cart)) continue;
+      return syncCachedCart(data.cart);
+    }
   }
 
-  return syncCachedCart(baseCart ?? cart ?? null);
+  if (isCompleteCart(cart)) {
+    return syncCachedCart(cart);
+  }
+
+  return syncCachedCart(cachedCart ?? null);
 }

@@ -1,5 +1,9 @@
 import {redirect} from 'react-router';
 import type {Route} from './+types/cart.$lines';
+import {
+  checkoutLocale,
+  toStorefrontCheckoutUrl,
+} from '~/lib/resolve-checkout-url';
 import {shadeCartAttributesFromSearch} from '~/lib/shade-cart';
 
 /**
@@ -63,9 +67,16 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
   // Update cart id in cookie
   const headers = cart.setCartId(cartResult.id);
 
+  const {language, country} = context.storefront.i18n;
+  const checkoutRedirect = toStorefrontCheckoutUrl(
+    cartResult.checkoutUrl ?? '',
+    context.env.PUBLIC_CHECKOUT_DOMAIN,
+    checkoutLocale(language, country),
+  );
+
   // redirect to checkout
-  if (cartResult.checkoutUrl) {
-    return redirect(cartResult.checkoutUrl, {headers});
+  if (checkoutRedirect) {
+    return redirect(checkoutRedirect, {headers});
   } else {
     throw new Error('No checkout URL found');
   }

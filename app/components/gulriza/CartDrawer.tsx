@@ -3,24 +3,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ShoppingBag, ArrowRight, X } from "lucide-react";
 import type { CartApiQueryFragment } from "storefrontapi.generated";
-import type { Money } from "~/models/types";
 import { useFormatPrice } from "~/lib/currency-store";
-import { CartLineShade } from "~/components/gulriza/CartLineShade";
-import {
-  CartLineQuantityControls,
-  CartLineRemoveButton,
-} from "~/components/gulriza/CartLineQuantityControls";
+import { CartLineItem } from "~/components/gulriza/CartLineItem";
+import { CartPromoForms } from "~/components/gulriza/CartPromoForms";
+import { CartTotals } from "~/components/gulriza/CartTotals";
+import { getCartPromotionSummary } from "~/lib/cart-promotions";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
+import { useBottomSheetDrag } from "~/hooks/use-bottom-sheet-drag";
 import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 
 const CLOSE_MS = 300;
 
-function toMoney(m: { amount: string; currencyCode: string }): Money {
-  return { amount: Number(m.amount), currencyCode: m.currencyCode };
-}
-
-// Slide-over bag drawer wired to the Hydrogen cart. Line remove and quantity
-// updates go through CartForm; totals come from the cart query fragment.
 export function CartDrawer({
   open,
   onClose,
@@ -33,7 +26,17 @@ export function CartDrawer({
   const lines = cart?.lines?.nodes ?? [];
   const count = cart?.totalQuantity ?? 0;
   const formatPrice = useFormatPrice();
-  const subtotal = cart?.cost?.subtotalAmount;
+  const promotion = getCartPromotionSummary(cart);
+  const displayMoney =
+    promotion.hasAdjustments && promotion.total
+      ? promotion.total
+      : promotion.subtotal;
+  const displayTotalLabel = displayMoney
+    ? formatPrice({
+        amount: Number(displayMoney.amount),
+        currencyCode: displayMoney.currencyCode,
+      })
+    : "—";
   const [visible, setVisible] = useState(false);
   const closingRef = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -45,6 +48,33 @@ export function CartDrawer({
     setVisible(false);
     window.setTimeout(onClose, CLOSE_MS);
   }, [onClose]);
+
+  const {
+    dragY,
+    isDragging,
+    isBottomSheet,
+    isSidePanel,
+    overlayOpacity,
+    dragHandleProps,
+  } = useBottomSheetDrag({
+    enabled: open && visible,
+    panelRef,
+    onDismiss: requestClose,
+  });
+
+  const backdropOpacity = visible
+    ? isBottomSheet && overlayOpacity != null
+      ? overlayOpacity
+      : 1
+    : 0;
+
+  const panelTransform = isBottomSheet
+    ? visible
+      ? `translateY(${dragY}px)`
+      : "translateY(100%)"
+    : visible
+      ? "translateX(0)"
+      : "translateX(100%)";
 
   useEffect(() => {
     if (!open) return;
@@ -70,50 +100,71 @@ export function CartDrawer({
       aria-modal="true"
       aria-label="Your bag"
       onClick={requestClose}
-      className="fixed inset-0 z-[100] flex justify-end backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none"
-      style={{ background: "rgba(8,16,15,0.86)", opacity: visible ? 1 : 0 }}
+      className="fixed inset-0 z-[100] flex items-end justify-center backdrop-blur-sm motion-reduce:transition-none md:items-stretch md:justify-end"
+      style={{
+        background: "rgba(8,16,15,0.86)",
+        opacity: backdropOpacity,
+        transition: isDragging
+          ? "none"
+          : "opacity 300ms ease-out",
+      }}
     >
       <div
         ref={panelRef}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="flex h-full w-full max-w-md flex-col border-l shadow-2xl outline-none transition-transform duration-300 ease-out motion-reduce:transition-none"
+        className="flex h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)))] w-full flex-col rounded-t-2xl border-t outline-none shadow-2xl motion-reduce:transition-none md:ml-auto md:h-full md:max-h-none md:w-full md:max-w-md md:rounded-none md:border-l md:border-t-0"
         style={{
           background: "var(--background)",
           borderColor: "var(--border)",
-          transform: visible ? "none" : "translateX(100%)",
+          transform: panelTransform,
+          transformOrigin: isSidePanel ? "right center" : "center bottom",
+          transition: isDragging
+            ? "none"
+            : "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)",
         }}
       >
         <div
-          className="flex items-center justify-between border-b px-6 py-5"
-          style={{ borderColor: "var(--border)" }}
+          className="shrink-0 select-none md:pointer-events-none"
+          {...dragHandleProps}
         >
-          <h2 className="font-display text-2xl" style={{ fontWeight: 400 }}>
-            Your Bag <span className="text-muted-foreground">({count})</span>
-          </h2>
-          <button
-            onClick={requestClose}
-            aria-label="Close bag"
-            className="touch-target flex h-11 w-11 items-center justify-center rounded-full border text-muted-foreground transition hover:border-accent hover:text-accent active:opacity-80"
+          <div
+            className="mx-auto mt-3 h-1 w-10 rounded-full md:hidden"
+            style={{ background: "var(--hairline)" }}
+            aria-hidden
+          />
+          <div
+            className="flex items-center justify-between border-b px-4 py-3.5 sm:px-5 sm:py-4 md:px-6 md:py-5"
             style={{ borderColor: "var(--border)" }}
           >
-            <X className="h-4 w-4" strokeWidth={1} />
-          </button>
+            <h2 className="font-display text-lg sm:text-xl md:text-2xl" style={{ fontWeight: 400 }}>
+              Your Bag <span className="text-muted-foreground">({count})</span>
+            </h2>
+            <button
+              onClick={requestClose}
+              aria-label="Close bag"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-muted-foreground transition hover:border-accent hover:text-accent active:opacity-80 touch-manipulation"
+              style={{ borderColor: "var(--border)" }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <X className="h-4 w-4" strokeWidth={1} />
+            </button>
+          </div>
         </div>
 
         {lines.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-8 text-center sm:px-6">
             <ShoppingBag className="mb-6 h-12 w-12 text-muted-foreground/30" strokeWidth={1} />
-            <p className="text-sm text-muted-foreground font-medium">
+            <p className="text-sm font-medium text-muted-foreground">
               Your bag is beautifully empty.
             </p>
             <Link
               to="/collections/all"
               onClick={requestClose}
-              className="group mt-10 flex w-full items-center justify-center gap-3 border py-4 transition-all duration-300 hover:opacity-90"
+              className="group mt-10 flex w-full max-w-sm items-center justify-center gap-3 border py-3.5 transition-all duration-300 hover:opacity-90 sm:py-4"
               style={{ background: "#ceac6c", color: "var(--background)", borderColor: "#ceac6c" }}
             >
-              <span className="tracked text-[0.8rem] font-medium uppercase tracking-[0.15em]">
+              <span className="tracked text-[0.75rem] font-medium uppercase tracking-[0.15em] sm:text-[0.8rem]">
                 Discover Collections
               </span>
               <ArrowRight
@@ -124,97 +175,99 @@ export function CartDrawer({
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5">
+            {/* Scrollable items — promo lives here on mobile so the list keeps maximum height */}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5 sm:py-4 md:px-6 md:py-5">
               <ul className="flex flex-col">
-                {lines.map((line) => {
-                  const { merchandise, quantity, id: lineId } = line;
-                  const { product, image, title } = merchandise;
-
-                  return (
-                    <li
-                      key={lineId}
-                      className="flex gap-4 border-b py-5 first:pt-0"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      <Link
-                        to={`/products/${product.handle}`}
-                        onClick={requestClose}
-                        className="relative aspect-[4/5] w-20 shrink-0 overflow-hidden"
-                        style={{ background: "var(--surface)" }}
-                      >
-                        {image?.url && (
-                          <img
-                            src={image.url}
-                            alt={image.altText ?? title}
-                            className="absolute inset-0 h-full w-full object-cover transition duration-500 hover:scale-105"
-                          />
-                        )}
-                      </Link>
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <div className="flex items-start justify-between gap-3">
-                          <Link
-                            to={`/products/${product.handle}`}
-                            onClick={requestClose}
-                            className="font-display text-lg leading-snug transition-colors hover:text-accent"
-                          >
-                            {product.title}
-                          </Link>
-                          <CartLineRemoveButton lineIds={[lineId]} />
-                        </div>
-                        <CartLineShade attributes={line.attributes} swatchSize="md" className="mt-1.5 text-xs text-muted-foreground" />
-
-                        <div className="mt-auto flex items-center justify-between pt-3">
-                          <CartLineQuantityControls lineId={lineId} quantity={quantity} />
-                          <span className="text-sm">
-                            {formatPrice(toMoney(line.cost.totalAmount))}
-                          </span>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
+                {lines.map((line) => (
+                  <li key={line.id}>
+                    <CartLineItem
+                      line={line}
+                      variant="drawer"
+                      onNavigate={requestClose}
+                      formatPrice={formatPrice}
+                    />
+                  </li>
+                ))}
               </ul>
+
+              <div className="mt-4 md:hidden">
+                {promotion.hasAdjustments && (
+                  <CartTotals cart={cart} formatPrice={formatPrice} compact />
+                )}
+                <CartPromoForms cart={cart} compact collapsible />
+              </div>
             </div>
 
+            {/* Mobile: slim sticky checkout bar */}
             <div
-              className="space-y-4 border-t px-6 py-5"
+              className="shrink-0 border-t px-4 py-3 md:hidden"
               style={{
                 borderColor: "var(--border)",
-                paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))",
+                paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
               }}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-[0.7rem] uppercase tracking-[0.25em] text-muted-foreground">
-                  Subtotal
-                </span>
-                <span className="font-display text-lg">
-                  {subtotal ? formatPrice(toMoney(subtotal)) : "—"}
-                </span>
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[0.6rem] uppercase tracking-[0.2em] text-muted-foreground">
+                    Total
+                  </p>
+                  <p className="font-display truncate text-lg leading-tight">
+                    {displayTotalLabel}
+                  </p>
+                </div>
+                <Link
+                  to="/cart"
+                  onClick={requestClose}
+                  className="tracked shrink-0 px-5 py-3.5 text-[0.7rem] uppercase tracking-[0.1em] transition hover:opacity-90 touch-manipulation"
+                  style={{
+                    background: "#ceac6c",
+                    color: "var(--background)",
+                  }}
+                >
+                  Checkout
+                </Link>
               </div>
+              <button
+                type="button"
+                onClick={requestClose}
+                className="tracked mt-2 w-full py-1 text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground transition hover:text-foreground touch-manipulation"
+              >
+                Continue shopping
+              </button>
+            </div>
+
+            {/* Desktop drawer footer */}
+            <div
+              className="hidden shrink-0 space-y-3 border-t px-6 py-5 md:block"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <CartTotals cart={cart} formatPrice={formatPrice} compact />
+              <CartPromoForms cart={cart} compact collapsible />
               <p className="text-[0.65rem] leading-relaxed text-muted-foreground">
                 Shipping and taxes calculated at checkout.
               </p>
               <Link
                 to="/cart"
                 onClick={requestClose}
-                className="group flex w-full items-center justify-center gap-3 border py-4 transition-all duration-300 hover:opacity-90"
+                className="group flex w-full items-center justify-center gap-2 border py-3.5 transition-all duration-300 hover:opacity-90 touch-manipulation"
                 style={{
                   background: "#ceac6c",
                   color: "var(--background)",
                   borderColor: "#ceac6c",
                 }}
               >
-                <span className="tracked text-[0.8rem] font-medium uppercase tracking-[0.15em]">
+                <span className="tracked text-center text-[0.8rem] font-medium uppercase leading-snug tracking-[0.15em]">
                   View Bag & Checkout
                 </span>
                 <ArrowRight
-                  className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
+                  className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1"
                   strokeWidth={1.5}
                 />
               </Link>
               <button
+                type="button"
                 onClick={requestClose}
-                className="tracked w-full border py-4 text-[0.75rem] uppercase tracking-[0.15em] text-foreground transition-colors duration-300 hover:bg-foreground hover:text-background"
+                className="tracked w-full border py-3.5 text-[0.75rem] uppercase tracking-[0.15em] text-foreground transition-colors duration-300 hover:bg-foreground hover:text-background touch-manipulation"
                 style={{ borderColor: "var(--border)" }}
               >
                 Continue Shopping

@@ -6,12 +6,12 @@ import type {ShopSettings} from '~/lib/shop-settings';
 import type {LocalizationSnapshot} from '~/lib/localization';
 import {CatalogProvider} from '~/contexts/catalog-context';
 import {LocalizationProvider} from '~/contexts/localization-context';
+import {CartDrawerProvider} from '~/contexts/cart-drawer-context';
 import {SiteHeader} from '~/components/gulriza/SiteHeader';
 import {SiteFooter} from '~/components/gulriza/SiteFooter';
 import {ScrollToTop} from '~/components/gulriza/ScrollToTop';
 import {CartFab} from '~/components/gulriza/CartFab';
 import {WebMcpTools} from '~/components/gulriza/WebMcpTools';
-import {useLiveCart} from '~/lib/use-live-cart';
 
 const EMPTY_CATALOG: CatalogSnapshot = {products: [], collections: []};
 
@@ -59,42 +59,30 @@ function ChromeHeader({
   shopSettings,
   publicStoreDomain,
   publicAccessToken,
-  cart,
   customerAccessToken,
 }: {
   isHome: boolean;
   shopSettings: ShopSettings;
   publicStoreDomain: string;
   publicAccessToken: string;
-  cart: Promise<CartApiQueryFragment | null>;
   customerAccessToken: Promise<string | null>;
 }) {
-  const [resolvedCart, setResolvedCart] = useState<CartApiQueryFragment | null>(
-    null,
-  );
   const [resolvedCustomerAccessToken, setResolvedCustomerAccessToken] =
     useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    void Promise.all([cart, customerAccessToken]).then(([nextCart, token]) => {
-      if (!active) return;
-      setResolvedCart(nextCart);
-      setResolvedCustomerAccessToken(token);
+    void customerAccessToken.then((token) => {
+      if (active) setResolvedCustomerAccessToken(token);
     });
     return () => {
       active = false;
     };
-  }, [cart, customerAccessToken]);
-
-  const liveCart = useLiveCart(resolvedCart);
-  const cartQuantity = liveCart?.totalQuantity ?? 0;
+  }, [customerAccessToken]);
 
   return (
     <SiteHeader
       transparent={isHome}
-      cart={liveCart}
-      cartQuantity={cartQuantity}
       shopSettings={shopSettings}
       publicStoreDomain={publicStoreDomain}
       publicAccessToken={publicAccessToken}
@@ -131,46 +119,24 @@ export function PageLayout({
 
   return (
     <LocalizationProvider localization={localization}>
-      <ScrollToTop />
-      <CatalogProvider catalog={resolvedCatalog}>
-        <WebMcpTools />
-        <ChromeHeader
-          isHome={isHome}
-          shopSettings={shopSettings}
-          publicStoreDomain={publicStoreDomain}
-          publicAccessToken={publicAccessToken}
-          cart={cart}
-          customerAccessToken={customerAccessToken}
-        />
-        <RouteTransitionOutlet routeKey={routeKey}>{children}</RouteTransitionOutlet>
-        <CartFabWithCart cart={cart} />
-        <SiteFooter shopSettings={shopSettings} />
-      </CatalogProvider>
+      <CartDrawerProvider cart={cart}>
+        <ScrollToTop />
+        <CatalogProvider catalog={resolvedCatalog}>
+          <WebMcpTools />
+          <ChromeHeader
+            isHome={isHome}
+            shopSettings={shopSettings}
+            publicStoreDomain={publicStoreDomain}
+            publicAccessToken={publicAccessToken}
+            customerAccessToken={customerAccessToken}
+          />
+          <RouteTransitionOutlet routeKey={routeKey}>{children}</RouteTransitionOutlet>
+          <CartFab />
+          <SiteFooter shopSettings={shopSettings} />
+        </CatalogProvider>
+      </CartDrawerProvider>
     </LocalizationProvider>
   );
-}
-
-function CartFabWithCart({
-  cart,
-}: {
-  cart: Promise<CartApiQueryFragment | null>;
-}) {
-  const [resolvedCart, setResolvedCart] = useState<CartApiQueryFragment | null>(
-    null,
-  );
-
-  useEffect(() => {
-    let active = true;
-    void cart.then((nextCart) => {
-      if (active) setResolvedCart(nextCart);
-    });
-    return () => {
-      active = false;
-    };
-  }, [cart]);
-
-  const liveCart = useLiveCart(resolvedCart);
-  return <CartFab cartQuantity={liveCart?.totalQuantity ?? 0} />;
 }
 
 export function NotFoundView() {

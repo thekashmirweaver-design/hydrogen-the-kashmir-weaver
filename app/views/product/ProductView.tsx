@@ -482,6 +482,7 @@ export function ProductView({
                 ) : isShopifyVariant ? (
                   <>
                     <CartForm
+                      fetcherKey="add-to-bag"
                       route="/cart"
                       inputs={{
                         lines: [
@@ -520,6 +521,7 @@ export function ProductView({
                     </CartForm>
                     <Link
                       to={buyNowHref}
+                      reloadDocument
                       className="block w-full border py-3.5 text-center tracked transition hover:text-accent"
                       style={{borderColor: 'var(--border)'}}
                     >

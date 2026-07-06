@@ -1,5 +1,7 @@
 import type {Storefront} from '@shopify/hydrogen';
 import type {CountryCode} from '@shopify/hydrogen/storefront-api-types';
+import type {AppSession} from '~/lib/session';
+import {getPersistedMarketCurrency} from '~/lib/i18n';
 
 export type ShopCurrencyOption = {
   code: string;
@@ -105,7 +107,14 @@ function resolveSelectedCurrency(
   currencies: ShopCurrencyOption[],
   selectedCountry: CountryCode,
   apiCurrencyCode?: string | null,
+  sessionCurrencyCode?: string | null,
 ): ShopCurrencyOption {
+  const fromSession = sessionCurrencyCode?.trim().toUpperCase();
+  if (fromSession) {
+    const bySession = currencies.find((c) => c.code === fromSession);
+    if (bySession) return bySession;
+  }
+
   const byCountry = currencies.find((c) => c.countryCode === selectedCountry);
   if (byCountry) return byCountry;
 
@@ -120,28 +129,28 @@ function resolveSelectedCurrency(
 
 export async function loadLocalization(
   storefront: Storefront,
+  session?: AppSession,
 ): Promise<LocalizationSnapshot> {
   const selectedCountry = storefront.i18n.country;
+  const sessionCurrencyCode = getPersistedMarketCurrency(session);
 
   try {
     const data = await storefront.query<LocalizationQueryResult>(
       LOCALIZATION_QUERY,
-      {cache: storefront.CacheLong()},
+      {cache: storefront.CacheNone()},
     );
 
     const currencies = buildCurrencyOptions(data.localization?.availableCountries);
-    const apiCountry = data.localization?.country?.isoCode?.trim() as
-      | CountryCode
-      | undefined;
-    const marketCountry = apiCountry ?? selectedCountry;
     const apiCurrencyCode = data.localization?.country?.currency?.isoCode;
     const resolvedCurrency = resolveSelectedCurrency(
       currencies,
-      marketCountry,
+      selectedCountry,
       apiCurrencyCode,
+      sessionCurrencyCode,
     );
 
     if (currencies.length) {
+      const marketCountry = resolvedCurrency.countryCode;
       return {
         currencies,
         selectedCountry: marketCountry,

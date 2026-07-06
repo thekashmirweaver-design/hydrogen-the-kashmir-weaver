@@ -19,7 +19,9 @@ import {PageLayout, NotFoundView} from './components/PageLayout';
 import {getCatalogOptions} from '~/lib/catalog-options';
 import {loadShopSettings} from '~/lib/shop-settings';
 import {loadLocalization} from '~/lib/localization';
+import {persistBuyerMarket} from '~/lib/i18n';
 import {isCartFormAction} from '~/lib/cart-form-action';
+import {isCompleteCart} from '~/lib/use-live-cart';
 import {loadSharedCatalog, loadSharedCatalogMenu} from '~/lib/shared-catalog';
 import {needsFullCatalog} from '~/lib/catalog-routes';
 import {resolveStoreUrl} from '~/lib/seo';
@@ -31,6 +33,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   formAction,
   currentUrl,
   nextUrl,
+  formData,
 }) => {
   if (currentUrl.toString() === nextUrl.toString()) return true;
 
@@ -41,8 +44,17 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     }
   }
 
-  // Cart fetchers sync via useLiveCart — skip refetching catalog, menus, localization.
+  // Refresh localization immediately after a currency/market switch.
   if (formMethod && formMethod !== 'GET' && isCartFormAction(formAction)) {
+    const cartInput = formData?.get('cartFormInput');
+    if (typeof cartInput === 'string') {
+      try {
+        const {action} = JSON.parse(cartInput) as {action?: string};
+        if (action === 'BuyerIdentityUpdate') return true;
+      } catch {
+        // fall through
+      }
+    }
     return false;
   }
 
@@ -127,8 +139,15 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
     loadShopSettings(context.storefront, {
       publicStoreDomain: context.env.PUBLIC_STORE_DOMAIN,
     }),
-    loadLocalization(context.storefront),
+    loadLocalization(context.storefront, context.session),
   ]);
+
+  persistBuyerMarket(
+    context.session,
+    localization.selectedCurrency.countryCode,
+    context.storefront.i18n.language,
+    localization.selectedCurrency.code,
+  );
 
   return {shopSettings, localization};
 }
@@ -158,10 +177,17 @@ function loadDeferredData({context, request}: Route.LoaderArgs) {
     catalog: catalogPromise,
     cart: cart.get().then(async (cartData) => {
       if (!cartData?.id) return cartData;
-      if (cartData.buyerIdentity?.countryCode === countryCode) return cartData;
+      if (cartData.buyerIdentity?.countryCode === countryCode) {
+        return cartData;
+      }
 
       const result = await cart.updateBuyerIdentity({countryCode});
-      return result.cart ?? cartData;
+      const refreshed = await cart.get();
+      const nextCart =
+        (isCompleteCart(refreshed) ? refreshed : null) ??
+        (isCompleteCart(result.cart) ? result.cart : null) ??
+        cartData;
+      return nextCart;
     }),
     isLoggedIn: customerAccount.isLoggedIn(),
     customerAccessToken: loadCustomerAccessToken(),
