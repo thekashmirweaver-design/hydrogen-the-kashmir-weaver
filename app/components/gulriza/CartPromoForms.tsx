@@ -15,11 +15,11 @@ type CartActionData = {
 const inputClass =
   'min-h-11 w-full flex-1 border bg-transparent px-3 py-2 text-base uppercase tracking-[0.15em] focus:outline-none';
 const buttonClass =
-  'tracked min-h-11 w-full border px-4 py-2 text-xs transition hover:text-accent disabled:opacity-50 sm:w-auto';
+  'btn-secondary tracked min-h-11 w-full px-4 py-2 text-xs disabled:opacity-50 sm:w-auto';
 const compactInputClass =
   'min-h-10 w-full flex-1 border bg-transparent px-3 py-2 text-[0.72rem] uppercase tracking-[0.12em] focus:outline-none';
 const compactButtonClass =
-  'tracked min-h-10 w-full shrink-0 border px-3 py-2 text-[0.65rem] uppercase tracking-[0.1em] transition hover:text-accent disabled:opacity-50 sm:w-auto';
+  'btn-secondary tracked min-h-10 w-full shrink-0 px-3 py-2 text-[0.65rem] uppercase tracking-[0.1em] disabled:opacity-50 sm:w-auto';
 
 function promoSummaryLabel(
   appliedDiscountCodes: string[],
@@ -97,7 +97,6 @@ export function CartPromoForms({
                     type="submit"
                     disabled={fetcher.state !== 'idle'}
                     className={fieldButton}
-                    style={{borderColor: 'var(--border)'}}
                   >
                     Apply
                   </button>
@@ -148,7 +147,6 @@ export function CartPromoForms({
                     type="submit"
                     disabled={fetcher.state !== 'idle'}
                     className={fieldButton}
-                    style={{borderColor: 'var(--border)'}}
                   >
                     Apply
                   </button>

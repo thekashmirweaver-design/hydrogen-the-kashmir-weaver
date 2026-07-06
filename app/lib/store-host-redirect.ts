@@ -7,11 +7,17 @@ const REDIRECT_TO_PRIMARY_HOSTS = new Set([
   'www.thekashmirweaver.in',
 ]);
 
+const OXYGEN_PREVIEW_HOST = /\.o2\.myshopify\.dev$/i;
+
 function resolvePrimaryOrigin(primaryStoreUrl?: string): string | null {
   const raw = (primaryStoreUrl ?? DEFAULT_PRIMARY_STORE_URL).trim().replace(/\/$/, '');
   if (!raw) return null;
   try {
-    return new URL(raw).origin;
+    const origin = new URL(raw).origin;
+    if (OXYGEN_PREVIEW_HOST.test(new URL(origin).hostname)) {
+      return new URL(DEFAULT_PRIMARY_STORE_URL).origin;
+    }
+    return origin;
   } catch {
     return null;
   }

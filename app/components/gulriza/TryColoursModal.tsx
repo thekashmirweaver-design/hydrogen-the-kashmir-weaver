@@ -43,8 +43,7 @@ function StudioFooter({
           <button
             type="button"
             onClick={onPreview}
-            className="min-h-11 flex-1 border py-3 tracked transition hover:border-[var(--accent)] hover:text-accent active:opacity-90 touch-manipulation"
-            style={{borderColor: 'var(--border)'}}
+            className="btn-secondary min-h-11 flex-1 py-3 tracked touch-manipulation"
           >
             Full preview
           </button>
@@ -208,8 +207,7 @@ export function TryColoursModal({
               <button
                 type="button"
                 onClick={() => setMobileScreen('pick')}
-                className="w-full border py-3.5 tracked transition hover:border-[var(--accent)] hover:text-accent"
-                style={{borderColor: 'var(--border)'}}
+                className="btn-secondary w-full py-3.5 tracked touch-manipulation"
               >
                 Change colour
               </button>

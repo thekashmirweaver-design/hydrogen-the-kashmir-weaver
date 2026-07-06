@@ -267,8 +267,7 @@ export function CartDrawer({
               <button
                 type="button"
                 onClick={requestClose}
-                className="tracked w-full border py-3.5 text-[0.75rem] uppercase tracking-[0.15em] text-foreground transition-colors duration-300 hover:bg-foreground hover:text-background touch-manipulation"
-                style={{ borderColor: "var(--border)" }}
+                className="btn-secondary tracked w-full py-3.5 text-[0.75rem] uppercase tracking-[0.15em] text-foreground touch-manipulation"
               >
                 Continue Shopping
               </button>

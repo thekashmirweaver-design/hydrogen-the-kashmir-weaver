@@ -12,7 +12,7 @@ import {
 } from '~/lib/resolve-checkout-url';
 import {CartView} from '~/views/cart/CartView';
 import {persistBuyerMarket} from '~/lib/i18n';
-import {seoBundle} from '~/lib/seo';
+import {resolveStoreUrl, seoBundle} from '~/lib/seo';
 
 export const meta: Route.MetaFunction = () => {
   return seoBundle({
@@ -96,10 +96,15 @@ export async function action({request, context}: Route.ActionArgs) {
   const headers = cartId ? cart.setCartId(result.cart.id) : new Headers();
   const {cart: cartResult, errors, warnings} = result;
   const {language, country} = context.storefront.i18n;
+  const storefrontUrl = resolveStoreUrl(
+    context.env.PUBLIC_STORE_URL,
+    request.url,
+  );
   const normalizedCart = cartWithStorefrontCheckoutUrl(
     cartResult,
     context.env.PUBLIC_CHECKOUT_DOMAIN,
     checkoutLocale(language, country),
+    storefrontUrl,
   );
 
   const redirectTo = formData.get('redirectTo') ?? null;
@@ -119,15 +124,20 @@ export async function action({request, context}: Route.ActionArgs) {
   );
 }
 
-export async function loader({context}: Route.LoaderArgs) {
+export async function loader({request, context}: Route.LoaderArgs) {
   const {cart, storefront} = context;
   const cartData = await cart.get();
   const {language, country} = storefront.i18n;
+  const storefrontUrl = resolveStoreUrl(
+    context.env.PUBLIC_STORE_URL,
+    request.url,
+  );
 
   return cartWithStorefrontCheckoutUrl(
     cartData,
     context.env.PUBLIC_CHECKOUT_DOMAIN,
     checkoutLocale(language, country),
+    storefrontUrl,
   );
 }
 

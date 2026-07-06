@@ -119,6 +119,77 @@
   font-weight: 400;
 }
 
+@layer components {
+  .btn-secondary {
+    background-color: var(--surface-2);
+    border: 1px solid var(--hairline);
+    color: var(--foreground);
+    transition:
+      border-color 0.2s ease,
+      color 0.2s ease,
+      background-color 0.2s ease,
+      opacity 0.2s ease;
+  }
+
+  .btn-secondary:hover {
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--hairline));
+    color: var(--accent);
+    background-color: color-mix(in srgb, var(--surface-2) 82%, var(--accent));
+  }
+
+  .btn-secondary:active {
+    opacity: 0.88;
+  }
+
+  .btn-secondary:disabled,
+  .btn-secondary[aria-disabled='true'] {
+    cursor: not-allowed;
+    opacity: 0.55;
+    background-color: var(--surface);
+    border-color: var(--border);
+    color: var(--muted-foreground);
+  }
+
+  .btn-secondary-accent {
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--hairline));
+    color: var(--accent);
+    background-color: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+  }
+
+  .btn-secondary-accent:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background-color: color-mix(in srgb, var(--accent) 20%, var(--surface-2));
+  }
+
+  /* Discovery / preview CTAs — visible on dark PDP without competing with gold primary */
+  .btn-preview {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    background-color: color-mix(in srgb, var(--foreground) 7%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--foreground) 24%, transparent);
+    color: var(--foreground);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition:
+      border-color 0.25s ease,
+      background-color 0.25s ease,
+      color 0.25s ease,
+      opacity 0.2s ease;
+  }
+
+  .btn-preview:hover {
+    background-color: color-mix(in srgb, var(--foreground) 11%, var(--surface));
+    border-color: color-mix(in srgb, var(--foreground) 38%, transparent);
+  }
+
+  .btn-preview:active {
+    opacity: 0.9;
+  }
+}
+
 @utility hairline {
   border: 0;
   border-top: 1px solid var(--border);

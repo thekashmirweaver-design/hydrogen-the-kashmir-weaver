@@ -24,7 +24,12 @@ export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}
   const checkoutDomain = root?.consent?.checkoutDomain;
   const locale = checkoutLocale(root?.consent?.language, root?.consent?.country);
   const checkoutUrl = rawCheckoutUrl
-    ? toStorefrontCheckoutUrl(rawCheckoutUrl, checkoutDomain, locale)
+    ? toStorefrontCheckoutUrl(
+        rawCheckoutUrl,
+        checkoutDomain,
+        locale,
+        root?.publicStoreUrl,
+      )
     : undefined;
 
   const {subtotal, total, hasAdjustments} = getCartPromotionSummary(cart);

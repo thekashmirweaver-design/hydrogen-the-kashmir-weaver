@@ -71,6 +71,19 @@ const FALLBACK_CURRENCY: ShopCurrencyOption = {
   countryCode: 'US',
 };
 
+/** Primary Shopify market country per currency (avoids USD → AO on checkout). */
+const PREFERRED_COUNTRY_FOR_CURRENCY: Partial<Record<string, CountryCode>> = {
+  USD: 'US',
+  GBP: 'GB',
+  INR: 'IN',
+  AUD: 'AU',
+  CAD: 'CA',
+  EUR: 'DE',
+  AED: 'AE',
+  SGD: 'SG',
+  JPY: 'JP',
+};
+
 type AvailableCountry = {
   isoCode?: string | null;
   name?: string | null;
@@ -90,14 +103,25 @@ export function buildCurrencyOptions(
     const countryCode = country?.isoCode?.trim();
     const currency = country?.currency;
     const code = currency?.isoCode?.trim();
-    if (!countryCode || !code || byCode.has(code)) continue;
+    if (!countryCode || !code) continue;
 
-    byCode.set(code, {
+    const preferred = PREFERRED_COUNTRY_FOR_CURRENCY[code];
+    const existing = byCode.get(code);
+    const option: ShopCurrencyOption = {
       code,
       symbol: currency?.symbol?.trim() || code,
       name: currency?.name?.trim() || code,
       countryCode: countryCode as CountryCode,
-    });
+    };
+
+    if (!existing) {
+      byCode.set(code, option);
+      continue;
+    }
+
+    if (preferred === countryCode) {
+      byCode.set(code, option);
+    }
   }
 
   return Array.from(byCode.values()).sort((a, b) => a.code.localeCompare(b.code));
@@ -150,10 +174,9 @@ export async function loadLocalization(
     );
 
     if (currencies.length) {
-      const marketCountry = resolvedCurrency.countryCode;
       return {
         currencies,
-        selectedCountry: marketCountry,
+        selectedCountry,
         selectedCurrency: resolvedCurrency,
       };
     }

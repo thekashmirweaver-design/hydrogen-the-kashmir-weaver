@@ -7,15 +7,62 @@ export {
 const DEFAULT_STORE_URL = 'https://thekashmirweaver.in';
 const SITE_NAME = 'The Kashmir Weaver';
 
+/** Oxygen preview deployments — never canonical storefront URLs. */
+const OXYGEN_PREVIEW_HOST = /\.o2\.myshopify\.dev$/i;
+
+/** Live custom domains that should win over stale Oxygen env values. */
+const LIVE_STOREFRONT_HOSTS = new Set([
+  'thekashmirweaver.in',
+  'www.thekashmirweaver.in',
+]);
+
 export type MetaDescriptor = Record<string, string>;
 
+function normalizeStoreUrl(url?: string | null): string | null {
+  const trimmed = url?.trim().replace(/\/$/, '');
+  if (!trimmed) return null;
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return null;
+  }
+}
+
+function isOxygenPreviewUrl(url: string): boolean {
+  try {
+    return OXYGEN_PREVIEW_HOST.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Canonical storefront origin for SEO, checkout return links, and analytics.
+ *
+ * Prefers the live request host on custom domains, rejects Oxygen preview URLs
+ * from PUBLIC_STORE_URL, and falls back to thekashmirweaver.in.
+ */
 export function resolveStoreUrl(
   storeUrl?: string | null,
   requestUrl?: string,
 ): string {
-  const trimmed = storeUrl?.replace(/\/$/, '');
-  if (trimmed) return trimmed;
-  if (requestUrl) return new URL(requestUrl).origin;
+  const requestOrigin = requestUrl ? normalizeStoreUrl(requestUrl) : null;
+  if (requestOrigin) {
+    const requestHost = new URL(requestOrigin).hostname.toLowerCase();
+    if (LIVE_STOREFRONT_HOSTS.has(requestHost)) {
+      return requestOrigin;
+    }
+  }
+
+  const envOrigin = normalizeStoreUrl(storeUrl);
+  if (envOrigin && !isOxygenPreviewUrl(envOrigin)) {
+    return envOrigin;
+  }
+
+  if (requestOrigin && !isOxygenPreviewUrl(requestOrigin)) {
+    return requestOrigin;
+  }
+
   return DEFAULT_STORE_URL;
 }
 

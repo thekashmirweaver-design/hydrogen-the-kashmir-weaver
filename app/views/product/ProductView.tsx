@@ -15,6 +15,7 @@ import {ProductTile} from '~/components/gulriza/ProductTile';
 import {CatalogImage} from '~/components/gulriza/CatalogImage';
 import {HorizontalScrollCue} from '~/components/gulriza/HorizontalScrollCue';
 import {TryColoursModal} from '~/components/gulriza/TryColoursModal';
+import {ShadeSwatchStack} from '~/components/gulriza/ShadeSwatchStack';
 import {SelectedColourCard} from '~/components/gulriza/SelectedColourCard';
 import {ProductOptionPicker} from '~/components/gulriza/ProductOptionPicker';
 import {QuantityStepper} from '~/components/gulriza/QuantityStepper';
@@ -421,13 +422,16 @@ export function ProductView({
                   <button
                     type="button"
                     onClick={openColourStudio}
-                    className="w-full border py-3.5 tracked transition hover:border-[var(--accent)] hover:text-accent active:opacity-80"
-                    style={{borderColor: 'var(--border)'}}
+                    aria-label={`Try new colours on ${product.name}`}
+                    className="btn-preview group w-full py-3.5 tracked touch-manipulation"
                   >
-                    Open colour studio
+                    <span className="inline-flex items-center justify-center gap-3">
+                      <ShadeSwatchStack shades={productShades} maxVisible={4} />
+                      <span>Try new colours</span>
+                    </span>
                   </button>
-                  <p className="text-[0.65rem] leading-relaxed text-muted-foreground">
-                    Preview colours in studio (beta).
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Preview how each shade looks on this piece before you buy.
                   </p>
                 </div>
               ) : null}
@@ -462,19 +466,13 @@ export function ProductView({
                   <>
                     <button
                       disabled
-                      className="w-full cursor-not-allowed py-3.5 tracked"
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid var(--border)',
-                        color: 'var(--muted-foreground)',
-                      }}
+                      className="btn-secondary w-full cursor-not-allowed py-3.5 tracked"
                     >
                       Sold Out
                     </button>
                     <Link
                       to="/concierge"
-                      className="block w-full border py-3.5 text-center tracked transition hover:text-accent"
-                      style={{borderColor: 'var(--accent)', color: 'var(--accent)'}}
+                      className="btn-secondary btn-secondary-accent block w-full py-3.5 text-center tracked touch-manipulation"
                     >
                       Commission a Similar Piece
                     </Link>
@@ -522,8 +520,7 @@ export function ProductView({
                     <Link
                       to={buyNowHref}
                       reloadDocument
-                      className="block w-full border py-3.5 text-center tracked transition hover:text-accent"
-                      style={{borderColor: 'var(--border)'}}
+                      className="btn-secondary block w-full py-3.5 text-center tracked touch-manipulation"
                     >
                       Buy Now
                     </Link>

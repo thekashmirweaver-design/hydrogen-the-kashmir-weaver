@@ -168,8 +168,7 @@ export function NotFoundView() {
         </Link>
         <Link
           to="/collections"
-          className="tracked border px-8 py-4 transition hover:text-accent"
-          style={{borderColor: 'var(--border)'}}
+          className="btn-secondary tracked px-8 py-4"
         >
           Collections
         </Link>

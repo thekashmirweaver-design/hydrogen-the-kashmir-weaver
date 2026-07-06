@@ -149,7 +149,7 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
 
   persistBuyerMarket(
     context.session,
-    localization.selectedCurrency.countryCode,
+    context.storefront.i18n.country,
     context.storefront.i18n.language,
     localization.selectedCurrency.code,
   );
@@ -160,12 +160,18 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
 function normalizeDeferredCart(
   cartData: CartApiQueryFragment | null,
   context: Route.LoaderArgs['context'],
+  requestUrl: string,
 ) {
   const {language, country} = context.storefront.i18n;
+  const storefrontUrl = resolveStoreUrl(
+    context.env.PUBLIC_STORE_URL,
+    requestUrl,
+  );
   return cartWithStorefrontCheckoutUrl(
     cartData,
     context.env.PUBLIC_CHECKOUT_DOMAIN,
     checkoutLocale(language, country),
+    storefrontUrl,
   );
 }
 
@@ -193,9 +199,9 @@ function loadDeferredData({context, request}: Route.LoaderArgs) {
   return {
     catalog: catalogPromise,
     cart: cart.get().then(async (cartData: CartApiQueryFragment | null) => {
-      if (!cartData?.id) return normalizeDeferredCart(cartData, context);
+      if (!cartData?.id) return normalizeDeferredCart(cartData, context, request.url);
       if (cartData.buyerIdentity?.countryCode === countryCode) {
-        return normalizeDeferredCart(cartData, context);
+        return normalizeDeferredCart(cartData, context, request.url);
       }
 
       const result = await cart.updateBuyerIdentity({countryCode});
@@ -204,7 +210,7 @@ function loadDeferredData({context, request}: Route.LoaderArgs) {
         (isCompleteCart(refreshed) ? refreshed : null) ??
         (isCompleteCart(result.cart) ? result.cart : null) ??
         cartData;
-      return normalizeDeferredCart(nextCart, context);
+      return normalizeDeferredCart(nextCart, context, request.url);
     }),
     isLoggedIn: customerAccount.isLoggedIn(),
     customerAccessToken: loadCustomerAccessToken(),

@@ -49,26 +49,48 @@ export function toStorefrontCheckoutUrl(
   checkoutUrl: string,
   checkoutDomain?: string | null,
   locale = 'en-us',
+  storefrontUrl?: string | null,
 ): string {
   const normalized = resolveCheckoutUrl(checkoutUrl, checkoutDomain);
 
   try {
     const url = new URL(normalized);
     const tokenMatch = url.pathname.match(/\/cart\/c\/([^/]+)/);
-    if (!tokenMatch?.[1]) return normalized;
-
     const host = checkoutHost(checkoutDomain) ?? url.hostname;
-    const checkout = new URL(
-      `https://${host}/checkouts/cn/${tokenMatch[1]}/${locale}`,
-    );
+    const checkout = tokenMatch?.[1]
+      ? new URL(`https://${host}/checkouts/cn/${tokenMatch[1]}/${locale}`)
+      : new URL(normalized);
 
     url.searchParams.forEach((value, key) => {
       if (key !== '_cs') checkout.searchParams.set(key, value);
     });
 
+    appendStorefrontReturnUrl(checkout, storefrontUrl);
+
     return checkout.toString();
   } catch {
     return normalized;
+  }
+}
+
+/** Hint Shopify checkout thank-you "Continue shopping" toward the live storefront. */
+function appendStorefrontReturnUrl(
+  checkout: URL,
+  storefrontUrl?: string | null,
+): void {
+  const origin = normalizeStorefrontOrigin(storefrontUrl);
+  if (!origin) return;
+  if (!checkout.searchParams.has('return_url')) {
+    checkout.searchParams.set('return_url', origin);
+  }
+}
+
+function normalizeStorefrontOrigin(storefrontUrl?: string | null): string | null {
+  if (!storefrontUrl?.trim()) return null;
+  try {
+    return new URL(storefrontUrl.trim()).origin;
+  } catch {
+    return null;
   }
 }
 
@@ -91,6 +113,7 @@ export function cartWithStorefrontCheckoutUrl(
   cart: CartApiQueryFragment | null | undefined,
   checkoutDomain: string | null | undefined,
   locale: string,
+  storefrontUrl?: string | null,
 ): CartApiQueryFragment | null {
   if (!cart?.checkoutUrl) return cart ?? null;
   return {
@@ -99,6 +122,7 @@ export function cartWithStorefrontCheckoutUrl(
       cart.checkoutUrl,
       checkoutDomain,
       locale,
+      storefrontUrl,
     ),
   };
 }

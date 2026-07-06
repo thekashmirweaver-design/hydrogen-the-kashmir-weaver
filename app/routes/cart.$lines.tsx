@@ -4,6 +4,7 @@ import {
   checkoutLocale,
   toStorefrontCheckoutUrl,
 } from '~/lib/resolve-checkout-url';
+import {resolveStoreUrl} from '~/lib/seo';
 import {shadeCartAttributesFromSearch} from '~/lib/shade-cart';
 
 /**
@@ -68,10 +69,15 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
   const headers = cart.setCartId(cartResult.id);
 
   const {language, country} = context.storefront.i18n;
+  const storefrontUrl = resolveStoreUrl(
+    context.env.PUBLIC_STORE_URL,
+    request.url,
+  );
   const checkoutRedirect = toStorefrontCheckoutUrl(
     cartResult.checkoutUrl ?? '',
     context.env.PUBLIC_CHECKOUT_DOMAIN,
     checkoutLocale(language, country),
+    storefrontUrl,
   );
 
   // redirect to checkout

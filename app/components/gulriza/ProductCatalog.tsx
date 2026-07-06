@@ -275,8 +275,7 @@ export function ProductCatalog({
             {FilterPanel}
             <button
               onClick={() => setDrawer(false)}
-              className="tracked mt-10 w-full border py-4"
-              style={{ borderColor: "var(--accent)", color: "var(--accent)" }}
+              className="btn-secondary btn-secondary-accent tracked mt-10 w-full py-4"
             >
               Show {filtered.length} {resultsLabel}
             </button>
