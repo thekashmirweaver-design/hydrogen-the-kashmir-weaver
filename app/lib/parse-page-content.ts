@@ -48,3 +48,17 @@ export function estimateReadMinutes(text: string): number {
   const words = text.split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.round(words / 200));
 }
+
+export function formatJournalDate(isoDate: string): string {
+  return new Date(`${isoDate}T12:00:00`).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+export function journalEyebrow(cat: string, minutes: number, date?: string): string {
+  const parts = [`${cat} · ${minutes} min read`];
+  if (date) parts.push(formatJournalDate(date));
+  return parts.join(' · ');
+}

@@ -6,6 +6,7 @@ import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {EditorialImage} from '~/components/gulriza/CatalogImage';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {JOURNAL_CATEGORIES, type JournalPost} from '~/models/static/journal';
+import {journalEyebrow} from '~/lib/parse-page-content';
 
 export function JournalView({posts}: {posts: JournalPost[]}) {
   const [cat, setCat] = useState('All');
@@ -68,7 +69,7 @@ export function JournalView({posts}: {posts: JournalPost[]}) {
               </div>
               <div className="md:col-span-4 md:-mt-8 lg:mt-0">
                 <Eyebrow>
-                  {feature.cat} · {feature.minutes} min read
+                  {journalEyebrow(feature.cat, feature.minutes, feature.date)}
                 </Eyebrow>
                 <h2
                   className="font-display mt-6 text-4xl leading-tight lg:text-5xl"
@@ -105,7 +106,7 @@ export function JournalView({posts}: {posts: JournalPost[]}) {
                 </div>
                 <div className="mt-8 md:mt-0 lg:mt-8">
                   <Eyebrow>
-                    {p.cat} · {p.minutes} min read
+                    {journalEyebrow(p.cat, p.minutes, p.date)}
                   </Eyebrow>
                   <h3
                     className="font-display mt-4 text-2xl leading-tight md:text-3xl lg:text-2xl"

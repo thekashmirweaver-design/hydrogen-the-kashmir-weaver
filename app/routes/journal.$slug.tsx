@@ -42,6 +42,6 @@ export async function loader({params, context}: Route.LoaderArgs) {
 }
 
 export default function ArticleRoute() {
-  const {article} = useLoaderData<typeof loader>();
-  return <ArticleView article={article} />;
+  const {article, datePublished} = useLoaderData<typeof loader>();
+  return <ArticleView article={article} datePublished={datePublished} />;
 }

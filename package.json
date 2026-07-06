@@ -13,6 +13,7 @@
     "lighthouse": "lhci autorun",
     "codegen": "shopify hydrogen codegen && react-router typegen",
     "seed:shopify": "tsx scripts/seed-shopify-admin.ts",
+    "sync:journal": "tsx scripts/sync-journal-articles.ts",
     "seed:sizes": "tsx scripts/seed-product-sizes.ts",
     "seed:dummy-product": "tsx scripts/seed-dummy-test-product.ts",
     "seed:collections": "tsx scripts/seed-shopify-collections.ts",

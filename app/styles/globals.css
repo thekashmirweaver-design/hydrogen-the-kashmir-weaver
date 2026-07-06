@@ -183,6 +183,16 @@
   );
 }
 
+@utility hero-bottom-scrim {
+  background: linear-gradient(
+    to top,
+    var(--background) 0%,
+    color-mix(in srgb, var(--background) 92%, transparent) 38%,
+    color-mix(in srgb, var(--background) 55%, transparent) 58%,
+    transparent 82%
+  );
+}
+
 @utility grain {
   position: relative;
 }

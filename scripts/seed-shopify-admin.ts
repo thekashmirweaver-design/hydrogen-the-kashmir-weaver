@@ -447,6 +447,7 @@ async function seedArticles(blogId: string | null) {
             author: {name: 'The Kashmir Weaver'},
             body: bodyHtml,
             summary: post.excerpt,
+            tags: [post.cat],
             isPublished: true,
             publishDate: post.date,
             image: {url: assetUrl(post.img), altText: post.title},

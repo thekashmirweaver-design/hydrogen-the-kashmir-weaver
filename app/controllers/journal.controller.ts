@@ -35,6 +35,10 @@ function mapCategory(tags: string[] | null | undefined): JournalCategory {
   return (match as JournalCategory | undefined) ?? 'Heritage';
 }
 
+function resolveReadMinutes(slug: string, bodyText: string): number {
+  return POSTS.find((p) => p.slug === slug)?.minutes ?? estimateReadMinutes(bodyText);
+}
+
 function mapShopifyArticleToPost(article: {
   handle: string;
   title: string;
@@ -51,7 +55,7 @@ function mapShopifyArticleToPost(article: {
     title: article.title,
     excerpt: article.excerpt?.trim() || bodyText.slice(0, 160).trim(),
     img: article.image?.url ?? '/assets/journal-craft.jpg',
-    minutes: estimateReadMinutes(bodyText),
+    minutes: resolveReadMinutes(article.handle, bodyText),
     date: article.publishedAt?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
   };
 }
@@ -68,7 +72,7 @@ function mapShopifyArticleToArticle(article: {
   return {
     title: article.title,
     cat: mapCategory(article.tags),
-    minutes: estimateReadMinutes(bodyText),
+    minutes: resolveReadMinutes(article.handle, bodyText),
     img: article.image?.url ?? '/assets/journal-craft.jpg',
     bodyHtml,
   };

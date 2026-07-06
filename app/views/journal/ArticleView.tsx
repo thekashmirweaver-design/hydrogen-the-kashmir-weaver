@@ -4,8 +4,15 @@ import {Eyebrow} from '~/components/gulriza/Eyebrow';
 import {EditorialImage} from '~/components/gulriza/CatalogImage';
 import {Reveal} from '~/components/gulriza/Reveal';
 import type {JournalArticle} from '~/models/static/journal';
+import {journalEyebrow} from '~/lib/parse-page-content';
 
-export function ArticleView({article}: {article: JournalArticle}) {
+export function ArticleView({
+  article,
+  datePublished,
+}: {
+  article: JournalArticle;
+  datePublished?: string;
+}) {
   return (
     <div>
       <section className="relative h-[80dvh] w-full overflow-hidden pt-[calc(var(--header-h)+1rem)]">
@@ -18,13 +25,14 @@ export function ArticleView({article}: {article: JournalArticle}) {
           sizes="100vw"
         />
         <div className="absolute inset-0 vignette-overlay" />
+        <div className="hero-bottom-scrim pointer-events-none absolute inset-0" />
         <div
-          className="absolute inset-x-0 bottom-0 mx-auto max-w-[1100px] px-6 md:px-10"
+          className="absolute inset-x-0 bottom-0 z-10 mx-auto max-w-[1100px] px-6 md:px-10"
           style={{paddingBottom: 'max(5rem, env(safe-area-inset-bottom))'}}
         >
           <Reveal>
-            <Eyebrow>
-              {article.cat} · {article.minutes} min read
+            <Eyebrow className="!text-foreground">
+              {journalEyebrow(article.cat, article.minutes, datePublished)}
             </Eyebrow>
             <h1
               className="font-display mt-6 text-5xl leading-[1.05] md:text-[5rem]"
