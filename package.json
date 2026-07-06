@@ -18,6 +18,7 @@
     "seed:dummy-product": "tsx scripts/seed-dummy-test-product.ts",
     "seed:collections": "tsx scripts/seed-shopify-collections.ts",
     "seed:menus": "tsx scripts/seed-shopify-menus-policies.ts",
+    "seed:policies": "tsx scripts/seed-policies-content.ts",
     "fix:currency": "tsx scripts/fix-store-currency.ts",
     "publish:headless": "tsx scripts/publish-headless-catalog.ts",
     "auth:deploy-scopes": "shopify app deploy --force --no-build",

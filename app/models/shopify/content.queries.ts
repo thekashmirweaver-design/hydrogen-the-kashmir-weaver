@@ -30,6 +30,8 @@ export const SHOP_POLICY_QUERY = `#graphql
     $language: LanguageCode
     $privacyPolicy: Boolean!
     $termsOfService: Boolean!
+    $shippingPolicy: Boolean!
+    $refundPolicy: Boolean!
   ) @inContext(language: $language, country: $country) {
     shop {
       privacyPolicy @include(if: $privacyPolicy) {
@@ -38,6 +40,18 @@ export const SHOP_POLICY_QUERY = `#graphql
       termsOfService @include(if: $termsOfService) {
         ...PolicyFields
       }
+      shippingPolicy @include(if: $shippingPolicy) {
+        ...PolicyFields
+      }
+      refundPolicy @include(if: $refundPolicy) {
+        ...PolicyFields
+      }
     }
   }
 ` as const;
+
+export type ShopPolicyName =
+  | 'privacyPolicy'
+  | 'termsOfService'
+  | 'shippingPolicy'
+  | 'refundPolicy';

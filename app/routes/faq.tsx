@@ -12,7 +12,7 @@ export const meta: Route.MetaFunction = ({data, location, matches}) => {
     metadata: {title, description},
     pathname: location.pathname,
     storeUrl,
-    jsonLd: data?.faqs ? [faqPageLd(data.faqs)] : [],
+    jsonLd: data?.faqs?.length ? [faqPageLd(data.faqs)] : [],
   });
 };
 

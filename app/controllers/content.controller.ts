@@ -7,10 +7,16 @@ import {
   CRAFT_HERO,
   CRAFT_PULL_QUOTE,
   CRAFT_PULL_QUOTE_ATTRIBUTION,
+  DISCLAIMER_INTRO,
+  DISCLAIMER_SECTIONS,
   FAQS,
   HERITAGE_HERO,
   PRIVACY_INTRO,
   PRIVACY_SECTIONS,
+  REFUND_INTRO,
+  REFUND_SECTIONS,
+  SHIPPING_INTRO,
+  SHIPPING_SECTIONS,
   STAGES,
   TERMS_INTRO,
   TERMS_SECTIONS,
@@ -20,7 +26,11 @@ import {
   type HeritageChapter,
   type LegalSection,
 } from '~/models/static/content';
-import {CONTENT_PAGE_QUERY, SHOP_POLICY_QUERY} from '~/models/shopify/content.queries';
+import {
+  CONTENT_PAGE_QUERY,
+  SHOP_POLICY_QUERY,
+  type ShopPolicyName,
+} from '~/models/shopify/content.queries';
 import {parsePageJson} from '~/lib/parse-page-content';
 import type {PageMetadata} from '~/controllers/catalog.controller';
 
@@ -42,6 +52,7 @@ export type CraftPageViewModel = {
 export type FaqPageViewModel = {
   faqs: FaqItem[];
   metadata: PageMetadata;
+  bodyHtml?: string | null;
 };
 
 export type CareGuidePageViewModel = {
@@ -50,19 +61,18 @@ export type CareGuidePageViewModel = {
   metadata: PageMetadata;
 };
 
-export type TermsPageViewModel = {
+export type LegalPageViewModel = {
   intro: string;
   sections: LegalSection[];
   metadata: PageMetadata;
   bodyHtml?: string | null;
 };
 
-export type PrivacyPageViewModel = {
-  intro: string;
-  sections: LegalSection[];
-  metadata: PageMetadata;
-  bodyHtml?: string | null;
-};
+export type TermsPageViewModel = LegalPageViewModel;
+export type PrivacyPageViewModel = LegalPageViewModel;
+export type ShippingPageViewModel = LegalPageViewModel;
+export type RefundPageViewModel = LegalPageViewModel;
+export type DisclaimerPageViewModel = LegalPageViewModel;
 
 type ShopifyPage = {
   handle: string;
@@ -84,6 +94,84 @@ async function loadShopifyPage(
   } catch {
     return null;
   }
+}
+
+function looksLikeHtml(body: string): boolean {
+  return /<[a-z][\s\S]*>/i.test(body.trim());
+}
+
+async function loadShopPolicyBody(
+  storefront: Storefront,
+  policyName: ShopPolicyName,
+): Promise<{title?: string | null; body?: string | null} | null> {
+  try {
+    const variables = {
+      privacyPolicy: policyName === 'privacyPolicy',
+      termsOfService: policyName === 'termsOfService',
+      shippingPolicy: policyName === 'shippingPolicy',
+      refundPolicy: policyName === 'refundPolicy',
+    };
+
+    const data = await storefront.query<{
+      shop?: Partial<
+        Record<
+          ShopPolicyName,
+          {title?: string | null; body?: string | null} | null
+        >
+      > | null;
+    }>(SHOP_POLICY_QUERY, {variables});
+
+    return data.shop?.[policyName] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function getShopPolicyPage(
+  storefront: Storefront | undefined,
+  policyName: ShopPolicyName,
+  staticPage: LegalPageViewModel,
+): Promise<LegalPageViewModel> {
+  if (!storefront) return staticPage;
+
+  const policy = await loadShopPolicyBody(storefront, policyName);
+  if (policy?.body) {
+    return {
+      intro: staticPage.intro,
+      sections: staticPage.sections,
+      bodyHtml: policy.body,
+      metadata: {
+        title: policy.title ?? staticPage.metadata.title,
+        description: staticPage.metadata.description,
+      },
+    };
+  }
+
+  return staticPage;
+}
+
+async function getShopifyHtmlPage(
+  storefront: Storefront | undefined,
+  handle: string,
+  staticPage: LegalPageViewModel,
+): Promise<LegalPageViewModel> {
+  if (!storefront) return staticPage;
+
+  const page = await loadShopifyPage(storefront, handle);
+  if (page?.body && looksLikeHtml(page.body)) {
+    return {
+      intro: staticPage.intro,
+      sections: staticPage.sections,
+      bodyHtml: page.body,
+      metadata: {
+        title: page.seo?.title ?? page.title ?? staticPage.metadata.title,
+        description:
+          page.seo?.description ?? staticPage.metadata.description,
+      },
+    };
+  }
+
+  return staticPage;
 }
 
 export async function getHeritagePage(
@@ -198,6 +286,18 @@ export async function getFaqPage(
     };
   }
 
+  if (looksLikeHtml(page.body)) {
+    return {
+      faqs: [],
+      bodyHtml: page.body,
+      metadata: {
+        title: page.seo?.title ?? page.title ?? staticPage.metadata.title,
+        description:
+          page.seo?.description ?? staticPage.metadata.description,
+      },
+    };
+  }
+
   return staticPage;
 }
 
@@ -241,7 +341,7 @@ export async function getCareGuidePage(
 export async function getTermsPage(
   storefront?: Storefront,
 ): Promise<TermsPageViewModel> {
-  const staticPage = {
+  return getShopPolicyPage(storefront, 'termsOfService', {
     intro: TERMS_INTRO,
     sections: TERMS_SECTIONS,
     metadata: {
@@ -249,48 +349,13 @@ export async function getTermsPage(
       description:
         'Terms and conditions governing the sale of hand-woven pashmina by The Kashmir Weaver.',
     },
-  };
-
-  if (!storefront) return staticPage;
-
-  try {
-    const data = await storefront.query<{
-      shop?: {
-        termsOfService?: {
-          title?: string | null;
-          body?: string | null;
-        } | null;
-      } | null;
-    }>(SHOP_POLICY_QUERY, {
-      variables: {
-        privacyPolicy: false,
-        termsOfService: true,
-      },
-    });
-
-    const policy = data.shop?.termsOfService;
-    if (policy?.body) {
-      return {
-        intro: staticPage.intro,
-        sections: staticPage.sections,
-        bodyHtml: policy.body,
-        metadata: {
-          title: policy.title ?? staticPage.metadata.title,
-          description: staticPage.metadata.description,
-        },
-      };
-    }
-  } catch {
-    // Fall back to static content
-  }
-
-  return staticPage;
+  });
 }
 
 export async function getPrivacyPage(
   storefront?: Storefront,
 ): Promise<PrivacyPageViewModel> {
-  const staticPage = {
+  return getShopPolicyPage(storefront, 'privacyPolicy', {
     intro: PRIVACY_INTRO,
     sections: PRIVACY_SECTIONS,
     metadata: {
@@ -298,40 +363,46 @@ export async function getPrivacyPage(
       description:
         'How The Kashmir Weaver collects, uses, and protects your personal information.',
     },
-  };
+  });
+}
 
-  if (!storefront) return staticPage;
+export async function getShippingPage(
+  storefront?: Storefront,
+): Promise<ShippingPageViewModel> {
+  return getShopPolicyPage(storefront, 'shippingPolicy', {
+    intro: SHIPPING_INTRO,
+    sections: SHIPPING_SECTIONS,
+    metadata: {
+      title: 'Shipping Policy — The Kashmir Weaver',
+      description:
+        'How The Kashmir Weaver delivers hand-woven pashmina within India and worldwide.',
+    },
+  });
+}
 
-  try {
-    const data = await storefront.query<{
-      shop?: {
-        privacyPolicy?: {
-          title?: string | null;
-          body?: string | null;
-        } | null;
-      } | null;
-    }>(SHOP_POLICY_QUERY, {
-      variables: {
-        privacyPolicy: true,
-        termsOfService: false,
-      },
-    });
+export async function getRefundPage(
+  storefront?: Storefront,
+): Promise<RefundPageViewModel> {
+  return getShopPolicyPage(storefront, 'refundPolicy', {
+    intro: REFUND_INTRO,
+    sections: REFUND_SECTIONS,
+    metadata: {
+      title: 'Returns Policy — The Kashmir Weaver',
+      description:
+        'Returns, exchanges, and refunds for The Kashmir Weaver orders.',
+    },
+  });
+}
 
-    const policy = data.shop?.privacyPolicy;
-    if (policy?.body) {
-      return {
-        intro: staticPage.intro,
-        sections: staticPage.sections,
-        bodyHtml: policy.body,
-        metadata: {
-          title: policy.title ?? staticPage.metadata.title,
-          description: staticPage.metadata.description,
-        },
-      };
-    }
-  } catch {
-    // Fall back to static content
-  }
-
-  return staticPage;
+export async function getDisclaimerPage(
+  storefront?: Storefront,
+): Promise<DisclaimerPageViewModel> {
+  return getShopifyHtmlPage(storefront, 'disclaimer', {
+    intro: DISCLAIMER_INTRO,
+    sections: DISCLAIMER_SECTIONS,
+    metadata: {
+      title: 'Disclaimer — The Kashmir Weaver',
+      description: 'Terms of use and disclaimers for The Kashmir Weaver website.',
+    },
+  });
 }

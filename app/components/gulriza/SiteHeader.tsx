@@ -49,12 +49,11 @@ function useIsLgUp() {
 function BrandLockup({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`font-display flex flex-col uppercase leading-[1.2] ${className}`}
-      style={{ fontWeight: 300 }}
+      className={`font-display flex flex-col uppercase leading-[1.15] font-semibold ${className}`}
     >
       <span className="whitespace-nowrap">The Kashmir</span>
       <span
-        className="mt-1 whitespace-nowrap text-[0.72em] not-italic tracking-[0.5em] opacity-90 transition-opacity duration-500 group-hover:opacity-100"
+        className="mt-0.5 whitespace-nowrap text-[0.72em] font-bold not-italic tracking-[0.5em] opacity-95 transition-opacity duration-500 group-hover:opacity-100"
         style={{ color: "var(--accent)" }}
       >
         Weaver
@@ -63,9 +62,8 @@ function BrandLockup({ className = "" }: { className?: string }) {
   );
 }
 
-// The loom-knot emblem. A quiet still image — no hover motion — sized purely
-// via `className` so it can sit inline with the header lockup or stacked above
-// the mobile menu's centered wordmark.
+// The loom-knot emblem. A quiet still image — sized purely via `className` so it
+// can sit inline with the header lockup.
 function BrandMark({ className = "" }: { className?: string }) {
   return (
     <img
@@ -74,6 +72,59 @@ function BrandMark({ className = "" }: { className?: string }) {
       aria-hidden
       className={`shrink-0 object-contain ${className}`}
     />
+  );
+}
+
+// Wordmark ↔ emblem on mobile; emblem + sliding lockup on desktop.
+function AnimatedHeaderBrand({ condensed }: { condensed: boolean }) {
+  const brandMotion =
+    "transition-[opacity,transform,max-width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
+
+  return (
+    <Link
+      to="/"
+      aria-label="The Kashmir Weaver"
+      className={`relative flex shrink-0 items-center overflow-hidden transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+        condensed
+          ? "h-7 w-7 md:h-8 md:w-8 lg:h-9 lg:w-9"
+          : "h-9 w-[7.25rem] min-[390px]:w-[8rem] md:h-10 md:w-[10rem] lg:h-11 lg:w-auto"
+      }`}
+    >
+      <span
+        aria-hidden={!condensed}
+        className={`absolute inset-0 flex items-center lg:hidden ${brandMotion} ${
+          condensed
+            ? "scale-100 opacity-100"
+            : "pointer-events-none scale-90 opacity-0"
+        }`}
+      >
+        <BrandMark className="h-7 w-7 md:h-8 md:w-8" />
+      </span>
+      <span
+        aria-hidden={condensed}
+        className={`absolute inset-0 flex items-center lg:hidden ${brandMotion} ${
+          condensed
+            ? "pointer-events-none translate-y-1 opacity-0"
+            : "translate-y-0 opacity-100"
+        }`}
+      >
+        <BrandLockup className="w-max text-left text-[0.8rem] tracking-[0.06em] min-[390px]:text-[0.92rem] min-[390px]:tracking-[0.08em] md:text-[1.1rem] md:tracking-[0.12em]" />
+      </span>
+
+      <span className="hidden min-w-0 items-center gap-3 lg:flex">
+        <BrandMark className="h-10 w-10 shrink-0" />
+        <span
+          aria-hidden={condensed}
+          className={`overflow-hidden ${brandMotion} ${
+            condensed
+              ? "max-w-0 opacity-0 -translate-x-2"
+              : "max-w-[15rem] opacity-100 translate-x-0"
+          }`}
+        >
+          <BrandLockup className="w-max text-left text-[1.35rem] tracking-[0.15em] xl:text-[1.65rem] xl:tracking-[0.2em]" />
+        </span>
+      </span>
+    </Link>
   );
 }
 
@@ -116,11 +167,24 @@ export function SiteHeader({
   }, []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
-    onScroll();
+    let ticking = false;
+
+    const update = () => {
+      setScrolled(window.scrollY > 24);
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    };
+
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [pathname]);
 
   // Mobile menu: lock body scroll, close on Escape, and trigger the entrance
   // transition on the next frame while open.
@@ -184,17 +248,14 @@ export function SiteHeader({
             paddingTop: scrolled ? "env(safe-area-inset-top)" : "0px",
           }}
         >
-          <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 md:h-20 md:px-6 lg:px-8 xl:px-10">
+          <div className="mx-auto flex h-[4.5rem] max-w-[1600px] items-center justify-between gap-3 px-5 md:h-20 md:gap-4 md:px-6 lg:gap-6 lg:px-8 xl:px-10">
             {/* LEFT: brand (all screens) */}
-            <div className="flex shrink items-center min-w-0">
-              <Link to="/" aria-label="Home" className="group -ml-0.5 flex items-center gap-2 md:gap-3">
-                <BrandMark className="h-7 w-7 md:h-9 md:w-9 lg:h-10 lg:w-10" />
-                <BrandLockup className="text-left text-[0.85rem] tracking-[0.08em] min-[375px]:text-[0.95rem] min-[375px]:tracking-[0.1em] md:text-[1.25rem] md:tracking-[0.15em] lg:text-[1.5rem] lg:tracking-[0.2em]" />
-              </Link>
+            <div className="flex shrink-0 items-center lg:min-w-0 lg:flex-1">
+              <AnimatedHeaderBrand condensed={scrolled} />
             </div>
 
             {/* RIGHT: all nav (desktop) · control clusters */}
-            <div className="flex flex-1 items-center justify-end gap-2 lg:gap-4 xl:gap-6">
+            <div className="flex shrink-0 items-center justify-end gap-2 lg:gap-4 xl:gap-6">
               <nav className="hidden items-center gap-4 lg:flex xl:gap-7">
                 {navItems.map((n) => {
                   const isShop = n.label === "Shop";
@@ -221,11 +282,11 @@ export function SiteHeader({
                 })}
               </nav>
 
-              {/* Mobile/tablet cluster: Search → Currency → Cart → Hamburger */}
-              <div className="flex items-center gap-0 lg:hidden">
+              {/* Mobile/tablet cluster: Search → Currency → Account → Cart → Hamburger */}
+              <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 lg:hidden">
                 <button
                   aria-label="Search"
-                  className="touch-target flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent active:opacity-80"
+                  className="flex h-10 w-10 min-h-10 min-w-10 items-center justify-center touch-manipulation text-foreground/80 transition hover:text-accent active:opacity-80"
                   onClick={() => {
                     publish('custom_search_opened', {});
                     setSearchOpen(true);
@@ -233,17 +294,18 @@ export function SiteHeader({
                 >
                   <Search className="h-[18px] w-[18px]" strokeWidth={1} />
                 </button>
-                <CurrencyDropdown />
+                <CurrencyDropdown compact />
                 <ShopifyAccount
                   publicStoreDomain={publicStoreDomain}
                   publicAccessToken={publicAccessToken}
                   customerAccessToken={customerAccessToken}
+                  compact
                 />
                 <button
                   type="button"
                   onClick={() => setCartOpen(true)}
                   aria-label={count > 0 ? `Bag, ${count} item${count === 1 ? "" : "s"}` : "Bag"}
-                  className="relative touch-target flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent active:opacity-80"
+                  className="relative flex h-10 w-10 min-h-10 min-w-10 items-center justify-center touch-manipulation text-foreground/80 transition hover:text-accent active:opacity-80"
                 >
                   <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1} />
                   {count > 0 && (
@@ -257,7 +319,7 @@ export function SiteHeader({
                 </button>
                 <button
                   ref={menuTriggerRef}
-                  className="touch-target -mr-2.5 flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent active:opacity-80"
+                  className="flex h-10 w-10 min-h-10 min-w-10 items-center justify-center touch-manipulation text-foreground/80 transition hover:text-accent active:opacity-80"
                   aria-label="Open menu"
                   aria-expanded={open}
                   onClick={() => setOpen(true)}
@@ -323,36 +385,28 @@ export function SiteHeader({
                 transform: menuVisible ? "none" : "translateY(-12px)",
               }}
             >
-              <div className="flex h-16 shrink-0 items-center justify-between px-4">
-                <button
-                  onClick={requestMenuClose}
-                  aria-label="Close menu"
-                  className="touch-target -ml-2.5 flex h-11 w-11 items-center justify-center active:opacity-80"
-                >
-                  <X className="h-5 w-5" strokeWidth={1} />
-                </button>
+              <div
+                className="flex h-[4.5rem] shrink-0 items-center justify-between gap-4 border-b px-5"
+                style={{ borderColor: "var(--border)" }}
+              >
                 <Link
                   to="/"
                   aria-label="Home"
                   onClick={requestMenuClose}
-                  className="group flex flex-col items-center gap-1.5"
+                  className="group flex min-w-0 items-center gap-2.5"
                 >
-                  <BrandMark className="h-9 w-9" />
-                  <BrandLockup className="items-center text-center text-xl tracking-[0.3em]" />
+                  <BrandMark className="h-8 w-8 shrink-0" />
+                  <BrandLockup className="text-left text-[1rem] tracking-[0.1em]" />
                 </Link>
                 <button
-                  onClick={() => {
-                    requestMenuClose();
-                    publish('custom_search_opened', {});
-                    setSearchOpen(true);
-                  }}
-                  aria-label="Search"
-                  className="touch-target -mr-2.5 flex h-11 w-11 items-center justify-center active:opacity-80"
+                  onClick={requestMenuClose}
+                  aria-label="Close menu"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center touch-manipulation text-foreground/80 transition hover:text-accent active:opacity-80"
                 >
-                  <Search className="h-5 w-5" strokeWidth={1} />
+                  <X className="h-[18px] w-[18px]" strokeWidth={1} />
                 </button>
               </div>
-              <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-8 pb-12 pt-8">
+              <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 pb-12 pt-8">
                 {navItems.map((n) => (
                   <Link
                     key={n.to}
@@ -376,7 +430,7 @@ export function SiteHeader({
   );
 }
 
-function CurrencyDropdown() {
+function CurrencyDropdown({compact = false}: {compact?: boolean}) {
   const {currencies, selectedCurrency} = useLocalization();
   const {pathname, search} = useLocation();
   const navigation = useNavigation();
@@ -567,7 +621,11 @@ function CurrencyDropdown() {
           aria-expanded={open}
           aria-label={`Select currency, current ${displayCode}`}
           onClick={() => (open ? (isLgUp ? setOpen(false) : requestClose()) : handleOpen())}
-          className="flex h-11 w-11 min-w-11 items-center justify-center gap-1 px-1 text-[0.65rem] uppercase tracking-[0.15em] text-foreground/90 transition hover:text-accent focus:outline-none min-[420px]:w-auto min-[420px]:gap-1.5 min-[420px]:px-1.5 min-[420px]:text-xs min-[420px]:tracking-[0.25em] lg:justify-start"
+          className={`flex items-center justify-center gap-1 px-1 text-[0.65rem] uppercase tracking-[0.15em] text-foreground/90 transition hover:text-accent focus:outline-none min-[420px]:gap-1.5 min-[420px]:px-1.5 min-[420px]:text-xs min-[420px]:tracking-[0.25em] lg:justify-start ${
+            compact
+              ? "h-10 w-10 min-w-10 min-[420px]:w-auto"
+              : "h-11 w-11 min-w-11 min-[420px]:w-auto"
+          }`}
           style={{opacity: isUpdating ? 0.65 : 1}}
         >
           <Globe className="h-3.5 w-3.5 shrink-0" strokeWidth={1} aria-hidden />

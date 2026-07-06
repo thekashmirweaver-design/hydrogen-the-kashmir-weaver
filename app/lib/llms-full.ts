@@ -113,7 +113,10 @@ export function buildLlmsFullDocument(options: {
     ['/search', 'Search'],
     ['/terms', 'Terms of service'],
     ['/privacy', 'Privacy policy'],
-    ['/policies/shipping-policy', 'Shipping policy'],
+    ['/shipping', 'Shipping policy'],
+    ['/returns', 'Returns policy'],
+    ['/disclaimer', 'Disclaimer'],
+    ['/policies/shipping-policy', 'Shipping policy (Shopify handle)'],
     ['/policies/refund-policy', 'Refund policy'],
   ];
   for (const [path, label, desc] of editorial) {

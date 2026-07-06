@@ -77,8 +77,9 @@ const FOOTER_ITEMS: MenuItemInput[] = [
   {title: 'Care Guide', type: 'HTTP', url: '/care-guide'},
   {title: 'Terms', type: 'HTTP', url: '/terms'},
   {title: 'Privacy', type: 'HTTP', url: '/privacy'},
-  {title: 'Shipping Policy', type: 'HTTP', url: '/policies/shipping-policy'},
-  {title: 'Refund Policy', type: 'HTTP', url: '/policies/refund-policy'},
+  {title: 'Shipping', type: 'HTTP', url: '/shipping'},
+  {title: 'Returns', type: 'HTTP', url: '/returns'},
+  {title: 'Disclaimer', type: 'HTTP', url: '/disclaimer'},
 ];
 
 const POLICIES: Array<{type: string; body: string}> = [

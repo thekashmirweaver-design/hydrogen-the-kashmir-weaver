@@ -16,8 +16,11 @@ const CARE_LINKS = [
 ] as const;
 
 const POLICY_LINKS = [
-  { to: "/terms", label: "Terms" },
-  { to: "/privacy", label: "Privacy" },
+  { to: '/terms', label: 'Terms' },
+  { to: '/privacy', label: 'Privacy' },
+  { to: '/shipping', label: 'Shipping' },
+  { to: '/returns', label: 'Returns' },
+  { to: '/disclaimer', label: 'Disclaimer' },
 ] as const;
 
 export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {

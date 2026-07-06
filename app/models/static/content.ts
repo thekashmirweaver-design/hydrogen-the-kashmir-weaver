@@ -182,6 +182,68 @@ export const CARE_GUIDE_SECTIONS: CareGuideSection[] = [
 export const TERMS_INTRO =
   'These terms govern your use of The Kashmir Weaver website and the purchase of our hand-woven pashmina. By accessing this site or placing an order, you accept these terms in full.';
 
+export const SHIPPING_INTRO =
+  'Every piece leaves our Srinagar atelier fully insured and tracked. This policy describes how we deliver hand-woven pashmina worldwide.';
+
+export const SHIPPING_SECTIONS: LegalSection[] = [
+  {
+    title: 'Order processing',
+    body: 'In-stock pieces are prepared for dispatch within 2–4 business days. During peak seasons or for bespoke commissions, processing times may vary.',
+  },
+  {
+    title: 'Delivery within India',
+    body: 'Domestic delivery is complimentary on retail orders. Please allow 5–7 working days from dispatch. All orders require a signature on receipt.',
+  },
+  {
+    title: 'International delivery',
+    body: 'We ship worldwide via insured courier. Delivery typically takes 7–12 working days from dispatch. Free worldwide shipping applies to retail orders over $200.',
+  },
+  {
+    title: 'Customs and duties',
+    body: 'International customers are responsible for import duties and local taxes. Shipping fees are calculated at checkout.',
+  },
+];
+
+export const REFUND_INTRO =
+  'We want you to be delighted with every piece. This policy explains returns, exchanges, and refunds for orders placed through our site.';
+
+export const REFUND_SECTIONS: LegalSection[] = [
+  {
+    title: 'Returns window',
+    body: 'Ready-to-wear pieces may be returned within 14 days of delivery in unworn, original condition with proof of purchase.',
+  },
+  {
+    title: 'Bespoke pieces',
+    body: 'Custom, bespoke, and made-to-order commissions are final sale unless defective or materially different from the agreed specification.',
+  },
+  {
+    title: 'Refunds',
+    body: 'Approved returns are refunded to the original payment method within 10–15 business days of receipt at our atelier.',
+  },
+  {
+    title: 'Contact',
+    body: `Contact Concierge before returning any item: ${CONTACT.email} · ${CONTACT.phone}.`,
+  },
+];
+
+export const DISCLAIMER_INTRO =
+  'By using The Kashmir Weaver website, you accept the disclaimers set out below.';
+
+export const DISCLAIMER_SECTIONS: LegalSection[] = [
+  {
+    title: 'Information on this site',
+    body: 'All content is for general information only and does not constitute advice. Product variations are inherent to hand craftsmanship.',
+  },
+  {
+    title: 'Limitation of liability',
+    body: 'The Kashmir Weaver shall not be liable for indirect or consequential damages arising from use of this site or our products.',
+  },
+  {
+    title: 'Governing law',
+    body: 'All use of this site is governed by the laws of Srinagar, Jammu & Kashmir, India.',
+  },
+];
+
 export const TERMS_SECTIONS: LegalSection[] = [
   {
     title: '1. General',

@@ -1,6 +1,7 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/policies.$handle';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
+import {LegalRichHtml} from '~/components/gulriza/LegalRichHtml';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
 import {truncateMetaDescription} from '~/lib/meta-description';
@@ -64,10 +65,7 @@ export default function PolicyRoute() {
         </h1>
       </Reveal>
       <Hairline className="my-12" />
-      <div
-        className="prose-invert space-y-6 text-sm leading-relaxed text-muted-foreground [&_a]:text-accent [&_h2]:font-display [&_h2]:text-foreground [&_h3]:font-display [&_h3]:text-foreground"
-        dangerouslySetInnerHTML={{__html: policy.body}}
-      />
+      <LegalRichHtml html={policy.body} />
       <div className="mt-16">
         <Link to="/" className="tracked text-muted-foreground hover:text-accent">
           ← Return home

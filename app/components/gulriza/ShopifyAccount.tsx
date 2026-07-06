@@ -100,11 +100,13 @@ function AccountMenuPanel({
 export function ShopifyAccount({
   customerAccessToken,
   className = '',
+  compact = false,
 }: {
   publicStoreDomain?: string;
   publicAccessToken?: string;
   customerAccessToken?: string | null;
   className?: string;
+  compact?: boolean;
 }) {
   const isLoggedIn = Boolean(customerAccessToken);
   const {pathname} = useLocation();
@@ -269,7 +271,9 @@ export function ShopifyAccount({
           onClick={() =>
             open ? (isLgUp ? setOpen(false) : requestClose()) : handleOpen()
           }
-          className="flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent focus:outline-none"
+          className={`flex items-center justify-center text-foreground/80 transition hover:text-accent focus:outline-none ${
+            compact ? 'h-10 w-10' : 'h-11 w-11'
+          }`}
         >
           <User className="h-[18px] w-[18px]" strokeWidth={1} aria-hidden />
         </button>

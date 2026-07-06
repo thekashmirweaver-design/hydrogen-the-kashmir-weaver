@@ -1,11 +1,12 @@
 import {Link} from 'react-router';
 import {ArrowRight} from 'lucide-react';
 import {Eyebrow} from '~/components/gulriza/Eyebrow';
-import {Reveal} from '~/components/gulriza/Reveal';
 import {Accordion} from '~/components/gulriza/Accordion';
+import {LegalRichHtml} from '~/components/gulriza/LegalRichHtml';
+import {Reveal} from '~/components/gulriza/Reveal';
 import type {FaqPageViewModel} from '~/controllers';
 
-export function FaqView({faqs}: FaqPageViewModel) {
+export function FaqView({faqs, bodyHtml}: FaqPageViewModel) {
   return (
     <div>
       <section className="mx-auto max-w-[1100px] px-6 pt-[calc(var(--header-h)+4rem)] text-center md:px-10">
@@ -27,15 +28,21 @@ export function FaqView({faqs}: FaqPageViewModel) {
         </Reveal>
       </section>
 
-      <section className="mx-auto mt-24 max-w-3xl px-6 md:px-10">
-        {faqs.map((f, i) => (
-          <Reveal key={f.q}>
-            <Accordion title={f.q} defaultOpen={i === 0}>
-              {f.a}
-            </Accordion>
-          </Reveal>
-        ))}
-      </section>
+      {bodyHtml ? (
+        <section className="mx-auto mt-24 max-w-3xl px-6 md:px-10">
+          <LegalRichHtml html={bodyHtml} />
+        </section>
+      ) : (
+        <section className="mx-auto mt-24 max-w-3xl px-6 md:px-10">
+          {faqs.map((f, i) => (
+            <Reveal key={f.q}>
+              <Accordion title={f.q} defaultOpen={i === 0}>
+                {f.a}
+              </Accordion>
+            </Reveal>
+          ))}
+        </section>
+      )}
 
       <section className="mx-auto max-w-[1100px] px-6 py-32 md:px-10">
         <Reveal className="text-center">
