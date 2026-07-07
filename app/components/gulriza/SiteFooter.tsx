@@ -14,6 +14,7 @@ const CARE_LINKS = [
   { to: "/concierge", label: "Concierge" },
   { to: "/faq", label: "FAQ" },
   { to: "/care-guide", label: "Care Guide" },
+  { to: "/shade-cards", label: "Shade Cards" },
 ] as const;
 
 const LEGAL_LINKS = [
