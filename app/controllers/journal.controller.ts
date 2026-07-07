@@ -1,4 +1,5 @@
 import type {Storefront} from '@shopify/hydrogen';
+import {blogCache} from '~/lib/storefront-cache';
 import {
   ARTICLES,
   JOURNAL_CATEGORIES,
@@ -100,6 +101,7 @@ export async function getJournalPage(
         } | null;
       }>(JOURNAL_BLOG_QUERY, {
         variables: {blogHandle: JOURNAL_BLOG_HANDLE, first: 50},
+        cache: blogCache(storefront),
       });
 
       const nodes = data.blog?.articles?.nodes;
@@ -154,6 +156,7 @@ export async function getArticlePage(
           blogHandle: JOURNAL_BLOG_HANDLE,
           articleHandle: slug,
         },
+        cache: blogCache(storefront),
       });
 
       const article = data.blog?.articleByHandle;
@@ -204,6 +207,7 @@ export async function listArticleSlugs(storefront?: Storefront): Promise<string[
         } | null;
       }>(JOURNAL_BLOG_QUERY, {
         variables: {blogHandle: JOURNAL_BLOG_HANDLE, first: 100},
+        cache: blogCache(storefront),
       });
 
       const handles = data.blog?.articles?.nodes?.map((node) => node.handle);

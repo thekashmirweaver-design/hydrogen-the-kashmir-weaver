@@ -10,6 +10,7 @@ import {
   type ShopifyMenuProductNode,
   type ShopifyProductNode,
 } from './mappers';
+import {collectionCache, productCache} from '~/lib/storefront-cache';
 import {catalogQuery} from './catalog-query';
 import {
   ALL_COLLECTIONS_QUERY,
@@ -78,7 +79,7 @@ export async function listCollections(
 ): Promise<Collection[]> {
   const data = await storefront.query(ALL_COLLECTIONS_QUERY, {
     variables: {first: COLLECTION_PAGE_SIZE},
-    cache: storefront.CacheLong(),
+    cache: collectionCache(storefront),
   });
 
   return data.collections.edges.map(({node}: {node: ShopifyCollectionNode}) =>
@@ -125,7 +126,7 @@ export async function listMenuProducts(
     ALL_MENU_PRODUCTS_QUERY,
     {
       variables: {first: PRODUCT_PAGE_SIZE},
-      cache: storefront.CacheLong(),
+      cache: productCache(storefront),
     },
   );
 

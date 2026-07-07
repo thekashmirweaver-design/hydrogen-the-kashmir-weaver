@@ -5,7 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowRight,
-  Expand,
+  ZoomIn,
   X,
 } from 'lucide-react';
 import {CartForm} from '@shopify/hydrogen';
@@ -348,42 +348,50 @@ export function ProductView({
       </div>
 
       <section className="mx-auto max-w-[1200px] px-6 py-10 md:px-10 md:py-14">
-        <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-stretch lg:gap-12">
+        <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-12">
           {/* Gallery */}
-          <div className="mx-auto w-full min-w-0 lg:mx-0 lg:h-full lg:self-stretch">
-            <div className="flex h-full min-h-0 flex-col gap-2 md:grid md:grid-cols-[auto_1fr] md:gap-2">
+          <div className="mx-auto w-full min-w-0 lg:mx-0">
+            <div className="flex flex-col gap-2 md:grid md:grid-cols-[auto_minmax(0,1fr)] md:items-start md:gap-2">
               <div
-                className="relative flex w-full min-w-0 touch-pan-y select-none items-center justify-center md:col-start-2 md:row-start-1"
+                className="group relative mx-auto w-fit max-w-full touch-pan-y select-none md:col-start-2 md:row-start-1"
                 {...gallerySwipe}
               >
-                <CatalogImage
-                  image={activeImage!}
-                  onClick={() => setFullOpen(true)}
-                  className="mx-auto w-full max-h-[min(75dvh,720px)] cursor-zoom-in object-contain"
-                  wrapperClassName="relative w-full"
-                  wrapperStyle={
-                    activeImage?.width && activeImage?.height
-                      ? {aspectRatio: `${activeImage.width} / ${activeImage.height}`}
-                      : {aspectRatio: '4 / 5'}
-                  }
-                  loading="eager"
-                  sizes="(min-width: 1024px) 55vw, 100vw"
-                />
-                <button
-                  aria-label="View full screen"
-                  onClick={() => setFullOpen(true)}
-                  className="touch-target absolute right-3 top-3 flex min-h-11 min-w-11 items-center justify-center rounded-full border transition hover:text-accent active:opacity-80 md:right-4 md:top-4"
-                  style={{
-                    borderColor: 'var(--border)',
-                    background: 'rgba(8,16,15,0.4)',
-                  }}
+                <div key={imgIdx} className="gallery-image-fade relative">
+                  <CatalogImage
+                    image={activeImage!}
+                    onClick={() => setFullOpen(true)}
+                    className="h-full w-full max-h-[min(75dvh,720px)] cursor-zoom-in object-contain"
+                    wrapperClassName="relative mx-auto w-auto max-h-[min(75dvh,720px)] max-w-full"
+                    wrapperStyle={
+                      activeImage?.width && activeImage?.height
+                        ? {
+                            aspectRatio: `${activeImage.width} / ${activeImage.height}`,
+                            maxHeight: 'min(75dvh, 720px)',
+                          }
+                        : {aspectRatio: '4 / 5', maxHeight: 'min(75dvh, 720px)'}
+                    }
+                    loading="eager"
+                    sizes="(min-width: 1024px) 55vw, 100vw"
+                  />
+                </div>
+                <div
+                  className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 motion-reduce:opacity-0"
+                  aria-hidden
                 >
-                  <Expand className="h-4 w-4" strokeWidth={1} />
-                </button>
+                  <span
+                    className="flex h-12 w-12 items-center justify-center rounded-full border text-foreground/90"
+                    style={{
+                      borderColor: 'var(--border)',
+                      background: 'rgba(8,16,15,0.45)',
+                    }}
+                  >
+                    <ZoomIn className="h-5 w-5" strokeWidth={1} />
+                  </span>
+                </div>
 
                 {soldOut && (
                   <div
-                    className="absolute left-3 top-3 px-3 py-1 text-[0.65rem] tracking-[0.3em] uppercase md:left-4 md:top-4"
+                    className="pointer-events-none absolute left-3 top-3 px-3 py-1 text-[0.65rem] tracking-[0.3em] uppercase md:left-4 md:top-4"
                     style={{
                       background: 'rgba(8,16,15,0.7)',
                       color: 'var(--accent)',
@@ -393,27 +401,6 @@ export function ProductView({
                     Sold Out
                   </div>
                 )}
-                {imgCount > 1 && (
-                  <>
-                    <button
-                      onClick={prevImg}
-                      aria-label="Previous"
-                      className="touch-target absolute left-3 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-foreground/80 hover:text-accent active:opacity-80 md:left-4"
-                    >
-                      <ChevronLeft className="h-5 w-5" strokeWidth={1} />
-                    </button>
-                    <button
-                      onClick={nextImg}
-                      aria-label="Next"
-                      className="touch-target absolute right-3 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-foreground/80 hover:text-accent active:opacity-80 md:right-4"
-                    >
-                      <ChevronRight className="h-5 w-5" strokeWidth={1} />
-                    </button>
-                  </>
-                )}
-                <div className="absolute bottom-3 right-3 text-xs tracking-[0.25em] text-muted-foreground md:bottom-4 md:right-4">
-                  {displayIdx + 1}/{imgCount}
-                </div>
               </div>
 
               {imgCount > 1 && (
@@ -451,10 +438,10 @@ export function ProductView({
                   </div>
 
                   <div
-                    className="relative hidden w-16 shrink-0 self-stretch md:col-start-1 md:row-start-1 md:block lg:w-[4.5rem]"
+                    className="hidden w-16 shrink-0 md:col-start-1 md:row-start-1 md:block lg:w-[4.5rem]"
                     onMouseLeave={clearImagePreview}
                   >
-                    <div className="absolute inset-0 flex flex-col gap-1.5 overflow-y-auto overscroll-contain">
+                    <div className="flex max-h-[min(75dvh,720px)] flex-col gap-1.5 overflow-y-auto overscroll-contain">
                       {displayImages.map((img, i) => (
                         <button
                           key={img.src}
@@ -816,14 +803,16 @@ export function ProductView({
                 className="relative flex min-h-0 flex-1 touch-pan-y select-none items-center justify-center p-4 md:p-10"
                 {...lightboxSwipe}
               >
-                <CatalogImage
-                  image={activeImage!}
-                  onClick={(e) => e.stopPropagation()}
-                  className="max-h-full max-w-full object-contain"
-                  wrapperClassName="flex h-full w-full items-center justify-center"
-                  loading="eager"
-                  sizes="100vw"
-                />
+                <div key={imgIdx} className="gallery-image-fade flex h-full w-full items-center justify-center">
+                  <CatalogImage
+                    image={activeImage!}
+                    onClick={(e) => e.stopPropagation()}
+                    className="max-h-full max-w-full object-contain"
+                    wrapperClassName="flex h-full w-full items-center justify-center"
+                    loading="eager"
+                    sizes="100vw"
+                  />
+                </div>
                 {imgCount > 1 && (
                   <>
                     <button

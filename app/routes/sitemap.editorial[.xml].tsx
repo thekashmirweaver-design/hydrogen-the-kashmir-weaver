@@ -1,4 +1,5 @@
 import type {Route} from './+types/sitemap.editorial[.xml]';
+import {blogCache} from '~/lib/storefront-cache';
 import {
   JOURNAL_BLOG_HANDLE,
   JOURNAL_BLOG_QUERY,
@@ -32,6 +33,7 @@ async function journalArticlePaths(
   try {
     const {blog} = await storefront.query(JOURNAL_BLOG_QUERY, {
       variables: {blogHandle: JOURNAL_BLOG_HANDLE, first: 250},
+      cache: blogCache(storefront),
     });
     if (blog?.articles?.nodes?.length) {
       return blog.articles.nodes.map(

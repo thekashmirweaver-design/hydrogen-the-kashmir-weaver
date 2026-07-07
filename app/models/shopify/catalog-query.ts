@@ -1,4 +1,5 @@
 import type {Storefront} from '@shopify/hydrogen';
+import {productCache} from '~/lib/storefront-cache';
 
 const INVENTORY_SCOPE_ERROR =
   /unauthenticated_read_product_inventory|quantityAvailable/i;
@@ -14,8 +15,8 @@ export async function catalogQuery<T>(
   withInventory: string,
   withoutInventory: string,
   variables: Record<string, unknown>,
+  cache = productCache(storefront),
 ): Promise<T> {
-  const cache = storefront.CacheLong();
   try {
     return (await storefront.query(withInventory, {variables, cache})) as T;
   } catch (error) {
