@@ -72,6 +72,7 @@ export type Product = {
   price: Money;
   compareAtPrice?: Money;
   shortDescription: string;
+  /** Shopify product description HTML for the PDP. */
   description: string;
   story: string;
   images: ProductImage[];
@@ -99,6 +100,8 @@ export type Product = {
   shades?: Shade[];
   /** PDP uses local recolor canvas (image set 0) instead of Shopify gallery. */
   solidRecolor?: boolean;
+  /** Whether the colour studio / Try Colours button is shown on the PDP. */
+  showColourStudio?: boolean;
 };
 
 export type CatalogSnapshot = {

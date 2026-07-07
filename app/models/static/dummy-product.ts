@@ -53,7 +53,7 @@ export const DUMMY_TEST_PRODUCT: Product = {
   shortDescription:
     'A dummy piece with every catalog field populated — use this route to verify the product detail page.',
   description:
-    'This is the long description block. Hand-woven in pure Changthangi pashmina, finished with Sozni embroidery along the borders. Each motif is worked by a single artisan over several weeks. Intended for layout and field testing only — not a live catalogue item.',
+    '<p>This is the long description block. Hand-woven in pure Changthangi pashmina, finished with Sozni embroidery along the borders. Each motif is worked by a single artisan over several weeks.</p><p>Intended for layout and field testing only — not a live catalogue item.</p>',
   story:
     'Every thread carries the silence of the Changthang plateau — a test passage for the story section, set in italic beneath the fold.',
   images: [
@@ -87,6 +87,7 @@ export const DUMMY_TEST_PRODUCT: Product = {
   variants: sizeOnlyVariants,
   shades: SHADES,
   solidRecolor: true,
+  showColourStudio: true,
 };
 
 export function isDummyTestProduct(handle: string): boolean {

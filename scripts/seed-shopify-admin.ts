@@ -279,6 +279,7 @@ async function ensureMetafieldDefinitions() {
     {key: 'limited', name: 'Limited edition', type: 'boolean', owner: 'PRODUCT'},
     {key: 'stock_qty', name: 'Stock quantity', type: 'number_integer', owner: 'PRODUCT'},
     {key: 'featured', name: 'Featured', type: 'boolean', owner: 'PRODUCT'},
+    {key: 'show_colour_studio', name: 'Show colour studio', type: 'boolean', owner: 'PRODUCT'},
     {key: 'care', name: 'Care instructions', type: 'single_line_text_field', owner: 'PRODUCT'},
     {key: 'guarantees_delivery', name: 'Guarantees and delivery', type: 'json', owner: 'PRODUCT'},
     {key: 'returns_care', name: 'Returns and care', type: 'json', owner: 'PRODUCT'},
@@ -524,6 +525,7 @@ function productMetafields(product: Product) {
     {namespace: 'custom', key: 'origin', type: 'single_line_text_field', value: product.origin},
     {namespace: 'custom', key: 'weave', type: 'single_line_text_field', value: product.weave},
     {namespace: 'custom', key: 'limited', type: 'boolean', value: String(!!product.limited)},
+    {namespace: 'custom', key: 'show_colour_studio', type: 'boolean', value: String(!!product.showColourStudio)},
     {namespace: 'custom', key: 'stock_qty', type: 'number_integer', value: String(product.stockQty ?? 1)},
   ];
 }

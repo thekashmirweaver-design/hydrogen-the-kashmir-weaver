@@ -20,6 +20,7 @@ import {SelectedColourCard} from '~/components/gulriza/SelectedColourCard';
 import {ProductOptionPicker} from '~/components/gulriza/ProductOptionPicker';
 import {QuantityStepper} from '~/components/gulriza/QuantityStepper';
 import {Reveal} from '~/components/gulriza/Reveal';
+import {LegalRichHtml} from '~/components/gulriza/LegalRichHtml';
 import type {Product, ProductVariant} from '~/models/types';
 import {useFormatPrice} from '~/lib/currency-store';
 import {
@@ -515,7 +516,7 @@ export function ProductView({
             ) : null}
 
             <div className="mt-6 flex flex-col gap-4">
-              {solidRecolor && productShades.length > 0 ? (
+              {product.showColourStudio && productShades.length > 0 ? (
                 <div className="space-y-3">
                   {selectedShade ? (
                     <SelectedColourCard shade={selectedShade} label="Colour" />
@@ -567,7 +568,10 @@ export function ProductView({
 
             <div className="mt-8">
               <Accordion title="Description" defaultOpen>
-                {product.description}
+                <LegalRichHtml
+                  html={product.description}
+                  className="text-sm [&_p+p]:mt-4"
+                />
               </Accordion>
             </div>
           </div>

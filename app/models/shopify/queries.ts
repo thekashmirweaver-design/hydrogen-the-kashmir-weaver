@@ -108,6 +108,7 @@ export const CATALOG_PRODUCT_FRAGMENT =
     handle
     title
     description
+    descriptionHtml
     productType
     vendor
     tags

@@ -174,6 +174,12 @@ function productMetafields(product: Product) {
       type: 'json',
       value: JSON.stringify(product.shades ?? SHADES),
     },
+    {
+      namespace: 'custom',
+      key: 'show_colour_studio',
+      type: 'boolean',
+      value: String(!!product.showColourStudio),
+    },
   ];
 }
 

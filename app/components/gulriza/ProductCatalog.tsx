@@ -95,13 +95,29 @@ export function ProductCatalog({
     };
   }, [drawer]);
 
+  const resolvedFilters = useMemo((): Filters => {
+    const stalePriceBounds =
+      enabled.includes("price") &&
+      priceBounds.max > 0 &&
+      filters.priceMin === 0 &&
+      filters.priceMax === 0;
+    if (!stalePriceBounds) return filters;
+    return {
+      ...filters,
+      priceMin: priceBounds.min,
+      priceMax: priceBounds.max,
+    };
+  }, [enabled, filters, priceBounds]);
+
   const filtered = useMemo(() => {
     let list = products.slice();
-    if (enabled.includes("collection") && filters.collections.size)
-      list = list.filter((p) => filters.collections.has(p.collectionSlug));
+    if (enabled.includes("collection") && resolvedFilters.collections.size)
+      list = list.filter((p) => resolvedFilters.collections.has(p.collectionSlug));
     if (enabled.includes("price"))
       list = list.filter(
-        (p) => p.price.amount >= filters.priceMin && p.price.amount <= filters.priceMax,
+        (p) =>
+          p.price.amount >= resolvedFilters.priceMin &&
+          p.price.amount <= resolvedFilters.priceMax,
       );
 
     if (sort === "price-asc") list.sort((a, b) => a.price.amount - b.price.amount);
@@ -116,7 +132,7 @@ export function ProductCatalog({
         return score(b) - score(a);
       });
     return list;
-  }, [enabled, filters, sort, products]);
+  }, [enabled, resolvedFilters, sort, products]);
 
   const toggle = (key: "collections", value: string) => {
     setFilters((f) => {
@@ -129,12 +145,13 @@ export function ProductCatalog({
   };
 
   const activeCount =
-    (enabled.includes("collection") ? filters.collections.size : 0) +
+    (enabled.includes("collection") ? resolvedFilters.collections.size : 0) +
     (enabled.includes("price") &&
-    (filters.priceMin !== priceBounds.min || filters.priceMax !== priceBounds.max)
+    (resolvedFilters.priceMin !== priceBounds.min ||
+      resolvedFilters.priceMax !== priceBounds.max)
       ? 1
       : 0) +
-    (showColorFilter && filters.colorCode !== defaultColorCode ? 1 : 0);
+    (showColorFilter && resolvedFilters.colorCode !== defaultColorCode ? 1 : 0);
 
   const reset = () => setFilters(initial);
 
@@ -146,7 +163,7 @@ export function ProductCatalog({
             <CheckRow
               key={c.handle}
               label={c.name}
-              checked={filters.collections.has(c.handle)}
+              checked={resolvedFilters.collections.has(c.handle)}
               onChange={() => toggle("collections", c.handle)}
             />
           ))}
@@ -158,8 +175,8 @@ export function ProductCatalog({
           <PriceRange
             min={priceBounds.min}
             max={priceBounds.max}
-            valueMin={filters.priceMin}
-            valueMax={filters.priceMax}
+            valueMin={resolvedFilters.priceMin}
+            valueMax={resolvedFilters.priceMax}
             currency={selectedCurrency}
             onChange={(lo, hi) => setFilters((f) => ({ ...f, priceMin: lo, priceMax: hi }))}
           />
@@ -170,7 +187,7 @@ export function ProductCatalog({
         <FilterGroup title="Colour">
           <ShadeDropdown
             shades={availableShades}
-            selectedCode={filters.colorCode}
+            selectedCode={resolvedFilters.colorCode}
             onSelect={(colorCode) => setFilters((f) => ({ ...f, colorCode }))}
             showLabel={false}
           />

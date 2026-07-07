@@ -58,6 +58,7 @@ export type ShopifyProductNode = {
   handle: string;
   title: string;
   description: string;
+  descriptionHtml: string;
   productType?: string | null;
   vendor?: string | null;
   tags: string[];
@@ -322,15 +323,21 @@ export function mapProduct(node: ShopifyProductNode): Product {
     name: collectionNode.title,
   }));
   const collection = allCollections[0];
-  const description = node.description.trim();
+  const plainDescription = node.description.trim();
+  const descriptionHtml =
+    node.descriptionHtml?.trim() ||
+    (plainDescription ? `<p>${plainDescription}</p>` : '');
   const shortDescription =
     getMetafield(fields, PRODUCT_METAFIELDS.shortDescription) ??
-    (description.length > 160
-      ? `${description.slice(0, 157)}…`
-      : description);
+    (plainDescription.length > 160
+      ? `${plainDescription.slice(0, 157)}…`
+      : plainDescription);
   const story =
-    getMetafield(fields, PRODUCT_METAFIELDS.story) ?? description ?? node.title;
+    getMetafield(fields, PRODUCT_METAFIELDS.story) ??
+    plainDescription ??
+    node.title;
   const limited = parseBoolean(getMetafield(fields, PRODUCT_METAFIELDS.limited));
+  const showColourStudio = parseBoolean(getMetafield(fields, PRODUCT_METAFIELDS.showColourStudio));
   const featured = parseBoolean(getMetafield(fields, PRODUCT_METAFIELDS.featured)) ?? false;
   const stockQty = parseInteger(getMetafield(fields, PRODUCT_METAFIELDS.stockQty));
   const reviewRating = parseReviewRating(node.reviewRating?.value);
@@ -364,7 +371,7 @@ export function mapProduct(node: ShopifyProductNode): Product {
     price: primaryVariant?.price ?? {amount: 0, currencyCode: 'USD'},
     compareAtPrice: primaryVariant?.compareAtPrice,
     shortDescription: shortDescription || node.title,
-    description: description || node.title,
+    description: descriptionHtml || `<p>${node.title}</p>`,
     story: story || node.title,
     images,
     material:
@@ -403,6 +410,7 @@ export function mapProduct(node: ShopifyProductNode): Product {
         : undefined,
     shades,
     solidRecolor: solidRecolor || undefined,
+    showColourStudio,
   };
 }
 
