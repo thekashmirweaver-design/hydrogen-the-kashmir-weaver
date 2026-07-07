@@ -101,30 +101,62 @@ function parseJsonField<T>(value: string | null | undefined): T | null {
   }
 }
 
+function collectStorefrontHostnames(
+  primaryDomainUrl?: string | null,
+  canonicalStoreUrl?: string | null,
+  publicStoreDomain?: string | null,
+): Set<string> {
+  const hosts = new Set<string>();
+  const addUrl = (raw?: string | null) => {
+    if (!raw?.trim()) return;
+    const withProto = raw.includes('://') ? raw : `https://${raw}`;
+    try {
+      const hostname = new URL(withProto).hostname.toLowerCase();
+      hosts.add(hostname);
+      if (hostname.startsWith('www.')) hosts.add(hostname.slice(4));
+      else hosts.add(`www.${hostname}`);
+    } catch {
+      // ignore invalid URL
+    }
+  };
+
+  addUrl(primaryDomainUrl);
+  addUrl(canonicalStoreUrl);
+  addUrl(publicStoreDomain);
+  for (const alias of [
+    'thekashmirweaver.in',
+    'thekashmirweaver.shop',
+  ]) {
+    hosts.add(alias);
+    hosts.add(`www.${alias}`);
+  }
+  return hosts;
+}
+
+function isShopifyManagedHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return host.endsWith('.myshopify.com') || host.endsWith('.myshopify.dev');
+}
+
 function normalizeMenuUrl(
   url: string | null | undefined,
   primaryDomainUrl?: string | null,
+  canonicalStoreUrl?: string | null,
+  publicStoreDomain?: string | null,
 ): string | null {
   if (!url) return null;
   if (url.startsWith('/')) return url;
 
   try {
     const parsed = new URL(url);
-    if (primaryDomainUrl) {
-      const domain = new URL(primaryDomainUrl);
-      if (
-        parsed.hostname === domain.hostname ||
-        parsed.hostname === `www.${domain.hostname}` ||
-        parsed.hostname.endsWith('.myshopify.com') ||
-        parsed.hostname.endsWith('.myshopify.dev')
-      ) {
-        return parsed.pathname + parsed.search + parsed.hash;
-      }
-    }
-    if (
-      parsed.hostname.endsWith('.myshopify.com') ||
-      parsed.hostname.endsWith('.myshopify.dev')
-    ) {
+    const host = parsed.hostname.toLowerCase();
+    const storefrontHosts = collectStorefrontHostnames(
+      primaryDomainUrl,
+      canonicalStoreUrl,
+      publicStoreDomain,
+    );
+
+    if (storefrontHosts.has(host) || isShopifyManagedHost(host)) {
       return parsed.pathname + parsed.search + parsed.hash;
     }
   } catch {
@@ -137,12 +169,19 @@ function normalizeMenuUrl(
 function mapMenuItems(
   items: Array<{title?: string | null; url?: string | null} | null> | null | undefined,
   primaryDomainUrl?: string | null,
+  canonicalStoreUrl?: string | null,
+  publicStoreDomain?: string | null,
 ): NavItem[] {
   if (!items?.length) return [];
 
   return items
     .map((item) => {
-      const to = normalizeMenuUrl(item?.url, primaryDomainUrl);
+      const to = normalizeMenuUrl(
+        item?.url,
+        primaryDomainUrl,
+        canonicalStoreUrl,
+        publicStoreDomain,
+      );
       const label = item?.title?.trim();
       if (!to || !label) return null;
       return {to, label};
@@ -156,10 +195,13 @@ export async function loadShopSettings(
     headerMenuHandle?: string;
     footerMenuHandle?: string;
     publicStoreDomain?: string;
+    canonicalStoreUrl?: string;
   },
 ): Promise<ShopSettings> {
   const headerMenuHandle = options?.headerMenuHandle ?? 'header-menu';
   const footerMenuHandle = options?.footerMenuHandle ?? 'footer-menu';
+  const canonicalStoreUrl = options?.canonicalStoreUrl ?? null;
+  const publicStoreDomain = options?.publicStoreDomain ?? null;
 
   try {
     const data = await storefront.query<ShopSettingsQueryResult>(SHOP_SETTINGS_QUERY, {
@@ -175,8 +217,18 @@ export async function loadShopSettings(
     const contactParsed = parseJsonField<ShopContact>(data.shop?.contact?.value ?? undefined);
     const socialParsed = parseJsonField<ShopSocial>(data.shop?.social?.value ?? undefined);
 
-    const headerMenu = mapMenuItems(data.headerMenu?.items, primaryDomainUrl);
-    const footerMenu = mapMenuItems(data.footerMenu?.items, primaryDomainUrl);
+    const headerMenu = mapMenuItems(
+      data.headerMenu?.items,
+      primaryDomainUrl,
+      canonicalStoreUrl,
+      publicStoreDomain,
+    );
+    const footerMenu = mapMenuItems(
+      data.footerMenu?.items,
+      primaryDomainUrl,
+      canonicalStoreUrl,
+      publicStoreDomain,
+    );
 
     if (
       marqueeParsed?.length ||
@@ -199,7 +251,10 @@ export async function loadShopSettings(
 
   try {
     const [headerData, footerData] = await Promise.all([
-      storefront.query<{menu?: ShopSettingsQueryResult['headerMenu']}>(HEADER_QUERY, {
+      storefront.query<{
+        shop?: {primaryDomain?: {url?: string | null} | null} | null;
+        menu?: ShopSettingsQueryResult['headerMenu'];
+      }>(HEADER_QUERY, {
         variables: {headerMenuHandle},
         cache: storefront.CacheLong(),
       }),
@@ -209,8 +264,19 @@ export async function loadShopSettings(
       }),
     ]);
 
-    const headerMenu = mapMenuItems(headerData.menu?.items);
-    const footerMenu = mapMenuItems(footerData.menu?.items);
+    const fallbackPrimaryDomain = headerData.shop?.primaryDomain?.url ?? null;
+    const headerMenu = mapMenuItems(
+      headerData.menu?.items,
+      fallbackPrimaryDomain,
+      canonicalStoreUrl,
+      publicStoreDomain,
+    );
+    const footerMenu = mapMenuItems(
+      footerData.menu?.items,
+      fallbackPrimaryDomain,
+      canonicalStoreUrl,
+      publicStoreDomain,
+    );
 
     if (headerMenu.length || footerMenu.length) {
       return {

@@ -143,6 +143,7 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
   const [shopSettings, localization] = await Promise.all([
     loadShopSettings(context.storefront, {
       publicStoreDomain: context.env.PUBLIC_STORE_DOMAIN,
+      canonicalStoreUrl: context.env.PUBLIC_STORE_URL,
     }),
     loadLocalization(context.storefront, context.session),
   ]);
