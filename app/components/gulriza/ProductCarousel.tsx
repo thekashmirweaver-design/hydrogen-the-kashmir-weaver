@@ -100,23 +100,30 @@ export function ProductCarousel({products}: {products: Product[]}) {
       </div>
 
       {products.length > 1 && (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-1">
           {products.map((_, idx) => (
             <button
               key={idx}
+              type="button"
               onClick={() => {
                 const step = getStep();
                 if (step > 0) {
                   scrollRef.current?.scrollTo({left: step * idx, behavior: "smooth"});
                 }
               }}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                idx === currentSlide
-                  ? "w-6 bg-foreground"
-                  : "w-2 bg-foreground/30 hover:bg-foreground/50"
-              }`}
+              className="flex h-6 min-h-11 w-6 min-w-11 shrink-0 items-center justify-center touch-manipulation"
               aria-label={`Go to slide ${idx + 1}`}
-            />
+              aria-current={idx === currentSlide ? "true" : undefined}
+            >
+              <span
+                aria-hidden
+                className={`block rounded-full transition-all duration-300 ${
+                  idx === currentSlide
+                    ? "h-1.5 w-6 bg-foreground"
+                    : "h-1.5 w-1.5 bg-foreground/30 hover:bg-foreground/50"
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}

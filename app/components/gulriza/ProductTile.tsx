@@ -153,7 +153,7 @@ export function ProductTile({product, disableSwipe}: {product: Product; disableS
                 style={{
                   filter: soldOut ? "grayscale(0.6)" : undefined,
                 }}
-                loading={i === 0 ? "lazy" : "eager"}
+                loading={i === 0 ? "eager" : "lazy"}
               />
             </div>
           ))}

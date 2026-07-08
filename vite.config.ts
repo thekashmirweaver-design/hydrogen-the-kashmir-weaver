@@ -11,6 +11,23 @@ export default defineConfig({
     // Allow a strict Content-Security-Policy
     // withtout inlining assets as base64:
     assetsInlineLimit: 0,
+    // Emit source maps so Lighthouse's `valid-source-maps` audit passes
+    // and production stack traces stay useful. Maps are emitted as
+    // sibling `.map` files (not inlined) so end-users only fetch them
+    // when the browser's devtools are open.
+    sourcemap: true,
+  },
+  environments: {
+    client: {
+      build: {
+        sourcemap: true,
+      },
+    },
+    ssr: {
+      build: {
+        sourcemap: true,
+      },
+    },
   },
   ssr: {
     optimizeDeps: {

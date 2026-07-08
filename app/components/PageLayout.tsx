@@ -1,5 +1,5 @@
 import {Link, useLocation, useNavigation} from 'react-router';
-import {useEffect, useState, type ReactNode} from 'react';
+import {lazy, Suspense, useEffect, useState, type ReactNode} from 'react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CatalogSnapshot} from '~/models/types';
 import type {ShopSettings} from '~/lib/shop-settings';
@@ -10,8 +10,16 @@ import {CartDrawerProvider} from '~/contexts/cart-drawer-context';
 import {SiteHeader} from '~/components/gulriza/SiteHeader';
 import {SiteFooter} from '~/components/gulriza/SiteFooter';
 import {ScrollToTop} from '~/components/gulriza/ScrollToTop';
-import {CartFab} from '~/components/gulriza/CartFab';
-import {WebMcpTools} from '~/components/gulriza/WebMcpTools';
+
+// Code-split below-the-fold / rarely-used UI. Both render inert (fixed
+// floating buttons) until interacted with, so the null Suspense fallback
+// is invisible.
+const CartFab = lazy(() =>
+  import('~/components/gulriza/CartFab').then((m) => ({default: m.CartFab})),
+);
+const WebMcpTools = lazy(() =>
+  import('~/components/gulriza/WebMcpTools').then((m) => ({default: m.WebMcpTools})),
+);
 
 const EMPTY_CATALOG: CatalogSnapshot = {products: [], collections: []};
 
@@ -122,7 +130,9 @@ export function PageLayout({
       <CartDrawerProvider cart={cart}>
         <ScrollToTop />
         <CatalogProvider catalog={resolvedCatalog}>
-          <WebMcpTools />
+          <Suspense fallback={null}>
+            <WebMcpTools />
+          </Suspense>
           <ChromeHeader
             isHome={isHome}
             shopSettings={shopSettings}
@@ -131,7 +141,9 @@ export function PageLayout({
             customerAccessToken={customerAccessToken}
           />
           <RouteTransitionOutlet routeKey={routeKey}>{children}</RouteTransitionOutlet>
-          <CartFab />
+          <Suspense fallback={null}>
+            <CartFab />
+          </Suspense>
           <SiteFooter shopSettings={shopSettings} />
         </CatalogProvider>
       </CartDrawerProvider>

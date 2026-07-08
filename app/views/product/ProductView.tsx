@@ -1,5 +1,5 @@
 import {Link, useFetcher, type FetcherWithComponents} from 'react-router';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {
   ChevronLeft,
@@ -14,7 +14,6 @@ import {Accordion} from '~/components/gulriza/Accordion';
 import {ProductTile} from '~/components/gulriza/ProductTile';
 import {CatalogImage} from '~/components/gulriza/CatalogImage';
 import {HorizontalScrollCue} from '~/components/gulriza/HorizontalScrollCue';
-import {TryColoursModal} from '~/components/gulriza/TryColoursModal';
 import {ShadeSwatch} from '~/components/gulriza/ShadeSwatch';
 import {ShadeSwatchStack} from '~/components/gulriza/ShadeSwatchStack';
 import {SelectedColourCard} from '~/components/gulriza/SelectedColourCard';
@@ -41,6 +40,13 @@ import {getProductShades, getDefaultSolidShadeCode, isSolidProduct} from '~/lib/
 import {buildBuyNowShadeQuery, shadeCartAttributes} from '~/lib/shade-cart';
 import {toCartSelectedVariant} from '~/lib/cart-selected-variant';
 import {useCartDrawer} from '~/contexts/cart-drawer-context';
+
+// Code-split the 750-line TryColoursModal. It only opens when the user
+// taps "Try colours" on a Solid product; the modal portals to document.body
+// and is closed by default, so the Suspense fallback stays invisible.
+const TryColoursModal = lazy(() =>
+  import('~/components/gulriza/TryColoursModal').then((m) => ({default: m.TryColoursModal})),
+);
 
 function isShopifyMerchandiseId(id?: string): boolean {
   if (!id) return false;
@@ -885,18 +891,20 @@ export function ProductView({
         : null}
 
       {tryColoursOpen && solidRecolor && productShades.length > 0 ? (
-        <TryColoursModal
-          open={tryColoursOpen}
-          onClose={() => setTryColoursOpen(false)}
-          productName={product.name}
-          shades={productShades}
-          selectedCode={selectedShadeCode}
-          onSelectShade={setSelectedShadeCode}
-          imageIdx={recolorImgIdx}
-          onImageIdxChange={setRecolorImgIdx}
-          priceLabel={formatPrice(displayPrice)}
-          purchaseControls={purchaseActions}
-        />
+        <Suspense fallback={null}>
+          <TryColoursModal
+            open={tryColoursOpen}
+            onClose={() => setTryColoursOpen(false)}
+            productName={product.name}
+            shades={productShades}
+            selectedCode={selectedShadeCode}
+            onSelectShade={setSelectedShadeCode}
+            imageIdx={recolorImgIdx}
+            onImageIdxChange={setRecolorImgIdx}
+            priceLabel={formatPrice(displayPrice)}
+            purchaseControls={purchaseActions}
+          />
+        </Suspense>
       ) : null}
     </div>
   );

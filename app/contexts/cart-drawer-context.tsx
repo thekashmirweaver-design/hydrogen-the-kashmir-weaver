@@ -1,5 +1,7 @@
 import {
   createContext,
+  lazy,
+  Suspense,
   useCallback,
   useContext,
   useEffect,
@@ -9,9 +11,15 @@ import {
 } from 'react';
 import {useLocation} from 'react-router';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
-import {CartDrawer} from '~/components/gulriza/CartDrawer';
 import {useLocalization} from '~/contexts/localization-context';
 import {clearLiveCartCache, useLiveCart} from '~/lib/use-live-cart';
+
+// Code-split the drawer (283 lines + deep dep graph). The chunk loads after
+// the first paint; the drawer is portaled and hidden until `open` is true,
+// so the null fallback is invisible.
+const CartDrawer = lazy(() =>
+  import('~/components/gulriza/CartDrawer').then((m) => ({default: m.CartDrawer})),
+);
 
 type CartDrawerContextValue = {
   cart: CartApiQueryFragment | null;
@@ -76,7 +84,9 @@ export function CartDrawerProvider({
   return (
     <CartDrawerContext.Provider value={value}>
       {children}
-      <CartDrawer open={isOpen} onClose={close} cart={liveCart} />
+      <Suspense fallback={null}>
+        <CartDrawer open={isOpen} onClose={close} cart={liveCart} />
+      </Suspense>
     </CartDrawerContext.Provider>
   );
 }

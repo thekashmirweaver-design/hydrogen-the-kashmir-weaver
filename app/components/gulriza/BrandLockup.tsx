@@ -1,4 +1,5 @@
 import brandMark from '~/assets/brand-mark.png';
+import brandMarkSmall from '~/assets/brand-mark-64.png';
 
 /**
  * Two-line brand lockup. Sizing/tracking come from `className` so header,
@@ -8,11 +9,11 @@ import brandMark from '~/assets/brand-mark.png';
 export function BrandLockup({className = ''}: {className?: string}) {
   return (
     <span
-      className={`font-display flex flex-col uppercase leading-[1.15] font-semibold ${className}`}
+      className={`font-display flex flex-col uppercase leading-[1.15] font-medium ${className}`}
     >
       <span className="whitespace-nowrap">The Kashmir</span>
       <span
-        className="mt-0.5 whitespace-nowrap text-[0.72em] font-semibold not-italic tracking-[0.42em] opacity-95 transition-opacity duration-500 group-hover:opacity-100"
+        className="mt-0.5 whitespace-nowrap text-[0.72em] font-medium not-italic tracking-[0.42em] opacity-95 transition-opacity duration-500 group-hover:opacity-100"
         style={{color: 'var(--accent)'}}
       >
         Weaver
@@ -25,7 +26,11 @@ export function BrandLockup({className = ''}: {className?: string}) {
 export function BrandMark({className = ''}: {className?: string}) {
   return (
     <img
-      src={brandMark}
+      src={brandMarkSmall}
+      srcSet={`${brandMarkSmall} 64w, ${brandMark} 500w`}
+      sizes="(max-width: 1024px) 32px, 64px"
+      width={64}
+      height={64}
       alt=""
       aria-hidden
       className={`shrink-0 object-contain ${className}`}

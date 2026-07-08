@@ -14,10 +14,32 @@ type CatalogImageProps = {
   style?: CSSProperties;
   onClick?: (e: MouseEvent) => void;
   showSkeleton?: boolean;
+  srcSet?: string;
 };
 
 function isShopifyCdn(src: string) {
   return src.includes('cdn.shopify.com');
+}
+
+/**
+ * Strip the size parameters Shopify appends to CDN URLs (`width=`,
+ * `height=`, `crop=`). Hydrogen's `<Image>` regenerates these per
+ * srcset variant — leaving them on the source URL bakes a 1000-px
+ * default into the `src` and forces browsers to fetch the largest
+ * variant even when `sizes` points to a smaller slot.
+ */
+function normalizeShopifyCdnUrl(src: string): string {
+  if (!isShopifyCdn(src)) return src;
+  try {
+    const url = new URL(src);
+    if (!url.searchParams.has('width')) return src;
+    url.searchParams.delete('width');
+    url.searchParams.delete('height');
+    url.searchParams.delete('crop');
+    return url.toString();
+  } catch {
+    return src;
+  }
 }
 
 /** Uses Hydrogen Image for Shopify CDN URLs; plain img for local /public assets. */
@@ -28,10 +50,11 @@ export function CatalogImage({
   wrapperStyle,
   loading = 'lazy',
   fetchPriority,
-  sizes = '(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw',
+  sizes = '(min-width: 1024px) 280px, (min-width: 640px) 50vw, 100vw',
   style,
   onClick,
   showSkeleton = true,
+  srcSet,
 }: CatalogImageProps) {
   const [loaded, setLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -55,7 +78,7 @@ export function CatalogImage({
     <Image
       ref={imgRef}
       data={{
-        url: image.src,
+        url: normalizeShopifyCdnUrl(image.src),
         altText: image.alt,
         width: image.width ?? 1200,
         height: image.height ?? 1500,
@@ -82,6 +105,7 @@ export function CatalogImage({
       onClick={onClick}
       width={image.width}
       height={image.height}
+      {...(srcSet ? {srcSet} : {})}
     />
   );
 
@@ -115,6 +139,7 @@ export function EditorialImage({
   sizes = '100vw',
   style,
   showSkeleton = true,
+  srcSet,
 }: {
   src: string;
   alt: string;
@@ -126,6 +151,7 @@ export function EditorialImage({
   sizes?: string;
   style?: CSSProperties;
   showSkeleton?: boolean;
+  srcSet?: string;
 }) {
   return (
     <CatalogImage
@@ -136,6 +162,7 @@ export function EditorialImage({
       sizes={sizes}
       style={style}
       showSkeleton={showSkeleton}
+      srcSet={srcSet}
     />
   );
 }

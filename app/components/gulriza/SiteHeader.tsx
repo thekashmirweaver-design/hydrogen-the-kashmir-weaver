@@ -1,5 +1,5 @@
 import {Link, useLocation, useNavigate, useNavigation, useFetchers, type FetcherWithComponents} from "react-router";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Search, ShoppingBag, Menu, X, ChevronDown, Check, Globe } from "lucide-react";
 import { CartForm, useAnalytics } from "@shopify/hydrogen";
@@ -7,7 +7,6 @@ import { useLocalization } from "~/contexts/localization-context";
 import type { ShopCurrencyOption } from "~/lib/localization";
 import { marketHref } from "~/lib/market-url";
 import { Marquee } from "~/components/gulriza/Marquee";
-import { SearchModal } from "~/components/gulriza/SearchModal";
 import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 import { useCartDrawer } from "~/contexts/cart-drawer-context";
 import type { CartApiQueryFragment } from "storefrontapi.generated";
@@ -16,6 +15,13 @@ import { ShopifyAccount } from "~/components/gulriza/ShopifyAccount";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
 import type {ShopSettings, NavItem} from "~/lib/shop-settings";
 import {BrandLockup, BrandMark} from "~/components/gulriza/BrandLockup";
+
+// Code-split the 400-line SearchModal — only needed when the user opens
+// search. The modal is portaled and mounted hidden, so a null fallback is
+// invisible.
+const SearchModal = lazy(() =>
+  import("~/components/gulriza/SearchModal").then((m) => ({default: m.SearchModal})),
+);
 
 const NAV = [
   { to: "/collections/all", label: "Shop" },
@@ -61,7 +67,7 @@ function AnimatedHeaderBrand({
       {/* Mobile: brand name at top → logo on scroll */}
       <Link
         to={homeHref}
-        aria-label="The Kashmir Weaver"
+        aria-label={condensed ? "The Kashmir Weaver — home" : undefined}
         className={`relative flex shrink-0 items-center lg:hidden ${
           condensed ? "h-8 w-8" : "min-h-[2.35rem] min-w-[6.75rem]"
         }`}
@@ -91,7 +97,6 @@ function AnimatedHeaderBrand({
       {/* Desktop: brand name always (scroll does not swap to logo) */}
       <Link
         to={homeHref}
-        aria-label="The Kashmir Weaver"
         className="hidden shrink-0 items-center lg:flex"
       >
         <BrandLockup className="w-max shrink-0 text-left text-[1.25rem] tracking-[0.12em] xl:text-[1.5rem] xl:tracking-[0.15em]" />
@@ -363,7 +368,6 @@ export function SiteHeader({
               >
                 <Link
                   to={marketTo("/")}
-                  aria-label="Home"
                   onClick={requestMenuClose}
                   className="group flex min-w-0 items-center gap-2.5"
                 >
@@ -394,7 +398,9 @@ export function SiteHeader({
             </div>
           )}
 
-          <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+          <Suspense fallback={null}>
+            <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+          </Suspense>
         </header>
       </div>
     </>

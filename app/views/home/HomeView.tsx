@@ -10,6 +10,7 @@ import {ProductTile} from '~/components/gulriza/ProductTile';
 import {ScrollIndicator} from '~/components/gulriza/ScrollIndicator';
 import {ProductCarousel} from '~/components/gulriza/ProductCarousel';
 import {EditorialImage} from '~/components/gulriza/CatalogImage';
+import {heroImage as heroImageUrl, heroImage800} from '~/lib/hero-image-urls';
 import type {Collection, Product} from '~/models/types';
 import type {JournalPost} from '~/models/static/journal';
 
@@ -83,13 +84,13 @@ export function HomeView({
 }
 
 function Hero({
-  heroImageUrl,
+  heroImageUrl: heroImageUrlProp,
   heroAlt,
 }: {
   heroImageUrl?: string;
   heroAlt?: string;
 }) {
-  const src = heroImageUrl || heroPortrait;
+  const src = heroImageUrlProp || heroPortrait;
   const alt =
     heroAlt ||
     'A woman wrapped in an emerald pashmina shawl, framed by a stone arch overlooking a Himalayan lake at dusk.';
@@ -104,6 +105,7 @@ function Hero({
           loading="eager"
           fetchPriority="high"
           sizes="(min-width: 768px) 55vw, 100vw"
+          srcSet={`${heroImageUrl} 1536w, ${heroImage800} 800w`}
         />
         <div className="vignette-overlay pointer-events-none absolute inset-0" />
       </div>

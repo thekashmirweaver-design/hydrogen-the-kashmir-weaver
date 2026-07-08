@@ -15,6 +15,11 @@ import {
 import type {Route} from './+types/root';
 import inter400Woff2 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
 import cormorant400Woff2 from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-400-normal.woff2?url';
+// The `?url` import resolves the hashed asset path for the
+// <link rel="preload"> below; the side-effect import keeps the CSS in the
+// bundle. The duplicate import is intentional.
+// eslint-disable-next-line import/no-duplicates
+import appStylesUrl from '~/styles/globals.css?url';
 import '~/styles/globals.css';
 import {PageLayout, NotFoundView} from './components/PageLayout';
 import {getCatalogOptions} from '~/lib/catalog-options';
@@ -30,6 +35,7 @@ import {
 import {loadSharedCatalog, loadSharedCatalogMenu} from '~/lib/shared-catalog';
 import {needsFullCatalog} from '~/lib/catalog-routes';
 import {resolveStoreUrl} from '~/lib/seo';
+import {heroImage, heroImage800} from '~/lib/hero-image-urls';
 
 export type RootLoader = typeof loader;
 
@@ -98,14 +104,28 @@ export function links() {
       crossOrigin: 'anonymous',
     },
     {
+      // Responsive preload: mobile (≤ 800 CSS px) gets the 800w variant,
+      // desktop gets the master. Once scripts/upload-shopify-file.ts has
+      // been run, the values in app/lib/hero-image-urls.ts point at the
+      // Shopify CDN and gain a real srcset.
       rel: 'preload',
-      href: '/assets/hero-portrait.jpg',
       as: 'image',
+      imagesrcset: `${heroImage} 1536w, ${heroImage800} 800w`,
+      imagesizes: '100vw',
       fetchPriority: 'high',
     },
     {
       rel: 'preconnect',
       href: 'https://cdn.shopify.com',
+    },
+    {
+      // Preload the bundled app CSS in parallel with the HTML download so
+      // the browser already has it cached when <Links/> emits the
+      // blocking <link rel="stylesheet"> below. This shaves the
+      // render-blocking time off FCP without losing the cascade.
+      rel: 'preload',
+      href: appStylesUrl,
+      as: 'style',
     },
     {rel: 'icon', type: 'image/x-icon', href: '/favicon.ico'},
   ];
