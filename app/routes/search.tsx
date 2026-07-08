@@ -8,6 +8,7 @@ import {
   type PredictiveSearchReturn,
   getEmptyPredictiveSearchResult,
 } from '~/lib/search';
+import {searchProductsPage} from '~/lib/search-products';
 import type {RegularSearchQuery, PredictiveSearchQuery} from 'storefrontapi.generated';
 import {SearchView} from '~/views/search/SearchView';
 import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
@@ -27,26 +28,43 @@ export const meta: Route.MetaFunction = ({location, matches}) => {
 export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);
   const isPredictive = url.searchParams.has('predictive');
-  const searchPromise: Promise<PredictiveSearchReturn | RegularSearchReturn> =
-    isPredictive
-      ? predictiveSearch({request, context})
-      : regularSearch({request, context});
+  if (isPredictive) {
+    return predictiveSearch({request, context});
+  }
 
-  searchPromise.catch((error: Error) => {
+  const term = String(url.searchParams.get('q') || '');
+  try {
+    const {products, pageInfo} = await searchProductsPage(
+      context.storefront,
+      term,
+    );
+    return {type: 'regular' as const, term, products, pageInfo};
+  } catch (error) {
     console.error(error);
-    return {term: '', result: null, error: error.message};
-  });
-
-  return await searchPromise;
+    return {
+      type: 'regular' as const,
+      term,
+      products: [],
+      pageInfo: {hasNextPage: false, endCursor: null},
+      error: error instanceof Error ? error.message : 'Search failed',
+    };
+  }
 }
 
 /**
  * Renders the /search route
  */
 export default function SearchPage() {
-  const {type, term, error} = useLoaderData<typeof loader>();
-  if (type === 'predictive') return null;
-  return <SearchView term={term} error={error} />;
+  const data = useLoaderData<typeof loader>();
+  if (data.type === 'predictive') return null;
+  return (
+    <SearchView
+      term={data.term}
+      error={data.error}
+      products={data.products}
+      pageInfo={data.pageInfo}
+    />
+  );
 }
 
 /**

@@ -249,9 +249,10 @@ function SignatureCollections({
                 <Reveal className="mt-16 text-center">
                   <Link
                     to={`/collections/${c.handle}`}
-                    className="tracked inline-flex items-center gap-3 text-muted-foreground transition hover:text-accent"
+                    className="tracked inline-flex w-full items-center justify-center gap-3 px-10 py-4 font-medium transition hover:opacity-90 sm:w-auto"
+                    style={{background: 'var(--accent)', color: 'var(--background)'}}
                   >
-                    View All {c.name} <ArrowRight className="h-3 w-3" strokeWidth={1} />
+                    View All {c.name} <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
                   </Link>
                 </Reveal>
               </div>
@@ -261,6 +262,7 @@ function SignatureCollections({
       </div>
 
       <div className="mx-auto max-w-[1600px] px-6 md:px-10">
+        <Hairline className="mt-24" />
         <Reveal className="mt-28 text-center">
           <Link
             to="/collections/all"

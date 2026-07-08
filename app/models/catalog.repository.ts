@@ -3,6 +3,8 @@ import type {CatalogSnapshot, Collection, Product} from './types';
 import * as ShopifyRepository from './shopify/repository';
 import * as StaticRepository from './static/repository';
 import {withDummyTestProduct} from './static/dummy-product';
+import {PRODUCT_LIST_PAGE_SIZE} from '~/lib/catalog-constants';
+import type {PaginatedProducts} from '~/lib/catalog-pagination';
 
 export type CatalogSource = 'shopify' | 'static';
 
@@ -50,6 +52,107 @@ export async function listProducts(
     options,
   );
   return withStaticDummyProducts(products, options);
+}
+
+function paginateStaticProducts(
+  products: Product[],
+  first: number,
+  after: string | null | undefined,
+): PaginatedProducts {
+  const offset = after ? Number.parseInt(after, 10) : 0;
+  const start = Number.isFinite(offset) ? offset : 0;
+  const slice = products.slice(start, start + first);
+  const nextOffset = start + slice.length;
+  const hasNextPage = nextOffset < products.length;
+  return {
+    products: slice,
+    pageInfo: {
+      hasNextPage,
+      endCursor: hasNextPage ? String(nextOffset) : null,
+    },
+  };
+}
+
+export async function listProductsPage(
+  options?: CatalogOptions,
+  page?: {first?: number; after?: string | null},
+): Promise<PaginatedProducts> {
+  const first = page?.first ?? PRODUCT_LIST_PAGE_SIZE;
+
+  if (options?.useStatic) {
+    return paginateStaticProducts(
+      withStaticDummyProducts(StaticRepository.products, options),
+      first,
+      page?.after,
+    );
+  }
+
+  if (options?.storefront) {
+    try {
+      return await ShopifyRepository.listProductsPage(options.storefront, {
+        first,
+        after: page?.after,
+      });
+    } catch (error) {
+      console.warn('[catalog] Shopify paginated fetch failed', error);
+      if (options.useStatic) {
+        return paginateStaticProducts(
+          withStaticDummyProducts(StaticRepository.products, options),
+          first,
+          page?.after,
+        );
+      }
+      throw error;
+    }
+  }
+
+  return paginateStaticProducts(StaticRepository.products, first, page?.after);
+}
+
+export async function listCollectionProductsPage(
+  handle: string,
+  options?: CatalogOptions,
+  page?: {first?: number; after?: string | null},
+): Promise<PaginatedProducts & {collection?: Collection}> {
+  const first = page?.first ?? PRODUCT_LIST_PAGE_SIZE;
+
+  if (options?.useStatic) {
+    const paginated = paginateStaticProducts(
+      withStaticDummyProducts(
+        StaticRepository.productsByCollection(handle),
+        options,
+      ),
+      first,
+      page?.after,
+    );
+    return {
+      ...paginated,
+      collection: StaticRepository.getCollection(handle),
+    };
+  }
+
+  if (options?.storefront) {
+    try {
+      return await ShopifyRepository.listCollectionProductsPage(
+        options.storefront,
+        handle,
+        {first, after: page?.after},
+      );
+    } catch (error) {
+      console.warn('[catalog] Shopify collection page fetch failed', error);
+      throw error;
+    }
+  }
+
+  const paginated = paginateStaticProducts(
+    StaticRepository.productsByCollection(handle),
+    first,
+    page?.after,
+  );
+  return {
+    ...paginated,
+    collection: StaticRepository.getCollection(handle),
+  };
 }
 
 export async function findProductByHandle(

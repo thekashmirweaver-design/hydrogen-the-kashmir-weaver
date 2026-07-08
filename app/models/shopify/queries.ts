@@ -232,22 +232,34 @@ export const MENU_FRAGMENT = `#graphql
   }
 ` as const;
 
+export const CATALOG_PAGE_INFO_FRAGMENT = `#graphql
+  fragment CatalogPageInfo on PageInfo {
+    hasNextPage
+    endCursor
+  }
+` as const;
+
 export const ALL_PRODUCTS_QUERY = `#graphql
   query CatalogAllProducts(
     $country: CountryCode
     $language: LanguageCode
     $first: Int!
+    $after: String
   ) @inContext(country: $country, language: $language) {
-    products(first: $first, sortKey: CREATED_AT, reverse: true) {
+    products(first: $first, after: $after, sortKey: CREATED_AT, reverse: true) {
       edges {
         node {
           ...CatalogProduct
         }
       }
+      pageInfo {
+        ...CatalogPageInfo
+      }
     }
   }
   ${CATALOG_QUERY_FRAGMENTS}
   ${CATALOG_PRODUCT_FRAGMENT}
+  ${CATALOG_PAGE_INFO_FRAGMENT}
 ` as const;
 
 export const CATALOG_MENU_PRODUCT_FRAGMENT = `#graphql
@@ -334,17 +346,22 @@ export const ALL_PRODUCTS_QUERY_NO_INVENTORY = `#graphql
     $country: CountryCode
     $language: LanguageCode
     $first: Int!
+    $after: String
   ) @inContext(country: $country, language: $language) {
-    products(first: $first, sortKey: CREATED_AT, reverse: true) {
+    products(first: $first, after: $after, sortKey: CREATED_AT, reverse: true) {
       edges {
         node {
           ...CatalogProduct
         }
       }
+      pageInfo {
+        ...CatalogPageInfo
+      }
     }
   }
   ${CATALOG_QUERY_FRAGMENTS_NO_INVENTORY}
   ${CATALOG_PRODUCT_FRAGMENT}
+  ${CATALOG_PAGE_INFO_FRAGMENT}
 ` as const;
 
 export const ALL_COLLECTIONS_QUERY = `#graphql
@@ -372,14 +389,18 @@ export const COLLECTION_BY_HANDLE_QUERY = `#graphql
     $language: LanguageCode
     $handle: String!
     $productFirst: Int!
+    $productAfter: String
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       ...CatalogCollection
-      products(first: $productFirst, sortKey: CREATED, reverse: true) {
+      products(first: $productFirst, after: $productAfter, sortKey: CREATED, reverse: true) {
         edges {
           node {
             ...CatalogProduct
           }
+        }
+        pageInfo {
+          ...CatalogPageInfo
         }
       }
     }
@@ -387,6 +408,7 @@ export const COLLECTION_BY_HANDLE_QUERY = `#graphql
   ${CATALOG_QUERY_FRAGMENTS}
   ${CATALOG_COLLECTION_FRAGMENT}
   ${CATALOG_PRODUCT_FRAGMENT}
+  ${CATALOG_PAGE_INFO_FRAGMENT}
 ` as const;
 
 export const COLLECTION_BY_HANDLE_QUERY_NO_INVENTORY = `#graphql
@@ -395,14 +417,18 @@ export const COLLECTION_BY_HANDLE_QUERY_NO_INVENTORY = `#graphql
     $language: LanguageCode
     $handle: String!
     $productFirst: Int!
+    $productAfter: String
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       ...CatalogCollection
-      products(first: $productFirst, sortKey: CREATED, reverse: true) {
+      products(first: $productFirst, after: $productAfter, sortKey: CREATED, reverse: true) {
         edges {
           node {
             ...CatalogProduct
           }
+        }
+        pageInfo {
+          ...CatalogPageInfo
         }
       }
     }
@@ -410,6 +436,7 @@ export const COLLECTION_BY_HANDLE_QUERY_NO_INVENTORY = `#graphql
   ${CATALOG_QUERY_FRAGMENTS_NO_INVENTORY}
   ${CATALOG_COLLECTION_FRAGMENT}
   ${CATALOG_PRODUCT_FRAGMENT}
+  ${CATALOG_PAGE_INFO_FRAGMENT}
 ` as const;
 
 export const SHOP_CATALOG_QUERY =

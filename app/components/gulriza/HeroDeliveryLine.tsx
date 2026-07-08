@@ -37,7 +37,7 @@ export function HeroDeliveryLine({className = ''}: {className?: string}) {
       className={`mt-6 flex flex-nowrap items-baseline gap-x-2 whitespace-nowrap font-display text-sm leading-relaxed tracking-tight text-muted-foreground sm:gap-x-3 sm:text-[1.0625rem] sm:tracking-normal md:mt-8 md:text-xl ${className}`}
       style={{fontWeight: 300}}
     >
-      <span>Hand-woven Kashmiri</span>
+      <span>Hand-woven Pashmina</span>
 
       <span className="hero-rotating-slot inline-flex shrink-0 items-baseline">
         <span className="hero-rotating-slot__sizer" aria-hidden>

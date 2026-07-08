@@ -32,6 +32,13 @@ export async function loader({params, context, request}: Route.LoaderArgs) {
 }
 
 export default function CollectionRoute() {
-  const {collection, products} = useLoaderData<typeof loader>();
-  return <CollectionView collection={collection} products={products} />;
+  const {collection, products, pageInfo} = useLoaderData<typeof loader>();
+  return (
+    <CollectionView
+      collection={collection}
+      products={products}
+      pageInfo={pageInfo}
+      listSource={{scope: 'collection', handle: collection.handle}}
+    />
+  );
 }

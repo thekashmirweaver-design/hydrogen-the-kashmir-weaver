@@ -1,25 +1,29 @@
 import {Link, Form} from 'react-router';
+import {Loader2} from 'lucide-react';
 import {Eyebrow} from '~/components/gulriza/Eyebrow';
 import {ProductTile} from '~/components/gulriza/ProductTile';
-import {useCatalog} from '~/contexts/catalog-context';
+import type {CatalogPageInfo} from '~/lib/catalog-pagination';
+import type {Product} from '~/models/types';
+import {useInfiniteSearchScroll} from '~/hooks/use-infinite-search-scroll';
 
 export function SearchView({
   term,
   error,
+  products: initialProducts,
+  pageInfo,
 }: {
   term: string;
   error?: string;
+  products: Product[];
+  pageInfo: CatalogPageInfo;
 }) {
-  const {products} = useCatalog();
-  const trimmed = term.trim().toLowerCase();
-  const results = trimmed
-    ? products.filter((p) =>
-        [p.name, p.collectionName, p.shortDescription, ...(p.tags ?? [])]
-          .join(' ')
-          .toLowerCase()
-          .includes(trimmed),
-      )
-    : [];
+  const trimmed = term.trim();
+  const {products, sentinelRef, isLoadingMore, hasMore} =
+    useInfiniteSearchScroll({
+      term,
+      initialProducts,
+      initialPageInfo: pageInfo,
+    });
 
   return (
     <section className="mx-auto max-w-[1400px] px-6 pt-[calc(var(--header-h)+1.5rem)] pb-24 md:px-10">
@@ -53,15 +57,31 @@ export function SearchView({
       {error && <p className="mt-6 text-sm text-red-400">{error}</p>}
       {trimmed && (
         <p className="mt-8 text-sm text-muted-foreground">
-          {results.length} result{results.length === 1 ? '' : 's'} for &ldquo;{term}&rdquo;
+          {products.length} result{products.length === 1 ? '' : 's'} for
+          &ldquo;{term}&rdquo;
         </p>
       )}
       <div className="mt-12 grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-3">
-        {results.map((product) => (
+        {products.map((product) => (
           <ProductTile key={product.handle} product={product} />
         ))}
       </div>
-      {trimmed && results.length === 0 && !error && (
+      {hasMore && (
+        <div
+          ref={sentinelRef}
+          className="flex justify-center py-12"
+          aria-hidden
+        >
+          {isLoadingMore && (
+            <Loader2
+              className="h-6 w-6 animate-spin text-muted-foreground"
+              strokeWidth={1.25}
+              aria-label="Loading more results"
+            />
+          )}
+        </div>
+      )}
+      {trimmed && products.length === 0 && !error && (
         <p className="mt-12 text-muted-foreground">
           No pieces matched.{' '}
           <Link to="/concierge" className="text-accent hover:underline">

@@ -557,7 +557,7 @@ export function ProductView({
               <Accordion title="Description" defaultOpen>
                 <LegalRichHtml
                   html={product.description}
-                  className="text-sm [&_p+p]:mt-4"
+                  className="text-sm"
                 />
               </Accordion>
             </div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, SlidersHorizontal, X } from "lucide-react";
 import type { Product } from "~/models/types";
 import { useCatalog } from "~/contexts/catalog-context";
 import { ProductTile } from "~/components/gulriza/ProductTile";
@@ -10,6 +10,8 @@ import { useFocusTrap } from "~/hooks/use-focus-trap";
 import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 import { ShadeDropdown } from "~/components/gulriza/ShadeDropdown";
 import { collectShadesFromProducts, getDefaultSolidShadeCode } from "~/lib/solid-product";
+import type { CatalogPageInfo, ProductListScope } from "~/lib/catalog-pagination";
+import { useInfiniteProductScroll } from "~/hooks/use-infinite-product-scroll";
 
 export type SortKey = "featured" | "newest" | "price-asc" | "price-desc" | "best-selling";
 
@@ -31,13 +33,17 @@ const SORT_OPTIONS: { id: SortKey; label: string }[] = [
 ];
 
 export function ProductCatalog({
-  products,
+  products: initialProducts,
+  pageInfo,
+  listSource,
   filters: enabled = ["collection", "price"],
   resultsLabel = "pieces",
   emptyMessage,
   id,
 }: {
   products: Product[];
+  pageInfo?: CatalogPageInfo;
+  listSource?: ProductListScope;
   /** Which filter facets to show. Pass [] to hide sidebar entirely (sort-only). */
   filters?: FilterKey[];
   resultsLabel?: string;
@@ -47,6 +53,14 @@ export function ProductCatalog({
   id?: string;
 }) {
   const { collections } = useCatalog();
+  const infiniteScrollEnabled = Boolean(listSource && pageInfo);
+  const infiniteScroll = useInfiniteProductScroll({
+    initialProducts,
+    initialPageInfo: pageInfo ?? { hasNextPage: false, endCursor: null },
+    listSource: listSource ?? { scope: "shop" },
+    enabled: infiniteScrollEnabled,
+  });
+  const products = infiniteScrollEnabled ? infiniteScroll.products : initialProducts;
   const priceBounds = useMemo(() => {
     const all = products.map((p) => p.price.amount);
     const min = all.length ? Math.min(...all) : 0;
@@ -253,11 +267,28 @@ export function ProductCatalog({
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-16 lg:grid-cols-3">
-              {filtered.map((p) => (
-                <ProductTile key={p.handle} product={p} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-16 lg:grid-cols-3">
+                {filtered.map((p) => (
+                  <ProductTile key={p.handle} product={p} />
+                ))}
+              </div>
+              {infiniteScrollEnabled && infiniteScroll.hasMore && (
+                <div
+                  ref={infiniteScroll.sentinelRef}
+                  className="flex justify-center py-12"
+                  aria-hidden
+                >
+                  {infiniteScroll.isLoadingMore && (
+                    <Loader2
+                      className="h-6 w-6 animate-spin text-muted-foreground"
+                      strokeWidth={1.25}
+                      aria-label="Loading more pieces"
+                    />
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

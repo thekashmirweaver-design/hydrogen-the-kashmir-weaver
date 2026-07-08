@@ -7,7 +7,8 @@ export const meta: Route.MetaFunction = ({location, matches}) => {
   return seoBundle({
     metadata: {
       title: 'Shade Cards — The Kashmir Weaver',
-      description: 'Browse the complete Kashmir Weaver shade palette.',
+      description:
+        'Browse the complete Kashmir Weaver shade palette and view the official shade card PDF.',
     },
     pathname: location.pathname,
     storeUrl: getStoreUrlFromMatches(matches),

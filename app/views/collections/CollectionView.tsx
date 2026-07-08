@@ -9,14 +9,19 @@ import {
 } from '~/components/gulriza/CollectionProductsScrollCue';
 import {ProductCatalog} from '~/components/gulriza/ProductCatalog';
 import {CollectionHeroBanner} from '~/components/gulriza/CollectionHeroBanner';
+import type {CatalogPageInfo, ProductListScope} from '~/lib/catalog-pagination';
 import type {Collection, Product} from '~/models/types';
 
 export function CollectionView({
   collection,
   products,
+  pageInfo,
+  listSource,
 }: {
   collection: Collection;
   products: Product[];
+  pageInfo?: CatalogPageInfo;
+  listSource?: ProductListScope;
 }) {
   const nameParts = collection.name.split(' ');
   const firstName = nameParts[0];
@@ -57,6 +62,8 @@ export function CollectionView({
       <ProductCatalog
         id={COLLECTION_PRODUCTS_ID}
         products={products}
+        pageInfo={pageInfo}
+        listSource={listSource}
         filters={[]}
         emptyMessage="No pieces in this collection yet."
       />

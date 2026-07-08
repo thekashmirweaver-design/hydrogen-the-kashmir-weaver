@@ -1,6 +1,8 @@
+import {useLoaderData} from 'react-router';
 import type {Route} from './+types/collections.all';
+import {getShopPage} from '~/controllers';
+import {getCatalogOptions} from '~/lib/catalog-options';
 import {ShopView} from '~/views/shop/ShopView';
-import {useCatalog} from '~/contexts/catalog-context';
 import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
 
 const SHOP_TITLE = 'Shop — The Kashmir Weaver';
@@ -16,11 +18,18 @@ export const meta: Route.MetaFunction = ({location, matches}) => {
   });
 };
 
-export async function loader() {
-  return null;
+export async function loader({context}: Route.LoaderArgs) {
+  const catalogOptions = getCatalogOptions(context);
+  return getShopPage(catalogOptions);
 }
 
 export default function ShopRoute() {
-  const catalog = useCatalog();
-  return <ShopView products={catalog.products} />;
+  const {products, pageInfo} = useLoaderData<typeof loader>();
+  return (
+    <ShopView
+      products={products}
+      pageInfo={pageInfo}
+      listSource={{scope: 'shop'}}
+    />
+  );
 }

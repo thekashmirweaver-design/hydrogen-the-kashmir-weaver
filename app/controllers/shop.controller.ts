@@ -2,18 +2,18 @@ import * as CatalogRepository from '~/models/catalog.repository';
 import type {CatalogOptions} from '~/models/catalog.repository';
 import type {CatalogSnapshot, Collection, Product} from '~/models/types';
 import type {PageMetadata} from '~/controllers/catalog.controller';
+import type {CatalogPageInfo} from '~/lib/catalog-pagination';
 import {resolveCatalogSnapshot} from '~/lib/shared-catalog';
 
 export type ShopPageViewModel = {
   products: Product[];
+  pageInfo: CatalogPageInfo;
 };
 
 export async function getShopPage(
   options?: CatalogOptions,
-  catalog?: CatalogSnapshot,
 ): Promise<ShopPageViewModel> {
-  const {products} = await resolveCatalogSnapshot(options, catalog);
-  return {products};
+  return CatalogRepository.listProductsPage(options);
 }
 
 export type CollectionsPageViewModel = {
@@ -63,6 +63,7 @@ export async function getCollectionsPage(
 export type CollectionPageViewModel = {
   collection: Collection;
   products: Product[];
+  pageInfo: CatalogPageInfo;
   metadata: PageMetadata;
   collectionLd: Record<string, unknown>;
   breadcrumbLd: Record<string, unknown>;
@@ -88,14 +89,20 @@ export async function getCollectionPage(
   const collectionFromSnapshot = snapshot.collections.find(
     (item) => item.handle === handle,
   );
+
+  const paginated = await CatalogRepository.listCollectionProductsPage(
+    handle,
+    options,
+  );
+
   const collection =
+    paginated.collection ??
     collectionFromSnapshot ??
     (await CatalogRepository.findCollectionByHandle(handle, options));
   if (!collection) return null;
 
-  const products = collectionFromSnapshot
-    ? snapshot.products.filter((product) => product.collectionSlug === handle)
-    : await CatalogRepository.listProductsByCollection(handle, options);
+  const products = paginated.products;
+  const pageInfo = paginated.pageInfo;
 
   const metadata = collectionMetadata(collection);
   const url = `/collections/${handle}`;
@@ -104,6 +111,7 @@ export async function getCollectionPage(
   return {
     collection,
     products,
+    pageInfo,
     metadata,
     collectionLd: {
       '@context': 'https://schema.org',

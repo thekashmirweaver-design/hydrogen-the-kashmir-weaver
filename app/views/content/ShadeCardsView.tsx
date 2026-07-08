@@ -1,5 +1,10 @@
 import {useState, useMemo} from 'react';
+import {ExternalLink} from 'lucide-react';
 import {SHADES} from '~/models/static/shades';
+
+/** Official printable shade card (Google Drive). */
+export const SHADE_CARD_PDF_URL =
+  'https://drive.google.com/file/d/1uBrCxSpr0LCpOW9MMhCPXj-VcVgHR4SE/view';
 
 function extractPrimaryFamily(family: string) {
   return family.split(' / ')[0];
@@ -49,8 +54,19 @@ export function ShadeCardsView() {
             Shade Cards
           </h1>
           <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-            {SHADES.length} colours organised by family. Click any card to copy its hex value.
+            {SHADES.length} colours organised by family. Click any card to copy its hex value,
+            or open the official shade card PDF.
           </p>
+          <a
+            href={SHADE_CARD_PDF_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="tracked mt-8 inline-flex items-center gap-3 border px-8 py-4 text-sm transition hover:border-accent hover:text-accent"
+            style={{borderColor: 'var(--border)'}}
+          >
+            View official shade card (PDF)
+            <ExternalLink className="h-4 w-4" strokeWidth={1.25} aria-hidden />
+          </a>
         </div>
 
         <div className="mb-12 flex flex-wrap justify-center gap-2">

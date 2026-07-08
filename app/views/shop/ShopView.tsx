@@ -2,9 +2,18 @@ import {Link} from 'react-router';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {ProductCatalog} from '~/components/gulriza/ProductCatalog';
+import type {CatalogPageInfo, ProductListScope} from '~/lib/catalog-pagination';
 import type {Product} from '~/models/types';
 
-export function ShopView({products}: {products: Product[]}) {
+export function ShopView({
+  products,
+  pageInfo,
+  listSource,
+}: {
+  products: Product[];
+  pageInfo?: CatalogPageInfo;
+  listSource?: ProductListScope;
+}) {
   return (
     <div>
       <section className="mx-auto max-w-[1600px] px-6 pt-[calc(var(--header-h)+1.5rem)] pb-12 md:px-10">
@@ -25,7 +34,11 @@ export function ShopView({products}: {products: Product[]}) {
         </Reveal>
       </section>
 
-      <ProductCatalog products={products} />
+      <ProductCatalog
+        products={products}
+        pageInfo={pageInfo}
+        listSource={listSource}
+      />
 
       <section className="mx-auto max-w-[1600px] px-6 pb-24 md:px-10">
         <Hairline />

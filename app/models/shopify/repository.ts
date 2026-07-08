@@ -11,6 +11,11 @@ import {
   type ShopifyProductNode,
 } from './mappers';
 import {collectionCache, productCache} from '~/lib/storefront-cache';
+import {
+  PRODUCT_FETCH_BATCH_SIZE,
+  PRODUCT_LIST_PAGE_SIZE,
+} from '~/lib/catalog-constants';
+import type {CatalogPageInfo, PaginatedProducts} from '~/lib/catalog-pagination';
 import {catalogQuery} from './catalog-query';
 import {
   ALL_COLLECTIONS_QUERY,
@@ -26,11 +31,13 @@ import {
   SHOP_CATALOG_QUERY,
 } from './queries';
 
-const PRODUCT_PAGE_SIZE = 250;
 const COLLECTION_PAGE_SIZE = 50;
 
 type ProductQueryResult = {
-  products: {edges: Array<{node: ShopifyProductNode}>};
+  products: {
+    edges: Array<{node: ShopifyProductNode}>;
+    pageInfo: CatalogPageInfo;
+  };
 };
 
 type MenuProductQueryResult = {
@@ -43,21 +50,54 @@ type ProductByHandleResult = {
 
 type CollectionByHandleResult = {
   collection: (ShopifyCollectionNode & {
-    products?: {edges: Array<{node: ShopifyProductNode}>};
+    products?: {
+      edges: Array<{node: ShopifyProductNode}>;
+      pageInfo: CatalogPageInfo;
+    };
   }) | null;
 };
 
-export async function listProducts(storefront: Storefront): Promise<Product[]> {
+function mapPageInfo(pageInfo?: CatalogPageInfo | null): CatalogPageInfo {
+  return {
+    hasNextPage: pageInfo?.hasNextPage ?? false,
+    endCursor: pageInfo?.endCursor ?? null,
+  };
+}
+
+export async function listProductsPage(
+  storefront: Storefront,
+  options: {first?: number; after?: string | null} = {},
+): Promise<PaginatedProducts> {
+  const first = options.first ?? PRODUCT_LIST_PAGE_SIZE;
   const data = await catalogQuery<ProductQueryResult>(
     storefront,
     ALL_PRODUCTS_QUERY,
     ALL_PRODUCTS_QUERY_NO_INVENTORY,
-    {first: PRODUCT_PAGE_SIZE},
+    {first, after: options.after ?? null},
   );
 
-  return data.products.edges.map(({node}: {node: ShopifyProductNode}) =>
-    mapProduct(node),
-  );
+  return {
+    products: data.products.edges.map(({node}) => mapProduct(node)),
+    pageInfo: mapPageInfo(data.products.pageInfo),
+  };
+}
+
+export async function listProducts(storefront: Storefront): Promise<Product[]> {
+  const products: Product[] = [];
+  let after: string | null = null;
+  let hasNextPage = true;
+
+  while (hasNextPage) {
+    const page = await listProductsPage(storefront, {
+      first: PRODUCT_FETCH_BATCH_SIZE,
+      after,
+    });
+    products.push(...page.products);
+    hasNextPage = page.pageInfo.hasNextPage;
+    after = page.pageInfo.endCursor;
+  }
+
+  return products;
 }
 
 export async function findProductByHandle(
@@ -95,28 +135,61 @@ export async function findCollectionByHandle(
     storefront,
     COLLECTION_BY_HANDLE_QUERY,
     COLLECTION_BY_HANDLE_QUERY_NO_INVENTORY,
-    {handle, productFirst: PRODUCT_PAGE_SIZE},
+    {handle, productFirst: 1, productAfter: null},
   );
 
   return data.collection ? mapCollection(data.collection) : undefined;
+}
+
+export async function listCollectionProductsPage(
+  storefront: Storefront,
+  handle: string,
+  options: {first?: number; after?: string | null} = {},
+): Promise<PaginatedProducts & {collection?: Collection}> {
+  const first = options.first ?? PRODUCT_LIST_PAGE_SIZE;
+  const data = await catalogQuery<CollectionByHandleResult>(
+    storefront,
+    COLLECTION_BY_HANDLE_QUERY,
+    COLLECTION_BY_HANDLE_QUERY_NO_INVENTORY,
+    {handle, productFirst: first, productAfter: options.after ?? null},
+  );
+
+  if (!data.collection?.products) {
+    return {
+      products: [],
+      pageInfo: {hasNextPage: false, endCursor: null},
+      collection: data.collection
+        ? mapCollection(data.collection)
+        : undefined,
+    };
+  }
+
+  return {
+    collection: mapCollection(data.collection),
+    products: data.collection.products.edges.map(({node}) => mapProduct(node)),
+    pageInfo: mapPageInfo(data.collection.products.pageInfo),
+  };
 }
 
 export async function listProductsByCollection(
   storefront: Storefront,
   handle: string,
 ): Promise<Product[]> {
-  const data = await catalogQuery<CollectionByHandleResult>(
-    storefront,
-    COLLECTION_BY_HANDLE_QUERY,
-    COLLECTION_BY_HANDLE_QUERY_NO_INVENTORY,
-    {handle, productFirst: PRODUCT_PAGE_SIZE},
-  );
+  const products: Product[] = [];
+  let after: string | null = null;
+  let hasNextPage = true;
 
-  if (!data.collection?.products) return [];
+  while (hasNextPage) {
+    const page = await listCollectionProductsPage(storefront, handle, {
+      first: PRODUCT_FETCH_BATCH_SIZE,
+      after,
+    });
+    products.push(...page.products);
+    hasNextPage = page.pageInfo.hasNextPage;
+    after = page.pageInfo.endCursor;
+  }
 
-  return data.collection.products.edges.map(
-    ({node}: {node: ShopifyProductNode}) => mapProduct(node),
-  );
+  return products;
 }
 
 export async function listMenuProducts(
@@ -125,7 +198,7 @@ export async function listMenuProducts(
   const data = await storefront.query<MenuProductQueryResult>(
     ALL_MENU_PRODUCTS_QUERY,
     {
-      variables: {first: PRODUCT_PAGE_SIZE},
+      variables: {first: PRODUCT_FETCH_BATCH_SIZE},
       cache: productCache(storefront),
     },
   );
