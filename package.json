@@ -14,6 +14,7 @@
     "codegen": "shopify hydrogen codegen && react-router typegen",
     "seed:shopify": "tsx scripts/seed-shopify-admin.ts",
     "sync:journal": "tsx scripts/sync-journal-articles.ts",
+    "upload:blogs": "tsx scripts/upload-blogs-from-folder.ts",
     "seed:sizes": "tsx scripts/seed-product-sizes.ts",
     "seed:dummy-product": "tsx scripts/seed-dummy-test-product.ts",
     "seed:collections": "tsx scripts/seed-shopify-collections.ts",
@@ -23,7 +24,7 @@
     "publish:headless": "tsx scripts/publish-headless-catalog.ts",
     "auth:deploy-scopes": "shopify app deploy --force --no-build",
     "storefront:push-scopes": "tsx scripts/push-storefront-scopes-from-toml.ts",
-    "auth:store": "npx @shopify/cli@latest store auth -s 70yuey-sr.myshopify.com --scopes read_products,write_products,read_content,write_content,read_online_store_navigation,write_online_store_navigation,read_legal_policies,write_legal_policies,read_publications,write_publications,read_markets,write_markets,read_metaobjects,write_metaobjects,read_metaobject_definitions",
+    "auth:store": "npx @shopify/cli@latest store auth -s 70yuey-sr.myshopify.com --scopes read_products,write_products,read_content,write_content,read_files,write_files,read_online_store_navigation,write_online_store_navigation,read_legal_policies,write_legal_policies,read_publications,write_publications,read_markets,write_markets,read_metaobjects,write_metaobjects,read_metaobject_definitions",
     "auth:verify-scopes": "npx @shopify/cli@latest store execute -s 70yuey-sr.myshopify.com --query '{ currentAppInstallation { accessScopes { handle } } }' --json",
     "auth:sync-env": "tsx scripts/sync-admin-token-from-cli.ts"
   },

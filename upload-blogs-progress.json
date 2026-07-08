@@ -1,0 +1,100 @@
+{
+  "runAt": "2026-07-08T18:26:42.137Z",
+  "shop": "70yuey-sr.myshopify.com",
+  "publishDate": "2026-07-08",
+  "summary": {
+    "created": 0,
+    "updated": 17,
+    "failed": 0,
+    "total": 17
+  },
+  "results": [
+    {
+      "handle": "journey-of-pashm-ladakh-to-wardrobe",
+      "category": "Heritage",
+      "action": "updated",
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0832/1174/7543/files/Gemini_Generated_Image_3ugevo3ugevo3uge_2df85d34-a46a-44cc-9e74-433c1d1a72b6.png?v=1783535178"
+    },
+    {
+      "handle": "5-elegant-ways-to-drape-pashmina-winter-wedding",
+      "category": "Style",
+      "action": "updated",
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0832/1174/7543/files/Gemini_Generated_Image_4igtd4igtd4igtd4_27ee4b9e-5720-4e19-9c97-932a795853f2.png?v=1783535186"
+    },
+    {
+      "handle": "what-is-kashmiri-pashmina-gi-tag",
+      "category": "Heritage",
+      "action": "updated"
+    },
+    {
+      "handle": "pashmina-vs-cashmere-actual-difference",
+      "category": "Heritage",
+      "action": "updated"
+    },
+    {
+      "handle": "what-is-kani-weaving-kashmiri-shawl",
+      "category": "Craft",
+      "action": "updated"
+    },
+    {
+      "handle": "decoding-sozni-embroidery-kashmiri-pashmina",
+      "category": "Craft",
+      "action": "updated"
+    },
+    {
+      "handle": "machine-spun-vs-hand-spun-pashmina",
+      "category": "Craft",
+      "action": "updated"
+    },
+    {
+      "handle": "luxury-bridal-trousseau-kashmiri-pashmina",
+      "category": "Luxury Living",
+      "action": "updated"
+    },
+    {
+      "handle": "corporate-luxury-gifting-kashmiri-pashmina",
+      "category": "Luxury Living",
+      "action": "updated"
+    },
+    {
+      "handle": "can-you-dry-clean-kashmiri-pashmina",
+      "category": "Style",
+      "action": "updated"
+    },
+    {
+      "handle": "why-is-real-kashmiri-pashmina-expensive",
+      "category": "Heritage",
+      "action": "updated"
+    },
+    {
+      "handle": "what-is-chashm-e-bulbul-diamond-weave",
+      "category": "Craft",
+      "action": "updated"
+    },
+    {
+      "handle": "how-to-iron-remove-wrinkles-pashmina",
+      "category": "Style",
+      "action": "updated"
+    },
+    {
+      "handle": "history-of-kashmiri-pashmina-shawl",
+      "category": "Heritage",
+      "action": "updated"
+    },
+    {
+      "handle": "how-to-fix-snags-pashmina-shawl",
+      "category": "Style",
+      "action": "updated"
+    },
+    {
+      "handle": "ultimate-mothers-day-gift-kashmiri-pashmina",
+      "category": "Luxury Living",
+      "action": "updated"
+    },
+    {
+      "handle": "how-to-style-pashmina-everyday-luxury",
+      "category": "Style",
+      "action": "updated"
+    }
+  ]
+}
