@@ -42,6 +42,9 @@ export async function loader({context, request}: Route.LoaderArgs) {
     journalPosts: journal.posts.slice(0, 3),
     heroImageUrl: featured.heroImageUrl,
     heroAlt: featured.heroAlt,
+    bestSellingCount: featured.bestSellingCount,
+    newestCount: featured.newestCount,
+    collectionPreviewCount: featured.collectionPreviewCount,
   };
 }
 
@@ -53,7 +56,14 @@ export default function HomeRoute() {
     <HomeView
       products={catalog.products}
       collections={catalog.collections}
-      {...data}
+      bestSellingCount={data.bestSellingCount}
+      newestCount={data.newestCount}
+      collectionPreviewCount={data.collectionPreviewCount}
+      featuredProducts={data.featuredProducts}
+      featuredCollections={data.featuredCollections}
+      journalPosts={data.journalPosts}
+      heroImageUrl={data.heroImageUrl}
+      heroAlt={data.heroAlt}
     />
   );
 }

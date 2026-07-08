@@ -10,8 +10,8 @@ import { useFocusTrap } from "~/hooks/use-focus-trap";
 import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 import { ShadeDropdown } from "~/components/gulriza/ShadeDropdown";
 import { collectShadesFromProducts, getDefaultSolidShadeCode } from "~/lib/solid-product";
-import type { CatalogPageInfo, ProductListScope, SortKey } from "~/lib/catalog-pagination";
-import { getSortConfig } from "~/lib/catalog-pagination";
+import type { CatalogPageInfo, CatalogFilters, ProductListScope, SortKey } from "~/lib/catalog-pagination";
+import { DEFAULT_CATALOG_SORT } from "~/lib/catalog-pagination";
 import { usePagePagination } from "~/hooks/use-page-pagination";
 import { PagePagination } from "~/components/gulriza/PagePagination";
 
@@ -54,12 +54,21 @@ export function ProductCatalog({
 }) {
   const { collections } = useCatalog();
   const paginationEnabled = Boolean(listSource && pageInfo);
-  const [sort, setSort] = useState<SortKey>("featured");
+  const [sort, setSort] = useState<SortKey>(DEFAULT_CATALOG_SORT);
+  const [priceMinFilter, setPriceMinFilter] = useState<number | undefined>();
+  const [priceMaxFilter, setPriceMaxFilter] = useState<number | undefined>();
+  const priceFilterTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const catalogFilters: CatalogFilters = useMemo(() => ({
+    priceMin: priceMinFilter,
+    priceMax: priceMaxFilter,
+  }), [priceMinFilter, priceMaxFilter]);
+
   const pagination = usePagePagination({
     initialProducts,
     initialPageInfo: pageInfo ?? { hasNextPage: false, endCursor: null },
     listSource: listSource ?? { scope: "shop" },
     sortKey: sort,
+    filters: catalogFilters,
     enabled: paginationEnabled,
   });
   const gridRef = useRef<HTMLDivElement>(null);
@@ -146,19 +155,21 @@ export function ProductCatalog({
           p.price.amount <= resolvedFilters.priceMax,
       );
 
-    if (sort === "price-asc") list.sort((a, b) => a.price.amount - b.price.amount);
-    else if (sort === "price-desc") list.sort((a, b) => b.price.amount - a.price.amount);
-    else if (sort === "newest")
-      list.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-    else if (sort === "best-selling")
-      list.sort((a, b) => {
-        const score = (p: Product) =>
-          (p.tags?.some((t) => /best-?sell/i.test(t)) ? 2 : 0) +
-          (p.limited ? 1 : 0);
-        return score(b) - score(a);
-      });
+    if (!paginationEnabled) {
+      if (sort === "price-asc") list.sort((a, b) => a.price.amount - b.price.amount);
+      else if (sort === "price-desc") list.sort((a, b) => b.price.amount - a.price.amount);
+      else if (sort === "newest")
+        list.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+      else if (sort === "best-selling")
+        list.sort((a, b) => {
+          const score = (p: Product) =>
+            (p.tags?.some((t) => /best-?sell/i.test(t)) ? 2 : 0) +
+            (p.limited ? 1 : 0);
+          return score(b) - score(a);
+        });
+    }
     return list;
-  }, [enabled, resolvedFilters, sort, products]);
+  }, [enabled, resolvedFilters, sort, products, paginationEnabled]);
 
   const toggle = (key: "collections", value: string) => {
     setFilters((f) => {
@@ -182,48 +193,55 @@ export function ProductCatalog({
   const reset = () => setFilters(initial);
 
   const FilterPanel = (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {enabled.includes("collection") && (
         <FilterGroup title="Collections">
-          {collections.map((c) => (
-            <CheckRow
-              key={c.handle}
-              label={c.name}
-              checked={resolvedFilters.collections.has(c.handle)}
-              onChange={() => toggle("collections", c.handle)}
-            />
-          ))}
+          <div className="mt-3 space-y-1.5">
+            {collections.map((c) => (
+              <CheckRow
+                key={c.handle}
+                label={c.name}
+                checked={resolvedFilters.collections.has(c.handle)}
+                onChange={() => toggle("collections", c.handle)}
+              />
+            ))}
+          </div>
         </FilterGroup>
       )}
 
       {enabled.includes("price") && (
         <FilterGroup title="Price">
-          <PriceRange
-            min={priceBounds.min}
-            max={priceBounds.max}
-            valueMin={resolvedFilters.priceMin}
-            valueMax={resolvedFilters.priceMax}
-            currency={selectedCurrency}
-            onChange={(lo, hi) => setFilters((f) => ({ ...f, priceMin: lo, priceMax: hi }))}
-          />
+          <div className="mt-3">
+            <PriceRange
+              min={priceBounds.min}
+              max={priceBounds.max}
+              valueMin={resolvedFilters.priceMin}
+              valueMax={resolvedFilters.priceMax}
+              currency={selectedCurrency}
+            onChange={(lo, hi) => {
+              setFilters((f) => ({ ...f, priceMin: lo, priceMax: hi }));
+              if (priceFilterTimerRef.current) clearTimeout(priceFilterTimerRef.current);
+              priceFilterTimerRef.current = setTimeout(() => {
+                setPriceMinFilter(lo);
+                setPriceMaxFilter(hi);
+              }, 400);
+            }}
+            />
+          </div>
         </FilterGroup>
       )}
 
       {showColorFilter && (
         <FilterGroup title="Colour">
-          <ShadeDropdown
-            shades={availableShades}
-            selectedCode={resolvedFilters.colorCode}
-            onSelect={(colorCode) => setFilters((f) => ({ ...f, colorCode }))}
-            showLabel={false}
-          />
+          <div className="mt-3">
+            <ShadeDropdown
+              shades={availableShades}
+              selectedCode={resolvedFilters.colorCode}
+              onSelect={(colorCode) => setFilters((f) => ({ ...f, colorCode }))}
+              showLabel={false}
+            />
+          </div>
         </FilterGroup>
-      )}
-
-      {activeCount > 0 && (
-        <button onClick={reset} className="tracked text-accent">
-          Clear filters ({activeCount})
-        </button>
       )}
     </div>
   );
@@ -261,9 +279,16 @@ export function ProductCatalog({
       >
         {showSidebar && (
           <aside className="hidden md:block">
-            <div className="sticky top-32 rounded-lg border p-5" style={{background: 'var(--surface)', borderColor: 'var(--border)'}}>
-              <div className="tracked text-accent">Filter</div>
-              <div className="mt-8">{FilterPanel}</div>
+            <div className="sticky top-32 rounded border p-6" style={{background: 'var(--surface)', borderColor: 'var(--border)'}}>
+              <div className="flex items-center justify-between">
+                <span className="tracked text-xs uppercase tracking-[0.2em] text-accent">Filter</span>
+                {activeCount > 0 && (
+                  <button onClick={reset} className="text-xs text-muted-foreground hover:text-accent transition-colors">
+                    Clear ({activeCount})
+                  </button>
+                )}
+              </div>
+              <div className="mt-6 space-y-8">{FilterPanel}</div>
             </div>
           </aside>
         )}
@@ -307,8 +332,10 @@ export function ProductCatalog({
             drawer ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
         >
-          <div
-            className="absolute inset-0"
+          <button
+            type="button"
+            aria-label="Close filters"
+            className="absolute inset-0 cursor-pointer"
             style={{ background: "rgba(0,0,0,0.55)" }}
             onClick={() => setDrawer(false)}
           />
@@ -425,8 +452,8 @@ function SortDropdown({ value, onChange }: { value: SortKey; onChange: (key: Sor
 function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="tracked text-foreground">{title}</div>
-      <div className="mt-4 space-y-2.5">{children}</div>
+      <div className="tracked text-xs uppercase tracking-[0.2em] text-foreground/70">{title}</div>
+      {children}
     </div>
   );
 }
@@ -479,13 +506,13 @@ function PriceRange({
 
   return (
     <div className="pt-2">
-      <div className="relative h-11">
+      <div className="relative mt-6 h-11">
         <div
-          className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2"
+          className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full"
           style={{ background: "var(--border)" }}
         />
         <div
-          className="absolute top-1/2 h-px -translate-y-1/2"
+          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
           style={{
             left: `${leftPct}%`,
             right: `${100 - rightPct}%`,
@@ -502,7 +529,7 @@ function PriceRange({
             const v = Math.min(Number(e.target.value), valueMax - step);
             onChange(v, valueMax);
           }}
-          className="range-thumb"
+          className="range-thumb z-10"
           aria-label="Minimum price"
         />
         <input
@@ -519,7 +546,7 @@ function PriceRange({
           aria-label="Maximum price"
         />
       </div>
-      <div className="mt-4 flex items-center gap-3">
+      <div className="mt-6 flex items-center gap-3">
         <PriceField
           label="Minimum price"
           value={valueMin}

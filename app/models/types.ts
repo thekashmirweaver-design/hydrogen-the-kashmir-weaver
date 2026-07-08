@@ -85,8 +85,6 @@ export type Product = {
   stock: "in" | "out";
   limited?: boolean;
   stockQty?: number;
-  /** Shopify `custom.featured` metafield — true adds this product to homepage curation. */
-  featured?: boolean;
   productType?: string;
   vendor?: string;
   tags?: string[];

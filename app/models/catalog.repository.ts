@@ -5,6 +5,8 @@ import * as StaticRepository from './static/repository';
 import {withDummyTestProduct} from './static/dummy-product';
 import {PRODUCT_LIST_PAGE_SIZE} from '~/lib/catalog-constants';
 import type {PaginatedProducts} from '~/lib/catalog-pagination';
+import {DEFAULT_FEATURED_COLLECTION_HANDLE} from '~/lib/featured-collection';
+import {loadHomepageFeatured} from '~/lib/homepage-featured';
 
 export type CatalogSource = 'shopify' | 'static';
 
@@ -13,6 +15,7 @@ export type CatalogOptions = {
   useStatic?: boolean;
   sortKey?: string;
   sortReverse?: boolean;
+  filters?: Record<string, unknown>[];
 };
 
 async function withCatalog<T>(
@@ -77,13 +80,29 @@ function sortStaticProducts(products: Product[], sortKey?: string, sortReverse?:
   return sorted;
 }
 
+function applyStaticFilters(products: Product[], options?: CatalogOptions): Product[] {
+  const filters = options?.filters;
+  if (!filters?.length) return products;
+  return products.filter((p) => {
+    for (const f of filters) {
+      if ('price' in f) {
+        const pr = f.price as {min?: number; max?: number};
+        if (pr.min !== undefined && p.price.amount < pr.min) return false;
+        if (pr.max !== undefined && p.price.amount > pr.max) return false;
+      }
+    }
+    return true;
+  });
+}
+
 function paginateStaticProducts(
   products: Product[],
   first: number,
   after: string | null | undefined,
   options?: CatalogOptions,
 ): PaginatedProducts {
-  const sorted = sortStaticProducts(products, options?.sortKey, options?.sortReverse);
+  const filtered = applyStaticFilters(products, options);
+  const sorted = sortStaticProducts(filtered, options?.sortKey, options?.sortReverse);
   const offset = after ? Number.parseInt(after, 10) : 0;
   const start = Number.isFinite(offset) ? offset : 0;
   const slice = sorted.slice(start, start + first);
@@ -115,6 +134,11 @@ export async function listProductsPage(
 
   if (options?.storefront) {
     try {
+      if (options.filters?.length) {
+        const allProducts = await listProducts(options);
+        return paginateStaticProducts(allProducts, first, page?.after, options);
+      }
+
       return await ShopifyRepository.listProductsPage(options.storefront, {
         first,
         after: page?.after,
@@ -136,6 +160,41 @@ export async function listProductsPage(
   }
 
   return paginateStaticProducts(StaticRepository.products, first, page?.after, options);
+}
+
+export async function listFeaturedCollectionProducts(
+  options?: CatalogOptions,
+  featuredCollectionHandle: string = DEFAULT_FEATURED_COLLECTION_HANDLE,
+  count?: number,
+): Promise<Product[]> {
+  const products = await listProductsByCollection(
+    featuredCollectionHandle,
+    options,
+    {sortKey: 'MANUAL', sortReverse: false},
+  );
+  return count != null && count > 0 ? products.slice(0, count) : products;
+}
+
+export async function listFeaturedProductsPage(
+  options?: CatalogOptions,
+  page?: {first?: number; after?: string | null},
+  filter?: {collectionHandle?: string; featuredCollectionHandle?: string},
+): Promise<PaginatedProducts> {
+  const first = page?.first ?? PRODUCT_LIST_PAGE_SIZE;
+  const handle =
+    filter?.featuredCollectionHandle ??
+    (options?.storefront
+      ? (await loadHomepageFeatured(options.storefront)).featuredCollectionHandle
+      : DEFAULT_FEATURED_COLLECTION_HANDLE);
+  let featuredProducts = await listFeaturedCollectionProducts(options, handle, 0);
+
+  if (filter?.collectionHandle) {
+    featuredProducts = featuredProducts.filter(
+      (product) => product.collectionSlug === filter.collectionHandle,
+    );
+  }
+
+  return paginateStaticProducts(featuredProducts, first, page?.after);
 }
 
 export async function listCollectionProductsPage(
@@ -166,7 +225,7 @@ export async function listCollectionProductsPage(
       return await ShopifyRepository.listCollectionProductsPage(
         options.storefront,
         handle,
-        {first, after: page?.after, sortKey: options.sortKey, sortReverse: options.sortReverse},
+        {first, after: page?.after, sortKey: options.sortKey, sortReverse: options.sortReverse, filters: options.filters},
       );
     } catch (error) {
       console.warn('[catalog] Shopify collection page fetch failed', error);
@@ -200,10 +259,13 @@ export async function findProductByHandle(
 export async function listCollections(
   options?: CatalogOptions,
 ): Promise<Collection[]> {
-  return withCatalog(
+  const collections = await withCatalog(
     ShopifyRepository.listCollections,
     () => StaticRepository.collections,
     options,
+  );
+  return collections.filter(
+    (collection) => collection.handle !== DEFAULT_FEATURED_COLLECTION_HANDLE,
   );
 }
 
@@ -222,10 +284,11 @@ export async function findCollectionByHandle(
 export async function listProductsByCollection(
   handle: string,
   options?: CatalogOptions,
+  sort?: {sortKey?: string; sortReverse?: boolean},
 ): Promise<Product[]> {
   const products = await withCatalog(
     (storefront) =>
-      ShopifyRepository.listProductsByCollection(storefront, handle),
+      ShopifyRepository.listProductsByCollection(storefront, handle, sort),
     () => StaticRepository.productsByCollection(handle),
     options,
   );

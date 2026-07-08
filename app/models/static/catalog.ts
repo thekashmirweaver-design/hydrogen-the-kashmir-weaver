@@ -18,6 +18,7 @@ const bluePashmina5 = "/assets/blue-pashmina-5.jpg";
 
 import type { Collection, Money, Product, ProductImage } from "../types";
 import { usd } from "../money";
+import { DEFAULT_FEATURED_COLLECTION_HANDLE } from "~/lib/featured-collection";
 
 const collectionImage = (src: string, name: string): ProductImage => ({ src, alt: name });
 
@@ -106,6 +107,19 @@ const rawCollections: RawCollection[] = [
       title: "Maheen Kari — The Kashmir Weaver",
       description:
         "Maheen Kari refers to exceptionally fine and delicate hand embroidery executed with microscopic precision.",
+    },
+  },
+  {
+    id: "col_homepage_featured",
+    handle: DEFAULT_FEATURED_COLLECTION_HANDLE,
+    name: "Homepage Featured",
+    tagline: "Curated for the homepage",
+    story:
+      "Products in this collection appear on the homepage Featured Pieces carousel and in the shop Featured sort. Reorder them manually in Shopify Admin.",
+    hero: royal,
+    seo: {
+      title: "Homepage Featured — The Kashmir Weaver",
+      description: "Curated pieces featured on the homepage.",
     },
   },
 ];
@@ -815,8 +829,12 @@ export const products: Product[] = catalog.map(normalizeProduct);
 
 export const getCollection = (handle: string) => collections.find((c) => c.handle === handle);
 export const getProduct = (handle: string) => products.find((p) => p.handle === handle);
-export const productsByCollection = (handle: string) =>
-  products.filter((p) => p.collectionSlug === handle);
+export const productsByCollection = (handle: string) => {
+  if (handle === DEFAULT_FEATURED_COLLECTION_HANDLE) {
+    return products.slice(0, 8);
+  }
+  return products.filter((p) => p.collectionSlug === handle);
+};
 
 export const allWeaveFacets = (): string[] =>
   Array.from(new Set(products.map((p) => p.weave))).sort();

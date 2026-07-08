@@ -349,23 +349,24 @@
 .range-thumb::-webkit-slider-thumb {
   -webkit-appearance: none;
   pointer-events: auto;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 9999px;
   background: var(--accent);
   border: 3px solid var(--background);
-  box-shadow: 0 0 0 8px transparent;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
   cursor: pointer;
   touch-action: none;
 }
 
 .range-thumb::-moz-range-thumb {
   pointer-events: auto;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 9999px;
   background: var(--accent);
   border: 3px solid var(--background);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
   cursor: pointer;
   touch-action: none;
 }

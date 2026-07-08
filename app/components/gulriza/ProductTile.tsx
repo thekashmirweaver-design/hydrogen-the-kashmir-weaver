@@ -55,7 +55,7 @@ function TileImageIndicator({
   );
 }
 
-export function ProductTile({product}: {product: Product}) {
+export function ProductTile({product, disableSwipe}: {product: Product; disableSwipe?: boolean}) {
   const [hover, setHover] = useState(false);
   const [active, setActive] = useState(0);
   const [loadExtras, setLoadExtras] = useState(false);
@@ -79,7 +79,7 @@ export function ProductTile({product}: {product: Product}) {
   const tileSwipe = useHorizontalSwipe({
     onSwipeLeft: goNext,
     onSwipeRight: goPrev,
-    enabled: multiImage,
+    enabled: multiImage && !disableSwipe,
     containSwipe: true,
   });
 

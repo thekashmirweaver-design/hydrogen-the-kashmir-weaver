@@ -4,7 +4,6 @@ import type {CatalogSnapshot, Collection, Product} from '~/models/types';
 import {
   loadHomepageFeatured,
   pickCollectionsByHandles,
-  pickProductsByHandles,
 } from '~/lib/homepage-featured';
 import {resolveCatalogSnapshot} from '~/lib/shared-catalog';
 import {truncateMetaDescription} from '~/lib/meta-description';
@@ -27,13 +26,15 @@ export async function getHomePage(
   catalog?: CatalogSnapshot,
 ): Promise<HomePageViewModel> {
   const {products, collections} = await resolveCatalogSnapshot(options, catalog);
-  const featuredProducts = pickProductsByHandles(
-    products,
-    featured?.productHandles ?? [],
+  const featuredProducts = await CatalogRepository.listFeaturedCollectionProducts(
+    options,
+    featured?.featuredCollectionHandle,
+    featured?.featuredCount ?? 8,
   );
   const featuredCollections = pickCollectionsByHandles(
     collections,
     featured?.collectionHandles ?? [],
+    {limit: featured?.collectionCount},
   );
   return {products, collections, featuredProducts, featuredCollections};
 }

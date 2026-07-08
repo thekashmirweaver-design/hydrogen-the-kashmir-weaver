@@ -18,9 +18,11 @@ export const meta: Route.MetaFunction = ({location, matches}) => {
   });
 };
 
-export async function loader({context}: Route.LoaderArgs) {
+export async function loader({context, request}: Route.LoaderArgs) {
   const catalogOptions = getCatalogOptions(context);
-  return getShopPage(catalogOptions);
+  const url = new URL(request.url);
+  const sort = url.searchParams.get('sort') as 'newest' | 'best-selling' | 'price-asc' | 'price-desc' | null;
+  return getShopPage(catalogOptions, sort ?? undefined);
 }
 
 export default function ShopRoute() {

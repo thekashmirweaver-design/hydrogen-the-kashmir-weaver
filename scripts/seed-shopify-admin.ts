@@ -19,6 +19,10 @@ import {
   shopifySizeProductOptions,
 } from '../app/models/store-sizes.ts';
 import type {Product} from '../app/models/types.ts';
+import {
+  DEFAULT_FEATURED_COLLECTION_HANDLE,
+  FEATURED_COLLECTION_TITLE,
+} from '../app/lib/featured-collection.ts';
 
 /** Load repo-root .env into process.env (does not override existing vars). */
 function loadEnvFile() {
@@ -278,7 +282,6 @@ async function ensureMetafieldDefinitions() {
     {key: 'weave', name: 'Weave', type: 'single_line_text_field', owner: 'PRODUCT'},
     {key: 'limited', name: 'Limited edition', type: 'boolean', owner: 'PRODUCT'},
     {key: 'stock_qty', name: 'Stock quantity', type: 'number_integer', owner: 'PRODUCT'},
-    {key: 'featured', name: 'Featured', type: 'boolean', owner: 'PRODUCT'},
     {key: 'show_colour_studio', name: 'Show colour studio', type: 'boolean', owner: 'PRODUCT'},
     {key: 'care', name: 'Care instructions', type: 'single_line_text_field', owner: 'PRODUCT'},
     {key: 'guarantees_delivery', name: 'Guarantees and delivery', type: 'json', owner: 'PRODUCT'},
@@ -321,7 +324,6 @@ async function ensureMetafieldDefinitions() {
 }
 
 async function setShopMetafields(shopId: string) {
-  const featuredHandles = products.slice(0, 8).map((p) => p.handle);
   const collectionHandles = collections.map((c) => c.handle);
 
   const metafields = [
@@ -341,8 +343,13 @@ async function setShopMetafields(shopId: string) {
       key: 'homepage_featured',
       type: 'json',
       value: JSON.stringify({
-        productHandles: featuredHandles,
-        collectionHandles,
+        featuredCollectionHandle: DEFAULT_FEATURED_COLLECTION_HANDLE,
+        collectionHandles: collectionHandles.slice(0, 4),
+        featuredCount: 8,
+        collectionCount: 4,
+        collectionPreviewCount: 3,
+        bestSellingCount: 8,
+        newestCount: 8,
         heroImageUrl: assetUrl('/assets/hero-portrait.jpg'),
         heroAlt:
           'A woman wrapped in an emerald pashmina shawl, framed by a stone arch overlooking a Himalayan lake at dusk.',
@@ -561,7 +568,9 @@ async function syncProductSizes(productId: string, product: Product) {
   }
 }
 
-async function seedProducts(collectionIds: Map<string, string>) {
+async function seedProducts(collectionIds: Map<string, string>): Promise<Map<string, string>> {
+  const productIdByHandle = new Map<string, string>();
+
   for (const product of products) {
     const media = product.images.map((img) => ({
       originalSource: assetUrl(img.src),
@@ -603,6 +612,7 @@ async function seedProducts(collectionIds: Map<string, string>) {
       }
 
       const productId = result.productCreate.product.id;
+      productIdByHandle.set(product.handle, productId);
       await syncProductSizes(productId, product);
 
       const collectionId = collectionIds.get(product.collectionSlug);
@@ -623,6 +633,66 @@ async function seedProducts(collectionIds: Map<string, string>) {
       console.log(`  · product ${product.handle}: ${(err as Error).message}`);
     }
     await sleep(500);
+  }
+
+  return productIdByHandle;
+}
+
+async function seedFeaturedCollection(productIdByHandle: Map<string, string>) {
+  const featuredHandles = products.slice(0, 8).map((p) => p.handle);
+  const productIds = featuredHandles
+    .map((handle) => productIdByHandle.get(handle))
+    .filter((id): id is string => id != null);
+
+  if (!productIds.length) {
+    console.log('  · homepage featured collection skipped (no product IDs)');
+    return;
+  }
+
+  try {
+    const result = await adminGraphql<{
+      collectionCreate: {
+        collection: {id: string; handle: string};
+        userErrors: Array<{message: string}>;
+      };
+    }>(
+      `#graphql
+      mutation CreateFeaturedCollection($input: CollectionInput!) {
+        collectionCreate(input: $input) {
+          collection { id handle }
+          userErrors { message }
+        }
+      }`,
+      {
+        input: {
+          title: FEATURED_COLLECTION_TITLE,
+          handle: DEFAULT_FEATURED_COLLECTION_HANDLE,
+          descriptionHtml:
+            '<p>Products shown on the homepage Featured Pieces carousel. Set sort to Manual and drag to reorder.</p>',
+          sortOrder: 'MANUAL',
+        },
+      },
+    );
+
+    if (result.collectionCreate.userErrors.length) {
+      throw new Error(result.collectionCreate.userErrors[0].message);
+    }
+
+    const collectionId = result.collectionCreate.collection.id;
+
+    await adminGraphql(
+      `#graphql
+      mutation AddToFeaturedCollection($id: ID!, $productIds: [ID!]!) {
+        collectionAddProducts(id: $id, productIds: $productIds) {
+          userErrors { message }
+        }
+      }`,
+      {id: collectionId, productIds},
+    );
+
+    console.log(`  ✓ collection ${DEFAULT_FEATURED_COLLECTION_HANDLE} (${productIds.length} products)`);
+  } catch (err) {
+    console.log(`  · collection ${DEFAULT_FEATURED_COLLECTION_HANDLE}: ${(err as Error).message}`);
   }
 }
 
@@ -661,9 +731,12 @@ async function main() {
   const collectionIds = await seedCollections();
 
   console.log('\n5. Products');
-  await seedProducts(collectionIds);
+  const productIdByHandle = await seedProducts(collectionIds);
 
-  console.log('\n6. Publish to Online Store (required for Storefront API)');
+  console.log('\n6. Homepage featured collection');
+  await seedFeaturedCollection(productIdByHandle);
+
+  console.log('\n7. Publish to Online Store (required for Storefront API)');
   await publishCatalogToStorefront();
 
   console.log('\nDone.');

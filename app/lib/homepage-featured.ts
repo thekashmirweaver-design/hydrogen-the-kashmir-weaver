@@ -1,11 +1,21 @@
 import type {Storefront} from '@shopify/hydrogen';
-import type {Collection, Product} from '~/models/types';
+import type {Collection} from '~/models/types';
+import {DEFAULT_FEATURED_COLLECTION_HANDLE} from '~/lib/featured-collection';
 
 export type HomepageFeatured = {
-  productHandles: string[];
+  /** Manual-sort collection handle for Featured Pieces (drag order in Admin). */
+  featuredCollectionHandle: string;
   collectionHandles: string[];
   heroImageUrl?: string;
   heroAlt?: string;
+  /** Max products in the homepage Featured Pieces carousel. */
+  featuredCount: number;
+  bestSellingCount: number;
+  newestCount: number;
+  /** Max collections in the homepage Signature Collections section (order from collectionHandles). */
+  collectionCount?: number;
+  /** Product tiles shown under each homepage collection. */
+  collectionPreviewCount: number;
 };
 
 const HOMEPAGE_FEATURED_QUERY = `#graphql
@@ -56,58 +66,58 @@ export async function loadHomepageFeatured(
       {cache: storefront.CacheLong()},
     );
     const parsed = parseJsonField<{
-      productHandles?: string[];
+      featuredCollectionHandle?: string;
       collectionHandles?: string[];
       heroImageUrl?: string;
       heroAlt?: string;
+      bestSellingCount?: number;
+      newestCount?: number;
+      featuredCount?: number;
+      collectionCount?: number;
+      collectionPreviewCount?: number;
     }>(data.shop?.homepageFeatured?.value ?? undefined);
 
     return {
-      productHandles: parsed?.productHandles?.filter(Boolean) ?? [],
+      featuredCollectionHandle:
+        parsed?.featuredCollectionHandle ?? DEFAULT_FEATURED_COLLECTION_HANDLE,
       collectionHandles: parsed?.collectionHandles?.filter(Boolean) ?? [],
       heroImageUrl: localizePublicAssetUrl(parsed?.heroImageUrl),
       heroAlt: parsed?.heroAlt,
+      bestSellingCount: parsed?.bestSellingCount ?? 8,
+      newestCount: parsed?.newestCount ?? 8,
+      featuredCount: parsed?.featuredCount ?? 8,
+      collectionCount: parsed?.collectionCount,
+      collectionPreviewCount: parsed?.collectionPreviewCount ?? 3,
     };
   } catch {
     return {
-      productHandles: [],
+      featuredCollectionHandle: DEFAULT_FEATURED_COLLECTION_HANDLE,
       collectionHandles: [],
+      bestSellingCount: 8,
+      newestCount: 8,
+      featuredCount: 8,
+      collectionPreviewCount: 3,
     };
   }
-}
-
-/**
- * Curated handles (from the shop's `homepage_featured` metafield) come first,
- * in the order listed. Any product with its own `custom.featured` metafield
- * set to true is appended after, so merchants can flag a product as featured
- * directly on the product without editing the shop-level JSON. Falls back to
- * the first N catalog products only when neither source yields anything.
- */
-export function pickProductsByHandles(
-  products: Product[],
-  handles: string[],
-  fallbackCount = 8,
-): Product[] {
-  const curated = handles
-    .map((handle) => products.find((p) => p.handle === handle))
-    .filter((p): p is Product => p != null);
-
-  const curatedHandles = new Set(curated.map((p) => p.handle));
-  const flagged = products.filter(
-    (p) => p.featured && !curatedHandles.has(p.handle),
-  );
-
-  const combined = [...curated, ...flagged];
-  return combined.length ? combined : products.slice(0, fallbackCount);
 }
 
 export function pickCollectionsByHandles(
   collections: Collection[],
   handles: string[],
+  options?: {limit?: number},
 ): Collection[] {
-  if (!handles.length) return collections;
-  const picked = handles
-    .map((handle) => collections.find((c) => c.handle === handle))
-    .filter((c): c is Collection => c != null);
-  return picked.length ? picked : collections;
+  const picked = handles.length
+    ? handles
+        .map((handle) => collections.find((c) => c.handle === handle))
+        .filter((c): c is Collection => c != null)
+    : [];
+
+  const result = picked.length ? picked : [...collections];
+  const limit = options?.limit;
+
+  if (limit != null && limit > 0) {
+    return result.slice(0, limit);
+  }
+
+  return result;
 }

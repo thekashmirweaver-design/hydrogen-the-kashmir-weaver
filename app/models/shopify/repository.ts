@@ -81,6 +81,10 @@ export async function listProductsPage(
     },
   );
 
+  if (!data?.products?.edges) {
+    throw new Error('[catalog] Storefront products query returned no products');
+  }
+
   return {
     products: data.products.edges.map(({node}) => mapProduct(node)),
     pageInfo: mapPageInfo(data.products.pageInfo),
@@ -149,7 +153,7 @@ export async function findCollectionByHandle(
 export async function listCollectionProductsPage(
   storefront: Storefront,
   handle: string,
-  options: {first?: number; after?: string | null; sortKey?: string; sortReverse?: boolean} = {},
+  options: {first?: number; after?: string | null; sortKey?: string; sortReverse?: boolean; filters?: Record<string, unknown>[]} = {},
 ): Promise<PaginatedProducts & {collection?: Collection}> {
   const first = options.first ?? PRODUCT_LIST_PAGE_SIZE;
   const data = await catalogQuery<CollectionByHandleResult>(
@@ -162,6 +166,7 @@ export async function listCollectionProductsPage(
       productAfter: options.after ?? null,
       productSortKey: options.sortKey ?? 'CREATED',
       productReverse: options.sortReverse ?? true,
+      productFilters: options.filters?.length ? options.filters : undefined,
     },
   );
 
@@ -185,6 +190,7 @@ export async function listCollectionProductsPage(
 export async function listProductsByCollection(
   storefront: Storefront,
   handle: string,
+  options?: {sortKey?: string; sortReverse?: boolean},
 ): Promise<Product[]> {
   const products: Product[] = [];
   let after: string | null = null;
@@ -194,6 +200,8 @@ export async function listProductsByCollection(
     const page = await listCollectionProductsPage(storefront, handle, {
       first: PRODUCT_FETCH_BATCH_SIZE,
       after,
+      sortKey: options?.sortKey ?? 'MANUAL',
+      sortReverse: options?.sortReverse ?? false,
     });
     products.push(...page.products);
     hasNextPage = page.pageInfo.hasNextPage;

@@ -3,6 +3,7 @@ import type {CatalogOptions} from '~/models/catalog.repository';
 import type {CatalogSnapshot, Collection, Product} from '~/models/types';
 import type {PageMetadata} from '~/controllers/catalog.controller';
 import type {CatalogPageInfo} from '~/lib/catalog-pagination';
+import {getSortConfig} from '~/lib/catalog-pagination';
 import {resolveCatalogSnapshot} from '~/lib/shared-catalog';
 
 export type ShopPageViewModel = {
@@ -12,8 +13,14 @@ export type ShopPageViewModel = {
 
 export async function getShopPage(
   options?: CatalogOptions,
+  sort?: 'newest' | 'best-selling' | 'price-asc' | 'price-desc',
 ): Promise<ShopPageViewModel> {
-  return CatalogRepository.listProductsPage(options);
+  const {sortKey, reverse} = getSortConfig(sort ?? 'newest', false);
+  return CatalogRepository.listProductsPage({
+    ...options,
+    sortKey,
+    sortReverse: reverse,
+  });
 }
 
 export type CollectionsPageViewModel = {
@@ -90,9 +97,10 @@ export async function getCollectionPage(
     (item) => item.handle === handle,
   );
 
+  const {sortKey, reverse} = getSortConfig('newest', true);
   const paginated = await CatalogRepository.listCollectionProductsPage(
     handle,
-    options,
+    {...options, sortKey, sortReverse: reverse},
   );
 
   const collection =

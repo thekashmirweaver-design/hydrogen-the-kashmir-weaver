@@ -6,22 +6,33 @@ import {ProductTile} from "~/components/gulriza/ProductTile";
 import {Reveal} from "~/components/gulriza/Reveal";
 import {Hand} from "lucide-react";
 
-const AUTO_SCROLL_MS = 5500;
+const AUTO_SCROLL_MS = 5000;
 
 export function ProductCarousel({products}: {products: Product[]}) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const pausedRef = useRef(false);
+
+  const getStep = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return 0;
+    const first = el.firstElementChild as HTMLElement | null;
+    if (first) return first.offsetWidth + 24;
+    return el.clientWidth * 0.85;
+  }, []);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const handleScroll = () => {
       if (el.scrollLeft > 10) setHasScrolled(true);
+      const step = getStep();
+      if (step > 0) setCurrentSlide(Math.round(el.scrollLeft / step));
     };
     el.addEventListener("scroll", handleScroll, {passive: true});
     return () => el.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [getStep]);
 
   const pause = useCallback(() => {
     pausedRef.current = true;
@@ -40,9 +51,8 @@ export function ProductCarousel({products}: {products: Product[]}) {
 
     const tick = () => {
       if (pausedRef.current || !el) return;
-      const first = el.firstElementChild as HTMLElement | null;
-      const gap = 24;
-      const step = first ? first.offsetWidth + gap : el.clientWidth * 0.85;
+      const step = getStep();
+      if (step <= 0) return;
       const maxScroll = el.scrollWidth - el.clientWidth;
       if (maxScroll <= 0) return;
 
@@ -83,11 +93,33 @@ export function ProductCarousel({products}: {products: Product[]}) {
             className="w-[min(85vw,320px)] shrink-0 snap-start sm:w-[min(58vw,340px)] md:w-[min(32vw,300px)] lg:w-[280px] xl:w-[300px]"
           >
             <Reveal delay={idx * 100}>
-              <ProductTile product={product} />
+              <ProductTile product={product} disableSwipe />
             </Reveal>
           </div>
         ))}
       </div>
+
+      {products.length > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          {products.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => {
+                const step = getStep();
+                if (step > 0) {
+                  scrollRef.current?.scrollTo({left: step * idx, behavior: "smooth"});
+                }
+              }}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                idx === currentSlide
+                  ? "w-6 bg-foreground"
+                  : "w-2 bg-foreground/30 hover:bg-foreground/50"
+              }`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

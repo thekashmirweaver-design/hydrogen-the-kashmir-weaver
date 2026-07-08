@@ -15,7 +15,6 @@ Each definition must have **Storefront API access** enabled so the Storefront AP
 | `weave` | Weave | Single line text | Weave or embroidery technique |
 | `limited` | Limited edition | True or false | Marks one-of-a-kind or limited pieces |
 | `stock_qty` | Stock quantity | Integer | Display stock count; used with variant availability |
-| `featured` | Featured | True or false | Adds this product to the homepage featured list (appended after any curated `homepage_featured` handles) |
 
 **Owner:** Product
 
@@ -40,7 +39,7 @@ Each definition must have **Storefront API access** enabled so the Storefront AP
 | `contact_whatsapp` | Contact WhatsApp | Single line text | WhatsApp number or link |
 | `instagram_url` | Instagram URL | URL | Social link |
 | `facebook_url` | Facebook URL | URL | Social link |
-| `homepage_featured` | Homepage featured | JSON | `{ "productHandles": ["..."], "collectionHandles": ["..."] }` for homepage curation |
+| `homepage_featured` | Homepage featured | JSON | Homepage carousels, hero, and collection curation (see below) |
 
 **Owner:** Shop
 
@@ -48,14 +47,43 @@ Each definition must have **Storefront API access** enabled so the Storefront AP
 
 ```json
 {
-  "productHandles": ["midnight-emerald-jamawar", "heritage-kani-shawl"],
+  "featuredCollectionHandle": "homepage-featured",
+  "featuredCount": 6,
+  "bestSellingCount": 8,
+  "newestCount": 8,
   "collectionHandles": ["jamawar-embroidery", "kani-pashmina"],
+  "collectionCount": 2,
+  "collectionPreviewCount": 3,
   "heroImageUrl": "https://your-store.com/assets/hero-portrait.jpg",
   "heroAlt": "Hero image alt text"
 }
 ```
 
-Selection order: curated `productHandles` first (in the order listed), then any product with `custom.featured` set to true, then — only if both are empty — the first eight products in catalog order. Collections fall back to all collections in catalog order when `collectionHandles` is empty.
+| Field | Purpose |
+| --- | --- |
+| `featuredCollectionHandle` | Manual-sort collection for **Featured Pieces** (default `homepage-featured`) |
+| `featuredCount` | Max products shown from that collection on the homepage |
+| `bestSellingCount` | Max products in the **Best Selling** carousel |
+| `newestCount` | Max products in the **Newest Pieces** carousel |
+| `collectionHandles` | **Signature Collections** — collection handles in display order |
+| `collectionCount` | Max collections in **Signature Collections** (optional; defaults to all picked handles) |
+| `collectionPreviewCount` | Product tiles under each homepage collection |
+| `heroImageUrl` / `heroAlt` | Homepage hero image |
+
+### Homepage Featured collection
+
+Create a **manual-sort** collection in Shopify Admin (handle `homepage-featured` by default):
+
+1. **Products → Collections → Create collection**
+2. Name: **Homepage Featured**, handle: `homepage-featured`
+3. Set **Sort** to **Manual**
+4. Add products and drag to reorder
+
+That order drives the homepage **Featured Pieces** carousel (up to `featuredCount`) and the shop **Featured** sort on `/collections/all`. This collection is hidden from the public `/collections` index.
+
+**Best Selling / Newest:** Sorted from the full catalog; counts are capped by `bestSellingCount` and `newestCount` (default `8` each).
+
+Collections fall back to all collections in catalog order when `collectionHandles` is empty.
 
 ## Product reviews (optional)
 

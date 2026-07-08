@@ -70,7 +70,7 @@ export function useSearchPagePagination({
     if (prevEntry.pageInfo.endCursor) {
       params.set('after', prevEntry.pageInfo.endCursor);
     }
-    fetcher.load(`/api/search-products?${params.toString()}`);
+    void fetcher.load(`/api/search-products?${params.toString()}`);
   }, [fetcher, loading, term]);
 
   const handleNextPage = useCallback(() => {

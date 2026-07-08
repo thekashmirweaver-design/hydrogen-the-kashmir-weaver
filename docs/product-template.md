@@ -161,7 +161,6 @@ to compare product code <strong>{CODE}</strong> with the selected code.</em></p>
 | `custom.origin` | single_line_text_field | yes | `"Srinagar, Kashmir"` |
 | `custom.weave` | single_line_text_field | yes | `"Plain hand-woven"` |
 | `custom.care` | single_line_text_field | no | `"Dry clean only."` |
-| `custom.featured` | boolean | no | `"true"` — adds to homepage curation |
 | `custom.limited` | boolean | no | `"true"` — flags limited edition |
 | `custom.stock_qty` | number_integer | no | `"5"` |
 | `custom.show_colour_studio` | boolean | no | `"true"` — enables "Try Colours" on PDP |

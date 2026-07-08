@@ -344,7 +344,7 @@ export const PRODUCT_BY_HANDLE_QUERY_NO_INVENTORY = `#graphql
 ` as const;
 
 export const ALL_PRODUCTS_QUERY_NO_INVENTORY = `#graphql
-  query CatalogAllProducts(
+  query CatalogAllProductsNoInventory(
     $country: CountryCode
     $language: LanguageCode
     $first: Int!
@@ -394,12 +394,13 @@ export const COLLECTION_BY_HANDLE_QUERY = `#graphql
     $handle: String!
     $productFirst: Int!
     $productAfter: String
-    $productSortKey: CollectionProductsSortKeys!
+    $productSortKey: ProductCollectionSortKeys!
     $productReverse: Boolean!
+    $productFilters: [ProductFilter!]
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       ...CatalogCollection
-      products(first: $productFirst, after: $productAfter, sortKey: $productSortKey, reverse: $productReverse) {
+      products(first: $productFirst, after: $productAfter, sortKey: $productSortKey, reverse: $productReverse, filters: $productFilters) {
         edges {
           node {
             ...CatalogProduct
@@ -424,12 +425,13 @@ export const COLLECTION_BY_HANDLE_QUERY_NO_INVENTORY = `#graphql
     $handle: String!
     $productFirst: Int!
     $productAfter: String
-    $productSortKey: CollectionProductsSortKeys!
+    $productSortKey: ProductCollectionSortKeys!
     $productReverse: Boolean!
+    $productFilters: [ProductFilter!]
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       ...CatalogCollection
-      products(first: $productFirst, after: $productAfter, sortKey: $productSortKey, reverse: $productReverse) {
+      products(first: $productFirst, after: $productAfter, sortKey: $productSortKey, reverse: $productReverse, filters: $productFilters) {
         edges {
           node {
             ...CatalogProduct

@@ -19,6 +19,18 @@ const artisan = '/assets/craft-artisan.png';
 const journalCraft = '/assets/journal-craft.jpg';
 const journalGoat = '/assets/changthangi-goat.jpg';
 
+function bestSellingScore(p: Product): number {
+  return (p.tags?.some((t) => /best-?sell/i.test(t)) ? 2 : 0) + (p.limited ? 1 : 0);
+}
+
+function sortBestSelling(products: Product[]): Product[] {
+  return [...products].sort((a, b) => bestSellingScore(b) - bestSellingScore(a));
+}
+
+function sortNewest(products: Product[]): Product[] {
+  return [...products].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+}
+
 export function HomeView({
   products,
   collections,
@@ -27,6 +39,9 @@ export function HomeView({
   journalPosts = [],
   heroImageUrl,
   heroAlt,
+  bestSellingCount = 8,
+  newestCount = 8,
+  collectionPreviewCount = 3,
 }: {
   products: Product[];
   collections: Collection[];
@@ -35,19 +50,37 @@ export function HomeView({
   journalPosts?: JournalPost[];
   heroImageUrl?: string;
   heroAlt?: string;
+  bestSellingCount?: number;
+  newestCount?: number;
+  collectionPreviewCount?: number;
 }) {
+  const bestSellingProducts = sortBestSelling(products).slice(0, bestSellingCount);
+  const newestProducts = sortNewest(products).slice(0, newestCount);
+
   return (
     <div>
       <Hero heroImageUrl={heroImageUrl} heroAlt={heroAlt} />
       <FeaturedProducts products={featuredProducts} />
+      <ProductCarouselSection
+        products={bestSellingProducts}
+        title="Best Selling"
+        ctaLabel="View All Best Selling"
+        ctaHref="/collections/all?sort=best-selling"
+      />
+      <ProductCarouselSection
+        products={newestProducts}
+        title="Newest Pieces"
+        ctaLabel="View All Newest"
+        ctaHref="/collections/all?sort=newest"
+      />
       <SignatureCollections
         collections={featuredCollections}
         products={products}
+        previewCount={collectionPreviewCount}
       />
       <CraftAndOrigin />
       <JournalSection posts={journalPosts} />
       <BespokeSection />
-      <ShopCallout />
     </div>
   );
 }
@@ -139,18 +172,65 @@ function FeaturedProducts({products}: {products: Product[]}) {
           </div>
           <Link
             to="/collections/all"
-            className="tracked hidden items-center gap-3 text-muted-foreground transition hover:text-accent md:flex"
+            className="tracked hidden items-center gap-3 px-6 py-3 font-medium transition hover:opacity-90 md:inline-flex"
+            style={{background: 'var(--accent)', color: 'var(--background)'}}
           >
-            View All Pieces <ArrowRight className="h-3 w-3" strokeWidth={1} />
+            View All Pieces <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
           </Link>
         </Reveal>
         <ProductCarousel products={featured} />
         <Reveal className="mt-12 text-center md:hidden">
           <Link
             to="/collections/all"
-            className="tracked inline-flex items-center gap-3 text-muted-foreground transition hover:text-accent"
+            className="tracked inline-flex w-full items-center justify-center gap-3 px-10 py-4 font-medium transition hover:opacity-90 sm:w-auto"
+            style={{background: 'var(--accent)', color: 'var(--background)'}}
           >
-            View All Pieces <ArrowRight className="h-3 w-3" strokeWidth={1} />
+            View All Pieces <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+          </Link>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function ProductCarouselSection({
+  products,
+  title,
+  ctaLabel,
+  ctaHref,
+}: {
+  products: Product[];
+  title: string;
+  ctaLabel: string;
+  ctaHref: string;
+}) {
+  if (!products.length) return null;
+  return (
+    <section className="relative py-20 md:py-32" style={{background: 'var(--surface)'}}>
+      <div className="mx-auto max-w-[1600px] px-6 md:px-10">
+        <Reveal className="mb-12 flex items-end justify-between">
+          <div>
+            <Eyebrow>The Atelier</Eyebrow>
+            <h2 className="font-display mt-4 text-3xl md:text-5xl" style={{fontWeight: 400}}>
+              {title}
+            </h2>
+          </div>
+          <Link
+            to={ctaHref}
+            className="tracked hidden items-center gap-3 px-6 py-3 font-medium transition hover:opacity-90 md:inline-flex"
+            style={{background: 'var(--accent)', color: 'var(--background)'}}
+          >
+            {ctaLabel} <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+          </Link>
+        </Reveal>
+        <ProductCarousel products={products} />
+        <Reveal className="mt-12 text-center md:hidden">
+          <Link
+            to={ctaHref}
+            className="tracked inline-flex w-full items-center justify-center gap-3 px-10 py-4 font-medium transition hover:opacity-90 sm:w-auto"
+            style={{background: 'var(--accent)', color: 'var(--background)'}}
+          >
+            {ctaLabel} <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
           </Link>
         </Reveal>
       </div>
@@ -173,9 +253,11 @@ function ExploreCollectionCta({handle, name}: {handle: string; name: string}) {
 function SignatureCollections({
   collections,
   products,
+  previewCount = 3,
 }: {
   collections: Collection[];
   products: Product[];
+  previewCount?: number;
 }) {
   return (
     <section className="relative py-32 md:py-40">
@@ -197,7 +279,7 @@ function SignatureCollections({
         {collections.map((c, i) => {
           const previewProducts = products
             .filter((p) => p.collectionSlug === c.handle)
-            .slice(0, 3);
+            .slice(0, previewCount);
           const nameParts = c.name.split(' ');
           const firstName = nameParts[0];
           const restName = nameParts.slice(1).join(' ');
@@ -261,18 +343,6 @@ function SignatureCollections({
         })}
       </div>
 
-      <div className="mx-auto max-w-[1600px] px-6 md:px-10">
-        <Hairline className="mt-24" />
-        <Reveal className="mt-28 text-center">
-          <Link
-            to="/collections/all"
-            className="tracked inline-flex w-full items-center justify-center gap-3 px-10 py-4 font-medium transition hover:opacity-90 sm:w-auto"
-            style={{background: 'var(--accent)', color: 'var(--background)'}}
-          >
-            Shop All Pieces <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
-          </Link>
-        </Reveal>
-      </div>
     </section>
   );
 }
@@ -449,34 +519,6 @@ function JournalSection({posts}: {posts: JournalPost[]}) {
             ))}
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
-
-function ShopCallout() {
-  return (
-    <section className="relative py-32 md:py-40">
-      <div className="mx-auto max-w-[1100px] px-6 md:px-10">
-        <Reveal className="text-center">
-          <Eyebrow>The Atelier</Eyebrow>
-          <h2 className="font-display mt-6 text-3xl md:text-5xl" style={{fontWeight: 400}}>
-            Take home a piece of Kashmir
-          </h2>
-          <p className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-muted-foreground">
-            Browse the complete collection of hand-woven pashmina — each a singular work, ready to
-            be yours.
-          </p>
-          <div className="mt-10">
-            <Link
-              to="/collections/all"
-              className="tracked inline-flex w-full items-center justify-center gap-3 px-10 py-4 font-medium transition hover:opacity-90 sm:w-auto"
-              style={{background: 'var(--accent)', color: 'var(--background)'}}
-            >
-              Shop All Pieces <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
-            </Link>
-          </div>
-        </Reveal>
       </div>
     </section>
   );

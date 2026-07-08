@@ -12,7 +12,6 @@ export const PRODUCT_METAFIELDS = {
   guaranteesDelivery: 'guarantees_delivery',
   returnsCare: 'returns_care',
   shadePalette: 'shade_palette',
-  featured: 'featured',
   showColourStudio: 'show_colour_studio',
 } as const;
 
