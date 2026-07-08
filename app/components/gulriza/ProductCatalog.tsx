@@ -11,7 +11,8 @@ import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 import { ShadeDropdown } from "~/components/gulriza/ShadeDropdown";
 import { collectShadesFromProducts, getDefaultSolidShadeCode } from "~/lib/solid-product";
 import type { CatalogPageInfo, ProductListScope } from "~/lib/catalog-pagination";
-import { useInfiniteProductScroll } from "~/hooks/use-infinite-product-scroll";
+import { usePagePagination } from "~/hooks/use-page-pagination";
+import { PagePagination } from "~/components/gulriza/PagePagination";
 
 export type SortKey = "featured" | "newest" | "price-asc" | "price-desc" | "best-selling";
 
@@ -53,14 +54,14 @@ export function ProductCatalog({
   id?: string;
 }) {
   const { collections } = useCatalog();
-  const infiniteScrollEnabled = Boolean(listSource && pageInfo);
-  const infiniteScroll = useInfiniteProductScroll({
+  const paginationEnabled = Boolean(listSource && pageInfo);
+  const pagination = usePagePagination({
     initialProducts,
     initialPageInfo: pageInfo ?? { hasNextPage: false, endCursor: null },
     listSource: listSource ?? { scope: "shop" },
-    enabled: infiniteScrollEnabled,
+    enabled: paginationEnabled,
   });
-  const products = infiniteScrollEnabled ? infiniteScroll.products : initialProducts;
+  const products = paginationEnabled ? pagination.products : initialProducts;
   const priceBounds = useMemo(() => {
     const all = products.map((p) => p.price.amount);
     const min = all.length ? Math.min(...all) : 0;
@@ -273,20 +274,15 @@ export function ProductCatalog({
                   <ProductTile key={p.handle} product={p} />
                 ))}
               </div>
-              {infiniteScrollEnabled && infiniteScroll.hasMore && (
-                <div
-                  ref={infiniteScroll.sentinelRef}
-                  className="flex justify-center py-12"
-                  aria-hidden
-                >
-                  {infiniteScroll.isLoadingMore && (
-                    <Loader2
-                      className="h-6 w-6 animate-spin text-muted-foreground"
-                      strokeWidth={1.25}
-                      aria-label="Loading more pieces"
-                    />
-                  )}
-                </div>
+              {paginationEnabled && (
+                <PagePagination
+                  currentPage={pagination.currentPage}
+                  hasNextPage={pagination.hasNextPage}
+                  hasPreviousPage={pagination.hasPreviousPage}
+                  onNext={pagination.handleNextPage}
+                  onPrevious={pagination.handlePrevPage}
+                  isLoading={pagination.isLoading}
+                />
               )}
             </>
           )}

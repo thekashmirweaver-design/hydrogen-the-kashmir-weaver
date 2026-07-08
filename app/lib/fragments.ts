@@ -22,38 +22,39 @@ export const CART_QUERY_FRAGMENT = `#graphql
         ...Money
       }
     }
-    merchandise {
-      ... on ProductVariant {
-        id
-        availableForSale
-        compareAtPrice {
-          ...Money
-        }
-        price {
-          ...Money
-        }
-        requiresShipping
-        title
-        image {
-          id
-          url
-          altText
-          width
-          height
+        merchandise {
+          ... on ProductVariant {
+            id
+            availableForSale
+            compareAtPrice {
+              ...Money
+            }
+            price {
+              ...Money
+            }
+            requiresShipping
+            title
+            sku
+            image {
+              id
+              url
+              altText
+              width
+              height
 
+            }
+            product {
+              handle
+              title
+              id
+              vendor
+            }
+            selectedOptions {
+              name
+              value
+            }
+          }
         }
-        product {
-          handle
-          title
-          id
-          vendor
-        }
-        selectedOptions {
-          name
-          value
-        }
-      }
-    }
     parentRelationship {
       parent {
         id
@@ -90,6 +91,7 @@ export const CART_QUERY_FRAGMENT = `#graphql
         }
         requiresShipping
         title
+        sku
         image {
           id
           url

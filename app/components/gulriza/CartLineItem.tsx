@@ -110,6 +110,11 @@ export function CartLineItem({
               : 'mt-1.5 text-sm text-muted-foreground'
           }
         />
+        {(merchandise as {sku?: string | null}).sku ? (
+          <p className={isDrawer ? 'mt-0.5 text-[0.65rem] text-muted-foreground' : 'mt-0.5 text-xs text-muted-foreground'}>
+            {(merchandise as {sku?: string | null}).sku}
+          </p>
+        ) : null}
         {!isDrawer && (
           <p className="mt-1 text-sm text-muted-foreground">{unitPrice}</p>
         )}

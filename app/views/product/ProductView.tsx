@@ -15,6 +15,7 @@ import {ProductTile} from '~/components/gulriza/ProductTile';
 import {CatalogImage} from '~/components/gulriza/CatalogImage';
 import {HorizontalScrollCue} from '~/components/gulriza/HorizontalScrollCue';
 import {TryColoursModal} from '~/components/gulriza/TryColoursModal';
+import {ShadeSwatch} from '~/components/gulriza/ShadeSwatch';
 import {ShadeSwatchStack} from '~/components/gulriza/ShadeSwatchStack';
 import {SelectedColourCard} from '~/components/gulriza/SelectedColourCard';
 import {ProductOptionPicker} from '~/components/gulriza/ProductOptionPicker';
@@ -576,6 +577,17 @@ export function ProductView({
                 <div className="grid grid-cols-1 gap-1 sm:grid-cols-[7rem_1fr] sm:gap-x-6 md:grid-cols-[8rem_1fr]">
                   <dt className="text-muted-foreground">Size</dt>
                   <dd>{selectedSize}</dd>
+                </div>
+              ) : null}
+              {selectedShade ? (
+                <div className="grid grid-cols-1 gap-1 sm:grid-cols-[7rem_1fr] sm:gap-x-6 md:grid-cols-[8rem_1fr]">
+                  <dt className="text-muted-foreground">Colour</dt>
+                  <dd>
+                    <span className="inline-flex items-center gap-2">
+                      <ShadeSwatch hex={selectedShade.hex} size="sm" label={selectedShade.family} />
+                      {selectedShade.family} ({selectedShade.code})
+                    </span>
+                  </dd>
                 </div>
               ) : null}
               {product.material ? (
