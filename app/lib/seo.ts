@@ -4,7 +4,7 @@ export {
   truncateMetaDescription,
 } from '~/lib/meta-description';
 
-const DEFAULT_STORE_URL = 'https://thekashmirweaver.in';
+const DEFAULT_STORE_URL = 'https://thekashmirweaver.shop';
 const SITE_NAME = 'The Kashmir Weaver';
 
 /** Oxygen preview deployments — never canonical storefront URLs. */
@@ -12,8 +12,8 @@ const OXYGEN_PREVIEW_HOST = /\.o2\.myshopify\.dev$/i;
 
 /** Live custom domains that should win over stale Oxygen env values. */
 const LIVE_STOREFRONT_HOSTS = new Set([
-  'thekashmirweaver.in',
-  'www.thekashmirweaver.in',
+  'thekashmirweaver.shop',
+  'www.thekashmirweaver.shop',
 ]);
 
 export type MetaDescriptor = Record<string, string>;
@@ -40,7 +40,7 @@ function isOxygenPreviewUrl(url: string): boolean {
  * Canonical storefront origin for SEO, checkout return links, and analytics.
  *
  * Prefers the live request host on custom domains, rejects Oxygen preview URLs
- * from PUBLIC_STORE_URL, and falls back to thekashmirweaver.in.
+ * from PUBLIC_STORE_URL, and falls back to thekashmirweaver.shop.
  */
 export function resolveStoreUrl(
   storeUrl?: string | null,

@@ -1,9 +1,8 @@
-const DEFAULT_PRIMARY_STORE_URL = 'https://thekashmirweaver.in';
+const DEFAULT_PRIMARY_STORE_URL = 'https://thekashmirweaver.shop';
 
 /** Hostnames that 301 to the primary storefront origin (same path + query). */
 const REDIRECT_TO_PRIMARY_HOSTS = new Set([
-  'thekashmirweaver.shop',
-  'www.thekashmirweaver.shop',
+  'thekashmirweaver.in',
   'www.thekashmirweaver.in',
 ]);
 

@@ -14,9 +14,9 @@ declare global {
     RESEND_API_KEY?: string;
     /** Inbox for concierge form submissions (default: thekashmirweaver@gmail.com). */
     CONCIERGE_EMAIL_TO?: string;
-    /** Verified sender in Resend (default: concierge@thekashmirweaver.in). */
+    /** Verified sender in Resend (default: concierge@thekashmirweaver.shop). */
     CONCIERGE_EMAIL_FROM?: string;
-    /** Canonical storefront URL (e.g. https://thekashmirweaver.in). Used by seed scripts and CSP. */
+    /** Canonical storefront URL (e.g. https://thekashmirweaver.shop). Used by seed scripts and CSP. */
     PUBLIC_STORE_URL?: string;
   }
 }
