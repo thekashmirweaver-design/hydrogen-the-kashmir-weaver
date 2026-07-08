@@ -8,6 +8,7 @@ export type JournalCategory =
   | 'Craft'
   | 'Style'
   | 'Travel'
+  | 'Literature'
   | 'Luxury Living';
 
 export type JournalPost = {
@@ -37,6 +38,7 @@ export const JOURNAL_CATEGORIES = [
   'Craft',
   'Style',
   'Travel',
+  'Literature',
   'Luxury Living',
 ] as const;
 

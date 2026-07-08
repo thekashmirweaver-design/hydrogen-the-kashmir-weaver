@@ -3,6 +3,7 @@ import {ArrowRight} from 'lucide-react';
 import {Eyebrow} from '~/components/gulriza/Eyebrow';
 import {EditorialImage} from '~/components/gulriza/CatalogImage';
 import {Reveal} from '~/components/gulriza/Reveal';
+import {JournalRichHtml} from '~/components/gulriza/JournalRichHtml';
 import type {JournalArticle} from '~/models/static/journal';
 import {journalEyebrow} from '~/lib/parse-page-content';
 
@@ -49,11 +50,7 @@ export function ArticleView({
 
       <article className="mx-auto max-w-2xl px-6 py-24 md:px-0">
         {article.bodyHtml ? (
-          <div
-            className="journal-article-body font-display text-xl leading-[1.7] text-foreground/90 [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-4 [&_blockquote]:my-8 [&_blockquote]:border-l [&_blockquote]:border-accent [&_blockquote]:pl-6 [&_blockquote]:italic [&_h2]:mt-12 [&_h2]:text-3xl [&_h3]:mt-10 [&_h3]:text-2xl [&_img]:my-10 [&_img]:w-full [&_li]:my-2 [&_ol]:my-8 [&_ol]:list-decimal [&_ol]:pl-6 [&_p+p]:mt-8 [&_p:first-of-type::first-letter]:float-left [&_p:first-of-type::first-letter]:mr-3 [&_p:first-of-type::first-letter]:font-display [&_p:first-of-type::first-letter]:text-5xl [&_p:first-of-type::first-letter]:leading-[0.85] [&_p:first-of-type::first-letter]:text-accent sm:[&_p:first-of-type::first-letter]:text-7xl [&_strong]:font-medium [&_ul]:my-8 [&_ul]:list-disc [&_ul]:pl-6"
-            style={{fontWeight: 300}}
-            dangerouslySetInnerHTML={{__html: article.bodyHtml}}
-          />
+          <JournalRichHtml html={article.bodyHtml} />
         ) : (
           (article.body ?? []).map((p, i) => (
             <p
