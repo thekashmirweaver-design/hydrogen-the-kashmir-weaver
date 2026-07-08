@@ -12,7 +12,7 @@ function scrollToProducts() {
   });
 }
 
-/** Hides once ≥25% of the products section is visible in the viewport. */
+/** Hides once the products section enters the viewport. */
 export function CollectionProductsScrollCue() {
   const [visible, setVisible] = useState(true);
 
@@ -22,9 +22,9 @@ export function CollectionProductsScrollCue() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setVisible(entry.intersectionRatio < 0.25);
+        if (entry.isIntersecting) setVisible(false);
       },
-      {threshold: [0, 0.25]},
+      {threshold: 0},
     );
 
     observer.observe(products);
