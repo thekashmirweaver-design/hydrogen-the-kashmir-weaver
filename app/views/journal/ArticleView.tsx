@@ -19,7 +19,9 @@ export function ArticleView({
       <section className="relative h-[80dvh] w-full overflow-hidden pt-[calc(var(--header-h)+1rem)]">
         <EditorialImage
           src={article.img}
-          alt={article.title}
+          alt={article.alt ?? article.title}
+          width={article.width ?? undefined}
+          height={article.height ?? undefined}
           className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
           loading="eager"
           fetchPriority="high"

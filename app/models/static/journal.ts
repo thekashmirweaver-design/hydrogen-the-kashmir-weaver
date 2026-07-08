@@ -17,6 +17,9 @@ export type JournalPost = {
   title: string;
   excerpt: string;
   img: string;
+  alt?: string | null;
+  width?: number | null;
+  height?: number | null;
   minutes: number;
   date: string;
 };
@@ -26,6 +29,9 @@ export type JournalArticle = {
   cat: JournalCategory;
   minutes: number;
   img: string;
+  alt?: string | null;
+  width?: number | null;
+  height?: number | null;
   /** Static fallback — plain-text paragraphs */
   body?: string[];
   /** Shopify blog body — rich HTML from the admin editor */

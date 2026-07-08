@@ -67,7 +67,9 @@ export function JournalView({posts}: {posts: JournalPost[]}) {
                 <div className="relative aspect-[16/10] w-full overflow-hidden">
                   <EditorialImage
                     src={feature.img}
-                    alt={feature.title}
+                    alt={feature.alt ?? feature.title}
+                    width={feature.width ?? undefined}
+                    height={feature.height ?? undefined}
                     className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
                     loading="eager"
                     fetchPriority="high"
@@ -107,7 +109,9 @@ export function JournalView({posts}: {posts: JournalPost[]}) {
                 <div className="relative aspect-[4/5] md:aspect-[4/3] lg:aspect-[4/5] w-full overflow-hidden">
                   <EditorialImage
                     src={p.img}
-                    alt={p.title}
+                    alt={p.alt ?? p.title}
+                    width={p.width ?? undefined}
+                    height={p.height ?? undefined}
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-[2000ms] group-hover:scale-105 edge-fade-bottom"
                     sizes="(min-width: 1024px) 33vw, 100vw"
                   />

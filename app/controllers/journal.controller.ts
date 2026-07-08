@@ -66,7 +66,15 @@ function mapShopifyArticleToPost(article: {
   contentHtml?: string | null;
   publishedAt?: string | null;
   tags?: string[] | null;
-  image?: {url?: string | null} | null;
+  image?:
+    | {
+        url?: string | null;
+        altText?: string | null;
+        width?: number | null;
+        height?: number | null;
+      }
+    | null
+    | undefined;
 }): JournalPost {
   const bodyText = htmlToPlainText(article.contentHtml);
   return {
@@ -75,6 +83,9 @@ function mapShopifyArticleToPost(article: {
     title: article.title,
     excerpt: article.excerpt?.trim() || bodyText.slice(0, 160).trim(),
     img: article.image?.url ?? '/assets/journal-craft.jpg',
+    alt: article.image?.altText ?? null,
+    width: article.image?.width ?? null,
+    height: article.image?.height ?? null,
     minutes: estimateReadMinutes(bodyText),
     date: article.publishedAt?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
   };
@@ -85,7 +96,15 @@ function mapShopifyArticleToArticle(article: {
   title: string;
   contentHtml?: string | null;
   tags?: string[] | null;
-  image?: {url?: string | null} | null;
+  image?:
+    | {
+        url?: string | null;
+        altText?: string | null;
+        width?: number | null;
+        height?: number | null;
+      }
+    | null
+    | undefined;
 }): JournalArticle {
   const bodyHtml = article.contentHtml?.trim() || undefined;
   const bodyText = htmlToPlainText(bodyHtml);
@@ -94,6 +113,9 @@ function mapShopifyArticleToArticle(article: {
     cat: mapCategory(article.tags),
     minutes: estimateReadMinutes(bodyText),
     img: article.image?.url ?? '/assets/journal-craft.jpg',
+    alt: article.image?.altText ?? null,
+    width: article.image?.width ?? null,
+    height: article.image?.height ?? null,
     bodyHtml,
   };
 }
@@ -112,7 +134,14 @@ async function fetchShopifyJournalPosts(
           contentHtml?: string | null;
           publishedAt?: string | null;
           tags?: string[] | null;
-          image?: {url?: string | null} | null;
+          image?:
+            | {
+                url?: string | null;
+                altText?: string | null;
+                width?: number | null;
+                height?: number | null;
+              }
+            | null;
         }> | null;
       } | null;
     } | null;
@@ -161,7 +190,14 @@ export async function getArticlePage(
           contentHtml?: string | null;
           publishedAt?: string | null;
           tags?: string[] | null;
-          image?: {url?: string | null} | null;
+          image?:
+            | {
+                url?: string | null;
+                altText?: string | null;
+                width?: number | null;
+                height?: number | null;
+              }
+            | null;
           seo?: {title?: string | null; description?: string | null} | null;
         } | null;
       } | null;
