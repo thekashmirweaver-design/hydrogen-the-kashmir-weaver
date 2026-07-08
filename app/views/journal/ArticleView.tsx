@@ -61,7 +61,7 @@ export function ArticleView({
           (article.body ?? []).map((p, i) => (
             <p
               key={i}
-              className="font-display text-xl leading-[1.7] text-foreground/90 first:mt-0 mt-8"
+              className="font-body text-xl leading-[1.7] text-foreground/90 first:mt-0 mt-8"
               style={{fontWeight: 300}}
             >
               {i === 0 ? (

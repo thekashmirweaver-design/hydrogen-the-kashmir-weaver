@@ -31,6 +31,7 @@
   "prettier": "@shopify/prettier-config",
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.2.11",
+    "@fontsource/eb-garamond": "^5.2.7",
     "@fontsource/inter": "^5.2.8",
     "@shopify/hydrogen": "2026.1.0",
     "@tailwindcss/postcss": "^4.3.2",

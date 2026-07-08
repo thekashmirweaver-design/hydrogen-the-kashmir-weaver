@@ -15,6 +15,7 @@ import {
 import type {Route} from './+types/root';
 import inter400Woff2 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
 import cormorant400Woff2 from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-400-normal.woff2?url';
+import ebGaramond400Woff2 from '@fontsource/eb-garamond/files/eb-garamond-latin-400-normal.woff2?url';
 // The `?url` import resolves the hashed asset path for the
 // <link rel="preload"> below; the side-effect import keeps the CSS in the
 // bundle. The duplicate import is intentional.
@@ -99,6 +100,13 @@ export function links() {
     {
       rel: 'preload',
       href: cormorant400Woff2,
+      as: 'font',
+      type: 'font/woff2',
+      crossOrigin: 'anonymous',
+    },
+    {
+      rel: 'preload',
+      href: ebGaramond400Woff2,
       as: 'font',
       type: 'font/woff2',
       crossOrigin: 'anonymous',
