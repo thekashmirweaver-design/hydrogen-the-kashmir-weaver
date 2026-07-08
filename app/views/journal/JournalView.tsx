@@ -48,6 +48,14 @@ export function JournalView({posts}: {posts: JournalPost[]}) {
         </HorizontalScrollCue>
       </section>
 
+      {posts.length === 0 ? (
+        <section className="mx-auto max-w-[1600px] px-6 py-20 md:px-10">
+          <p className="text-base text-muted-foreground">
+            New stories from the valley are on their way. Check back soon.
+          </p>
+        </section>
+      ) : null}
+
       {feature && (
         <section className="mx-auto max-w-[1600px] px-6 py-20 md:px-10">
           <Reveal>

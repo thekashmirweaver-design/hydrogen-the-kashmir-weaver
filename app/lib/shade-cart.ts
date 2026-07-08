@@ -16,14 +16,21 @@ export type ParsedCartShade = {
   hex?: string;
 };
 
+function normalizeHex(hex: string | null | undefined): string | undefined {
+  const value = hex?.trim();
+  if (!value) return undefined;
+  return value.startsWith('#') ? value : `#${value}`;
+}
+
 export function shadeCartAttributes(
   shade: Shade | null | undefined,
 ): CartLineAttribute[] {
   if (!shade) return [];
+  const hex = normalizeHex(shade.hex);
   return [
     {key: SHADE_CART_ATTR.code, value: shade.code},
     {key: SHADE_CART_ATTR.colour, value: shade.family},
-    {key: SHADE_CART_ATTR.hex, value: shade.hex},
+    ...(hex ? [{key: SHADE_CART_ATTR.hex, value: hex}] : []),
   ];
 }
 
@@ -33,8 +40,8 @@ export function shadeCartAttributesFromSearch(
   const code = searchParams.get('shadeCode')?.trim();
   const colour = searchParams.get('shadeColour')?.trim();
   const hex =
-    searchParams.get('shadeHex')?.trim() ??
-    (code ? findShadeByCode(SHADES, code)?.hex : undefined);
+    normalizeHex(searchParams.get('shadeHex')) ??
+    (code ? normalizeHex(findShadeByCode(SHADES, code)?.hex) : undefined);
   const attrs: CartLineAttribute[] = [];
   if (code) attrs.push({key: SHADE_CART_ATTR.code, value: code});
   if (colour) attrs.push({key: SHADE_CART_ATTR.colour, value: colour});
@@ -64,11 +71,21 @@ export function parseShadeFromCartAttributes(
   if (!hex && code) {
     hex = findShadeByCode(SHADES, code)?.hex;
   }
+  const normalizedHex = normalizeHex(hex);
   return {
     ...(code ? {code} : {}),
     ...(family ? {family} : {}),
-    ...(hex ? {hex} : {}),
+    ...(normalizedHex ? {hex: normalizedHex} : {}),
   };
+}
+
+export function hasShadeCartAttributes(
+  attributes:
+    | Array<{key?: string | null; value?: string | null} | null>
+    | null
+    | undefined,
+): boolean {
+  return parseShadeFromCartAttributes(attributes) != null;
 }
 
 export function formatShadeCartLabel(

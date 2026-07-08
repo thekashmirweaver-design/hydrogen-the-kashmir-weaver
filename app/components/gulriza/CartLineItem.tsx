@@ -1,7 +1,11 @@
 import {Link} from 'react-router';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import {CartLineShade} from '~/components/gulriza/CartLineShade';
-import {CartLineVariant} from '~/components/gulriza/CartLineVariant';
+import {
+  getCartLineColorLabel,
+  getCartLineSizeLabel,
+} from '~/lib/cart-variant-label';
+import {hasShadeCartAttributes} from '~/lib/shade-cart';
 import {
   CartLineQuantityControls,
   CartLineRemoveButton,
@@ -67,6 +71,19 @@ export function CartLineItem({
     formatPrice,
   );
 
+  const metaClass = isDrawer
+    ? 'text-xs text-muted-foreground'
+    : 'text-sm text-muted-foreground';
+  const skuClass = isDrawer
+    ? 'text-[0.65rem] text-muted-foreground'
+    : 'text-xs text-muted-foreground';
+  const hasShade = hasShadeCartAttributes(attributes);
+  const colorLabel = hasShade
+    ? null
+    : getCartLineColorLabel(merchandise);
+  const sizeLabel = getCartLineSizeLabel(product.title, merchandise);
+  const sku = (merchandise as {sku?: string | null}).sku?.trim() || null;
+
   return (
     <div
       className={
@@ -101,32 +118,22 @@ export function CartLineItem({
         >
           {product.title}
         </Link>
-        <CartLineVariant
-          productTitle={product.title}
-          merchandise={merchandise}
-          className={
-            isDrawer
-              ? 'mt-1 text-xs text-muted-foreground'
-              : 'mt-1.5 text-sm text-muted-foreground'
-          }
-        />
-        {(merchandise as {sku?: string | null}).sku ? (
-          <p className={isDrawer ? 'mt-0.5 text-[0.65rem] text-muted-foreground' : 'mt-0.5 text-xs text-muted-foreground'}>
-            {(merchandise as {sku?: string | null}).sku}
-          </p>
-        ) : null}
+        <div className={`${isDrawer ? 'mt-1' : 'mt-1.5'} space-y-0.5`}>
+          {hasShade ? (
+            <CartLineShade
+              attributes={attributes}
+              swatchSize={isDrawer ? 'sm' : 'md'}
+              className={metaClass}
+            />
+          ) : colorLabel ? (
+            <p className={metaClass}>{colorLabel}</p>
+          ) : null}
+          {sizeLabel ? <p className={metaClass}>{sizeLabel}</p> : null}
+          {sku ? <p className={skuClass}>{sku}</p> : null}
+        </div>
         {!isDrawer && (
           <p className="mt-1 text-sm text-muted-foreground">{unitPrice}</p>
         )}
-        <CartLineShade
-          attributes={attributes}
-          swatchSize="md"
-          className={
-            isDrawer
-              ? 'mt-1.5 text-xs text-muted-foreground'
-              : 'mt-2 text-sm text-muted-foreground'
-          }
-        />
       </div>
 
       <div className="col-start-3 row-start-1 shrink-0 self-start">

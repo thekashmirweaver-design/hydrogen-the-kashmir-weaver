@@ -1,11 +1,10 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/_index';
-import {getHomePage} from '~/controllers';
-import {getCatalogOptions} from '~/lib/catalog-options';
+import {getHomePage, getJournalPage} from '~/controllers';
+import {getCatalogOptions, getJournalOptions} from '~/lib/catalog-options';
+import {loadHomepageFeatured} from '~/lib/homepage-featured';
 import {loadSharedCatalog} from '~/lib/shared-catalog';
 import {HomeView} from '~/views/home/HomeView';
-import {getJournalPage} from '~/controllers/journal.controller';
-import {loadHomepageFeatured} from '~/lib/homepage-featured';
 import {useCatalog} from '~/contexts/catalog-context';
 import {
   getStoreUrlFromMatches,
@@ -30,9 +29,10 @@ export const meta: Route.MetaFunction = ({location, matches}) => {
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const catalogOptions = getCatalogOptions(context);
+  const journalOptions = getJournalOptions(context);
   const [featured, journal, catalog] = await Promise.all([
     loadHomepageFeatured(context.storefront),
-    getJournalPage(context.storefront),
+    getJournalPage(journalOptions),
     loadSharedCatalog(request, catalogOptions),
   ]);
   const home = await getHomePage(catalogOptions, featured, catalog);

@@ -123,9 +123,14 @@ function applyOptimisticCartFromFetchers(
           | undefined;
         if (!selectedVariant?.id) continue;
 
-        const existingLine = cartLines.find(
-          (line) => line.merchandise.id === selectedVariant.id,
-        );
+        const incomingAttributes = (
+          input as {attributes?: OptimisticCartLine['attributes']}
+        ).attributes;
+        const existingLine = cartLines.find((line) => {
+          if (line.merchandise.id !== selectedVariant.id) return false;
+          if (!incomingAttributes?.length && !line.attributes?.length) return true;
+          return JSON.stringify(line.attributes ?? []) === JSON.stringify(incomingAttributes ?? []);
+        });
         isOptimistic = true;
 
         const addQty = input.quantity || 1;

@@ -29,7 +29,11 @@ import {
   showQuantitySelector,
   UNTRACKED_MAX_QTY,
 } from '~/lib/product-inventory';
-import {formatOptionDisplay, isSizeOptionName} from '~/lib/parse-size-option';
+import {
+  formatOptionDisplay,
+  getProductColor,
+  isSizeOptionName,
+} from '~/lib/parse-size-option';
 import {useFocusTrap} from '~/hooks/use-focus-trap';
 import {useHorizontalSwipe} from '~/hooks/use-horizontal-swipe';
 import {lockScroll, unlockScroll} from '~/lib/scroll-lock';
@@ -87,6 +91,11 @@ export function ProductView({
   const selectedSize = selectedVariant?.selectedOptions.find((o) =>
     /size/i.test(o.name),
   )?.value;
+  const productColor = useMemo(
+    () =>
+      getProductColor(product.options, selectedVariant?.selectedOptions),
+    [product.options, selectedVariant?.selectedOptions],
+  );
   const selectedWeight = selectedVariant?.weightLabel;
   const selectedSku = selectedVariant?.sku;
   const displayImages = useMemo(() => {
@@ -174,6 +183,9 @@ export function ProductView({
       ? !selectedVariant.availableForSale
       : product.stock === 'out';
   const solidRecolor = isSolidProduct(product);
+  const usesColourStudio = Boolean(
+    product.showColourStudio && productShades.length > 0,
+  );
   const selectedShade = useMemo(
     () =>
       productShades.find((shade) => shade.code === selectedShadeCode) ??
@@ -224,15 +236,17 @@ export function ProductView({
     '',
   );
   const shadeLineAttributes = useMemo(
-    () => (solidRecolor ? shadeCartAttributes(selectedShade) : []),
-    [solidRecolor, selectedShade],
+    () => (usesColourStudio ? shadeCartAttributes(selectedShade) : []),
+    [usesColourStudio, selectedShade],
   );
   const buyNowHref = useMemo(() => {
     if (!buyNowVariantId) return '/cart';
-    const shadeQuery = buildBuyNowShadeQuery(solidRecolor ? selectedShade : null);
+    const shadeQuery = buildBuyNowShadeQuery(
+      usesColourStudio ? selectedShade : null,
+    );
     const path = `/cart/${buyNowVariantId}:${buyNowQuantity}`;
     return shadeQuery ? `${path}?${shadeQuery}` : path;
-  }, [buyNowVariantId, buyNowQuantity, solidRecolor, selectedShade]);
+  }, [buyNowVariantId, buyNowQuantity, usesColourStudio, selectedShade]);
 
   useEffect(() => {
     if (!fullOpen) return;
@@ -579,15 +593,24 @@ export function ProductView({
                   <dd>{selectedSize}</dd>
                 </div>
               ) : null}
-              {selectedShade ? (
+              {usesColourStudio && selectedShade ? (
                 <div className="grid grid-cols-1 gap-1 sm:grid-cols-[7rem_1fr] sm:gap-x-6 md:grid-cols-[8rem_1fr]">
                   <dt className="text-muted-foreground">Colour</dt>
                   <dd>
                     <span className="inline-flex items-center gap-2">
-                      <ShadeSwatch hex={selectedShade.hex} size="sm" label={selectedShade.family} />
+                      <ShadeSwatch
+                        hex={selectedShade.hex}
+                        size="sm"
+                        label={selectedShade.family}
+                      />
                       {selectedShade.family} ({selectedShade.code})
                     </span>
                   </dd>
+                </div>
+              ) : productColor ? (
+                <div className="grid grid-cols-1 gap-1 sm:grid-cols-[7rem_1fr] sm:gap-x-6 md:grid-cols-[8rem_1fr]">
+                  <dt className="text-muted-foreground">Colour</dt>
+                  <dd>{productColor}</dd>
                 </div>
               ) : null}
               {product.material ? (

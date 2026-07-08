@@ -1,4 +1,5 @@
 import type {Route} from './+types/sitemap.editorial[.xml]';
+import {getJournalOptions} from '~/lib/catalog-options';
 import {blogCache} from '~/lib/storefront-cache';
 import {
   JOURNAL_BLOG_HANDLE,
@@ -28,28 +29,29 @@ const EDITORIAL_PATHS = [
 ];
 
 async function journalArticlePaths(
-  storefront: Route.LoaderArgs['context']['storefront'],
+  context: Route.LoaderArgs['context'],
 ): Promise<string[]> {
+  const {useStatic} = getJournalOptions(context);
   try {
-    const {blog} = await storefront.query(JOURNAL_BLOG_QUERY, {
+    const {blog} = await context.storefront.query(JOURNAL_BLOG_QUERY, {
       variables: {blogHandle: JOURNAL_BLOG_HANDLE, first: 250},
-      cache: blogCache(storefront),
+      cache: blogCache(context.storefront),
     });
-    if (blog?.articles?.nodes?.length) {
-      return blog.articles.nodes.map(
+    if (blog) {
+      return (blog.articles?.nodes ?? []).map(
         (article: {handle: string}) => `/journal/${article.handle}`,
       );
     }
   } catch {
-    // Fall back to static journal posts when Storefront API is unavailable.
+    // Storefront unavailable — optional static demo when enabled.
   }
-  return POSTS.map((post) => `/journal/${post.slug}`);
+  return useStatic ? POSTS.map((post) => `/journal/${post.slug}`) : [];
 }
 
 export async function loader({request, context}: Route.LoaderArgs) {
   const baseUrl = new URL(request.url).origin;
   const lastmod = new Date().toISOString().split('T')[0];
-  const articlePaths = await journalArticlePaths(context.storefront);
+  const articlePaths = await journalArticlePaths(context);
   const paths = [...EDITORIAL_PATHS, ...articlePaths];
 
   const urls = paths

@@ -1,6 +1,7 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/journal.$slug';
 import {getArticlePage} from '~/controllers';
+import {getJournalOptions} from '~/lib/catalog-options';
 import {ArticleView} from '~/views/journal/ArticleView';
 import {
   blogPostingLd,
@@ -36,7 +37,7 @@ export const meta: Route.MetaFunction = ({data, location, matches}) => {
 export async function loader({params, context}: Route.LoaderArgs) {
   const slug = params.slug;
   if (!slug) throw new Response('Not found', {status: 404});
-  const page = await getArticlePage(slug, context.storefront);
+  const page = await getArticlePage(slug, getJournalOptions(context));
   if (!page) throw new Response('Not found', {status: 404});
   return page;
 }

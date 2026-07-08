@@ -14,10 +14,7 @@ import type {Collection, Product} from '~/models/types';
 import type {JournalPost} from '~/models/static/journal';
 
 const heroPortrait = '/assets/hero-portrait.jpg';
-const himalayas = '/assets/himalayas.jpg';
 const artisan = '/assets/craft-artisan.png';
-const journalCraft = '/assets/journal-craft.jpg';
-const journalGoat = '/assets/changthangi-goat.jpg';
 
 function bestSellingScore(p: Product): number {
   return (p.tags?.some((t) => /best-?sell/i.test(t)) ? 2 : 0) + (p.limited ? 1 : 0);
@@ -79,7 +76,7 @@ export function HomeView({
         previewCount={collectionPreviewCount}
       />
       <CraftAndOrigin />
-      <JournalSection posts={journalPosts} />
+      {journalPosts.length > 0 ? <JournalSection posts={journalPosts} /> : null}
       <BespokeSection />
     </div>
   );
@@ -404,38 +401,8 @@ function CraftAndOrigin() {
 }
 
 function JournalSection({posts}: {posts: JournalPost[]}) {
-  const [featured, ...rest] = posts.length
-    ? posts
-    : [
-        {
-          slug: 'himalayan-highlands',
-          cat: 'Heritage' as const,
-          title: 'The Himalayan Highlands',
-          excerpt:
-            'Above the tree line, on the Changthang plateau, a single goat produces 80 grams of fleece a year. This is how pashmina begins.',
-          img: himalayas,
-          minutes: 12,
-          date: '2026-01-15',
-        },
-        {
-          slug: 'hands-that-weave-magic',
-          cat: 'Craft' as const,
-          title: 'Hands That Weave Magic',
-          excerpt: 'Meet the artisans who keep the tradition of Kashmiri craft alive.',
-          img: journalCraft,
-          minutes: 8,
-          date: '2026-01-10',
-        },
-        {
-          slug: 'the-art-of-pashmina-care',
-          cat: 'Style' as const,
-          title: 'The Art of Pashmina Care',
-          excerpt: 'Timeless pieces deserve timeless care. A quiet primer.',
-          img: journalGoat,
-          minutes: 5,
-          date: '2026-01-05',
-        },
-      ];
+  const [featured, ...rest] = posts;
+  if (!featured) return null;
 
   return (
     <section className="relative py-32 md:py-40">
