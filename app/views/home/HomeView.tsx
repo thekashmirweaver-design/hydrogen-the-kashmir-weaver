@@ -3,6 +3,7 @@ import {ArrowRight} from 'lucide-react';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {CollectionStoryMobile} from '~/components/gulriza/CollectionStoryMobile';
 import {CollectionHeroBanner} from '~/components/gulriza/CollectionHeroBanner';
+import {FeaturedProducts} from '~/components/gulriza/FeaturedProducts';
 import {HeroDeliveryLine} from '~/components/gulriza/HeroDeliveryLine';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {OriginMap} from '~/components/gulriza/OriginMap';
@@ -153,41 +154,6 @@ function Hero({
       </div>
 
       <ScrollIndicator className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-10 -translate-x-1/2 md:bottom-10" />
-    </section>
-  );
-}
-
-function FeaturedProducts({products}: {products: Product[]}) {
-  const featured = products.length ? products : [];
-  return (
-    <section className="relative py-20 md:py-32">
-      <div className="mx-auto max-w-[1600px] px-6 md:px-10">
-        <Reveal className="mb-12 flex items-end justify-between">
-          <div>
-            <Eyebrow>The Atelier</Eyebrow>
-            <h2 className="font-display mt-4 text-3xl md:text-5xl" style={{fontWeight: 400}}>
-              Featured Pieces
-            </h2>
-          </div>
-          <Link
-            to="/collections/all"
-            className="tracked hidden items-center gap-3 px-6 py-3 font-medium transition hover:opacity-90 md:inline-flex"
-            style={{background: 'var(--accent)', color: 'var(--background)'}}
-          >
-            View All Pieces <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
-          </Link>
-        </Reveal>
-        <ProductCarousel products={featured} />
-        <Reveal className="mt-12 text-center md:hidden">
-          <Link
-            to="/collections/all"
-            className="tracked inline-flex w-full items-center justify-center gap-3 px-10 py-4 font-medium transition hover:opacity-90 sm:w-auto"
-            style={{background: 'var(--accent)', color: 'var(--background)'}}
-          >
-            View All Pieces <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
-          </Link>
-        </Reveal>
-      </div>
     </section>
   );
 }

@@ -1,7 +1,9 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/journal.$slug';
 import {getArticlePage} from '~/controllers';
-import {getJournalOptions} from '~/lib/catalog-options';
+import {getCatalogOptions, getJournalOptions} from '~/lib/catalog-options';
+import {loadHomepageFeatured} from '~/lib/homepage-featured';
+import {listFeaturedCollectionProducts} from '~/models/catalog.repository';
 import {ArticleView} from '~/views/journal/ArticleView';
 import {
   blogPostingLd,
@@ -37,12 +39,32 @@ export const meta: Route.MetaFunction = ({data, location, matches}) => {
 export async function loader({params, context}: Route.LoaderArgs) {
   const slug = params.slug;
   if (!slug) throw new Response('Not found', {status: 404});
-  const page = await getArticlePage(slug, getJournalOptions(context));
+
+  const catalogOptions = getCatalogOptions(context);
+  const [page, featured] = await Promise.all([
+    getArticlePage(slug, getJournalOptions(context)),
+    loadHomepageFeatured(context.storefront).catch(() => null),
+  ]);
   if (!page) throw new Response('Not found', {status: 404});
-  return page;
+
+  const featuredProducts = featured
+    ? await listFeaturedCollectionProducts(
+        catalogOptions,
+        featured.featuredCollectionHandle,
+        featured.featuredCount,
+      )
+    : [];
+
+  return {...page, featuredProducts};
 }
 
 export default function ArticleRoute() {
-  const {article, datePublished} = useLoaderData<typeof loader>();
-  return <ArticleView article={article} datePublished={datePublished} />;
+  const {article, datePublished, featuredProducts} = useLoaderData<typeof loader>();
+  return (
+    <ArticleView
+      article={article}
+      datePublished={datePublished}
+      featuredProducts={featuredProducts}
+    />
+  );
 }

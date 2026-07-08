@@ -4,15 +4,19 @@ import {Eyebrow} from '~/components/gulriza/Eyebrow';
 import {EditorialImage} from '~/components/gulriza/CatalogImage';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {JournalRichHtml} from '~/components/gulriza/JournalRichHtml';
+import {FeaturedProducts} from '~/components/gulriza/FeaturedProducts';
 import type {JournalArticle} from '~/models/static/journal';
+import type {Product} from '~/models/types';
 import {journalEyebrow} from '~/lib/parse-page-content';
 
 export function ArticleView({
   article,
   datePublished,
+  featuredProducts = [],
 }: {
   article: JournalArticle;
   datePublished?: string;
+  featuredProducts?: Product[];
 }) {
   return (
     <div>
@@ -94,6 +98,8 @@ export function ArticleView({
           </Link>
         </div>
       </article>
+
+      <FeaturedProducts products={featuredProducts} />
     </div>
   );
 }
