@@ -66,14 +66,19 @@ function mapPageInfo(pageInfo?: CatalogPageInfo | null): CatalogPageInfo {
 
 export async function listProductsPage(
   storefront: Storefront,
-  options: {first?: number; after?: string | null} = {},
+  options: {first?: number; after?: string | null; sortKey?: string; sortReverse?: boolean} = {},
 ): Promise<PaginatedProducts> {
   const first = options.first ?? PRODUCT_LIST_PAGE_SIZE;
   const data = await catalogQuery<ProductQueryResult>(
     storefront,
     ALL_PRODUCTS_QUERY,
     ALL_PRODUCTS_QUERY_NO_INVENTORY,
-    {first, after: options.after ?? null},
+    {
+      first,
+      after: options.after ?? null,
+      sortKey: options.sortKey ?? 'CREATED_AT',
+      reverse: options.sortReverse ?? true,
+    },
   );
 
   return {
@@ -144,14 +149,20 @@ export async function findCollectionByHandle(
 export async function listCollectionProductsPage(
   storefront: Storefront,
   handle: string,
-  options: {first?: number; after?: string | null} = {},
+  options: {first?: number; after?: string | null; sortKey?: string; sortReverse?: boolean} = {},
 ): Promise<PaginatedProducts & {collection?: Collection}> {
   const first = options.first ?? PRODUCT_LIST_PAGE_SIZE;
   const data = await catalogQuery<CollectionByHandleResult>(
     storefront,
     COLLECTION_BY_HANDLE_QUERY,
     COLLECTION_BY_HANDLE_QUERY_NO_INVENTORY,
-    {handle, productFirst: first, productAfter: options.after ?? null},
+    {
+      handle,
+      productFirst: first,
+      productAfter: options.after ?? null,
+      productSortKey: options.sortKey ?? 'CREATED',
+      productReverse: options.sortReverse ?? true,
+    },
   );
 
   if (!data.collection?.products) {

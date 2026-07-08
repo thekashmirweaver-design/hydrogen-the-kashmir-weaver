@@ -245,8 +245,10 @@ export const ALL_PRODUCTS_QUERY = `#graphql
     $language: LanguageCode
     $first: Int!
     $after: String
+    $sortKey: ProductSortKeys!
+    $reverse: Boolean!
   ) @inContext(country: $country, language: $language) {
-    products(first: $first, after: $after, sortKey: CREATED_AT, reverse: true) {
+    products(first: $first, after: $after, sortKey: $sortKey, reverse: $reverse) {
       edges {
         node {
           ...CatalogProduct
@@ -347,8 +349,10 @@ export const ALL_PRODUCTS_QUERY_NO_INVENTORY = `#graphql
     $language: LanguageCode
     $first: Int!
     $after: String
+    $sortKey: ProductSortKeys!
+    $reverse: Boolean!
   ) @inContext(country: $country, language: $language) {
-    products(first: $first, after: $after, sortKey: CREATED_AT, reverse: true) {
+    products(first: $first, after: $after, sortKey: $sortKey, reverse: $reverse) {
       edges {
         node {
           ...CatalogProduct
@@ -390,10 +394,12 @@ export const COLLECTION_BY_HANDLE_QUERY = `#graphql
     $handle: String!
     $productFirst: Int!
     $productAfter: String
+    $productSortKey: CollectionProductsSortKeys!
+    $productReverse: Boolean!
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       ...CatalogCollection
-      products(first: $productFirst, after: $productAfter, sortKey: CREATED, reverse: true) {
+      products(first: $productFirst, after: $productAfter, sortKey: $productSortKey, reverse: $productReverse) {
         edges {
           node {
             ...CatalogProduct
@@ -418,10 +424,12 @@ export const COLLECTION_BY_HANDLE_QUERY_NO_INVENTORY = `#graphql
     $handle: String!
     $productFirst: Int!
     $productAfter: String
+    $productSortKey: CollectionProductsSortKeys!
+    $productReverse: Boolean!
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       ...CatalogCollection
-      products(first: $productFirst, after: $productAfter, sortKey: CREATED, reverse: true) {
+      products(first: $productFirst, after: $productAfter, sortKey: $productSortKey, reverse: $productReverse) {
         edges {
           node {
             ...CatalogProduct

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Loader2, SlidersHorizontal, X } from "lucide-react";
+import { Check, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import type { Product } from "~/models/types";
 import { useCatalog } from "~/contexts/catalog-context";
 import { ProductTile } from "~/components/gulriza/ProductTile";
@@ -10,11 +10,10 @@ import { useFocusTrap } from "~/hooks/use-focus-trap";
 import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 import { ShadeDropdown } from "~/components/gulriza/ShadeDropdown";
 import { collectShadesFromProducts, getDefaultSolidShadeCode } from "~/lib/solid-product";
-import type { CatalogPageInfo, ProductListScope } from "~/lib/catalog-pagination";
+import type { CatalogPageInfo, ProductListScope, SortKey } from "~/lib/catalog-pagination";
+import { getSortConfig } from "~/lib/catalog-pagination";
 import { usePagePagination } from "~/hooks/use-page-pagination";
 import { PagePagination } from "~/components/gulriza/PagePagination";
-
-export type SortKey = "featured" | "newest" | "price-asc" | "price-desc" | "best-selling";
 
 export type FilterKey = "collection" | "price" | "color";
 
@@ -55,12 +54,25 @@ export function ProductCatalog({
 }) {
   const { collections } = useCatalog();
   const paginationEnabled = Boolean(listSource && pageInfo);
+  const [sort, setSort] = useState<SortKey>("featured");
   const pagination = usePagePagination({
     initialProducts,
     initialPageInfo: pageInfo ?? { hasNextPage: false, endCursor: null },
     listSource: listSource ?? { scope: "shop" },
+    sortKey: sort,
     enabled: paginationEnabled,
   });
+  const gridRef = useRef<HTMLDivElement>(null);
+  const prevPageRef = useRef(1);
+
+  useEffect(() => {
+    if (!paginationEnabled) return;
+    if (prevPageRef.current !== pagination.currentPage) {
+      prevPageRef.current = pagination.currentPage;
+      gridRef.current?.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+  }, [pagination.currentPage, paginationEnabled]);
+
   const products = paginationEnabled ? pagination.products : initialProducts;
   const priceBounds = useMemo(() => {
     const all = products.map((p) => p.price.amount);
@@ -88,7 +100,6 @@ export function ProductCatalog({
   const showColorFilter = enabled.includes("color") && availableShades.length > 0;
 
   const [filters, setFilters] = useState<Filters>(initial);
-  const [sort, setSort] = useState<SortKey>("featured");
   const [drawer, setDrawer] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   useFocusTrap(drawer, drawerRef);
@@ -250,7 +261,7 @@ export function ProductCatalog({
       >
         {showSidebar && (
           <aside className="hidden md:block">
-            <div className="sticky top-32">
+            <div className="sticky top-32 rounded-lg border p-5" style={{background: 'var(--surface)', borderColor: 'var(--border)'}}>
               <div className="tracked text-accent">Filter</div>
               <div className="mt-8">{FilterPanel}</div>
             </div>
@@ -269,7 +280,7 @@ export function ProductCatalog({
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-16 lg:grid-cols-3">
+              <div ref={gridRef} className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-16 lg:grid-cols-3">
                 {filtered.map((p) => (
                   <ProductTile key={p.handle} product={p} />
                 ))}
@@ -289,9 +300,13 @@ export function ProductCatalog({
         </div>
       </div>
 
-      {/* Mobile filter drawer */}
-      {drawer && showSidebar && (
-        <div className="fixed inset-0 z-[60] md:hidden">
+      {/* Mobile filter bottom sheet */}
+      {showSidebar && (
+        <div
+          className={`fixed inset-0 z-[60] transition-opacity duration-300 md:hidden ${
+            drawer ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        >
           <div
             className="absolute inset-0"
             style={{ background: "rgba(0,0,0,0.55)" }}
@@ -303,13 +318,14 @@ export function ProductCatalog({
             role="dialog"
             aria-modal="true"
             aria-label="Filters"
-            className="absolute inset-y-0 left-0 flex w-[88%] max-w-sm flex-col overflow-y-auto p-6 outline-none"
+            className={`absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col overflow-y-auto rounded-t-2xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] outline-none transition-transform duration-300 ${
+              drawer ? 'translate-y-0' : 'translate-y-full'
+            }`}
             style={{
               background: "var(--background)",
-              paddingTop: "max(1.5rem, env(safe-area-inset-top))",
-              paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))",
             }}
           >
+            <div className="mx-auto mb-4 h-1 w-10 shrink-0 rounded-full" style={{background: 'var(--border)'}} />
             <div className="flex items-center justify-between pb-6">
               <span className="tracked text-accent">Filter</span>
               <button onClick={() => setDrawer(false)} aria-label="Close filters">

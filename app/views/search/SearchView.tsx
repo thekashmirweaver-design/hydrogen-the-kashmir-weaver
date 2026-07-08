@@ -1,3 +1,4 @@
+import {useEffect, useRef} from 'react';
 import {Link, Form} from 'react-router';
 import {Eyebrow} from '~/components/gulriza/Eyebrow';
 import {ProductTile} from '~/components/gulriza/ProductTile';
@@ -24,6 +25,16 @@ export function SearchView({
       initialProducts,
       initialPageInfo: pageInfo,
     });
+
+  const gridRef = useRef<HTMLDivElement>(null);
+  const prevPageRef = useRef(1);
+
+  useEffect(() => {
+    if (prevPageRef.current !== currentPage) {
+      prevPageRef.current = currentPage;
+      gridRef.current?.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+  }, [currentPage]);
 
   return (
     <section className="mx-auto max-w-[1400px] px-6 pt-[calc(var(--header-h)+1.5rem)] pb-24 md:px-10">
@@ -60,7 +71,7 @@ export function SearchView({
           Results for &ldquo;{term}&rdquo;
         </p>
       )}
-      <div className="mt-12 grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-3">
+      <div ref={gridRef} className="mt-12 grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((product) => (
           <ProductTile key={product.handle} product={product} />
         ))}
