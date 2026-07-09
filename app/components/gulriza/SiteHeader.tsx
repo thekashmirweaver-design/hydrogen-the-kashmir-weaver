@@ -260,7 +260,7 @@ export function SiteHeader({
                 })}
               </nav>
 
-              {/* Mobile/tablet cluster: Search → Theme → Currency → Account → Cart → Hamburger */}
+              {/* Mobile/tablet cluster: Search → Currency → Account → Cart → Hamburger (theme lives in the menu drawer) */}
               <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:hidden">
                 <button
                   aria-label="Search"
@@ -272,7 +272,6 @@ export function SiteHeader({
                 >
                   <Search className="h-[18px] w-[18px]" strokeWidth={1} />
                 </button>
-                <ThemeToggle />
                 <CurrencyDropdown compact />
                 <ShopifyAccount
                   publicStoreDomain={publicStoreDomain}
@@ -307,7 +306,7 @@ export function SiteHeader({
                 </button>
               </div>
 
-              {/* Desktop cluster: Currency → Search → Theme → Account → Cart */}
+              {/* Desktop cluster: Currency → Search → Account → Theme → Cart */}
               <div className="hidden items-center gap-2 lg:flex xl:gap-4">
                 <CurrencyDropdown />
                 <button
@@ -398,6 +397,17 @@ export function SiteHeader({
                   </Link>
                 ))}
               </nav>
+
+              {/* Theme control — mobile/tablet only. Mirrors the desktop
+                  nav-cluster ThemeToggle but lives inside the menu drawer
+                  because the mobile/tablet header is already crowded. */}
+              <div
+                className="flex shrink-0 items-center justify-between gap-4 border-t px-5 py-4 min-[420px]:px-6"
+                style={{borderColor: "var(--border)"}}
+              >
+                <span className="tracked text-muted-foreground">Theme</span>
+                <ThemeToggle />
+              </div>
             </div>
           )}
 
