@@ -434,7 +434,11 @@ export function TryColoursModal({
           <ColourStudioPreview {...previewProps} size="stage" />
           <span
             className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full"
-            style={{background: 'rgba(8,16,15,0.5)', border: '1px solid var(--border)'}}
+            style={{
+              background: 'var(--backdrop-soft)',
+              border: '1px solid var(--border)',
+              color: 'var(--foreground)',
+            }}
           >
             <Expand className="h-4 w-4" strokeWidth={1.25} aria-hidden />
           </span>

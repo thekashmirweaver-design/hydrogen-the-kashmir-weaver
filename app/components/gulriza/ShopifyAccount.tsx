@@ -207,8 +207,11 @@ export function ShopifyAccount({
             <button
               type="button"
               aria-label="Close account menu"
-              className="fixed inset-0 z-[80] bg-black/50 transition-opacity duration-300 ease-out motion-reduce:transition-none"
-              style={{opacity: sheetVisible ? 1 : 0}}
+              className="fixed inset-0 z-[80] transition-opacity duration-300 ease-out motion-reduce:transition-none"
+              style={{
+                background: "var(--backdrop-soft)",
+                opacity: sheetVisible ? 1 : 0,
+              }}
               onClick={requestClose}
             />
             <div
