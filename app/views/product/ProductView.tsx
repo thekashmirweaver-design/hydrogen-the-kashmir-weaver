@@ -349,7 +349,7 @@ export function ProductView({
 
   return (
     <div>
-      <div className="mx-auto max-w-[1600px] px-6 pt-[calc(var(--header-h)+1.5rem)] md:px-10">
+      <div className="mx-auto max-w-[1600px] px-6 pt-8 md:px-10">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs tracking-[0.25em] text-muted-foreground uppercase">
           <Link to="/" className="inline-flex min-h-11 items-center hover:text-accent">
             Home

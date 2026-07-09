@@ -1,42 +1,21 @@
-import {Script} from '@shopify/hydrogen';
-
 /**
- * Inline FOUC-blocker. Runs synchronously in <head> before paint, reads
- * either the stored preference or the OS preference, and sets the
- * <html data-theme="…" data-theme-mode="…" color-scheme="…"> attributes
- * the ThemeProvider then takes over.
+ * Inline FOUC-blocker. Must run synchronously in <head> before paint.
+ * Reads `tkw-theme` from localStorage (or OS preference) and sets
+ * <html data-theme / data-theme-mode / color-scheme> for ThemeProvider.
  *
- * The script body is intentionally terse and Side-effect free. It only
- * touches document.documentElement attributes + localStorage. No global
- * lookups, no eval, no DOM mutation beyond the three attributes.
+ * Uses a plain <script> (not Hydrogen <Script>) so the browser executes it
+ * immediately while parsing head — required for persistence across reloads.
  */
-const bootScriptBody = `
-(function () {
-  try {
-    var KEY = 'tkw-theme';
-    var stored = null;
-    try { stored = window.localStorage.getItem(KEY); } catch (e) { stored = null; }
-    var mode = (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : 'system';
-    var systemLight = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
-    var resolved = (mode === 'light' || mode === 'dark') ? mode : (systemLight ? 'light' : 'dark');
-    var root = document.documentElement;
-    root.setAttribute('data-theme', resolved);
-    root.setAttribute('data-theme-mode', mode);
-    root.style.colorScheme = resolved;
-  } catch (e) {
-    /* swallow — defaults apply */
-  }
-})();
-`;
+const bootScriptBody = `(function(){try{var KEY='tkw-theme';var stored=null;try{stored=window.localStorage.getItem(KEY)}catch(e){stored=null}var mode=(stored==='light'||stored==='dark'||stored==='system')?stored:'system';var systemLight=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches);var resolved=(mode==='light'||mode==='dark')?mode:(systemLight?'light':'dark');var root=document.documentElement;root.setAttribute('data-theme',resolved);root.setAttribute('data-theme-mode',mode);root.style.colorScheme=resolved}catch(e){}})();`;
 
-export function ThemeBootScript() {
+export function ThemeBootScript({nonce}: {nonce?: string}) {
   return (
-    <Script
-      // Hydrogen's <Script> dedupes by id across renders; the boot script
-      // is mounted exactly once near the document <head>.
+    <script
       id="tkw-theme-boot"
-    >
-      {bootScriptBody}
-    </Script>
+      // Blocking inline script — must not be async/defer.
+      suppressHydrationWarning
+      nonce={nonce}
+      dangerouslySetInnerHTML={{__html: bootScriptBody}}
+    />
   );
 }

@@ -82,7 +82,7 @@ export function ConciergeView() {
 
   return (
     <div>
-      <section className="mx-auto max-w-[1100px] px-6 pt-[calc(var(--header-h)+1.5rem)] text-center md:px-10">
+      <section className="mx-auto max-w-[1100px] px-6 pt-8 text-center md:px-10">
         <Reveal>
           <Eyebrow>Concierge</Eyebrow>
           <h1

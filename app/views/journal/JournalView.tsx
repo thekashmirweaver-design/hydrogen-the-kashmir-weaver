@@ -33,7 +33,7 @@ export function JournalView({
 
   return (
     <div>
-      <section className="mx-auto max-w-[1600px] px-6 pt-[calc(var(--header-h)+1.5rem)] md:px-10">
+      <section className="mx-auto max-w-[1600px] px-6 pt-8 md:px-10">
         <Eyebrow>Journal — Issue 09</Eyebrow>
         <h1
           className="font-display mt-6 text-5xl leading-[1.05] md:text-[5.5rem]"

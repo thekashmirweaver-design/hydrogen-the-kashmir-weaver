@@ -5,7 +5,7 @@ import type {SortKey} from '~/lib/catalog-pagination';
 import * as CatalogRepository from '~/models/catalog.repository';
 import type {Route} from './+types/api.catalog-products';
 
-function parsePriceFilters(url: URL): Record<string, unknown>[] {
+function parseCatalogFilters(url: URL): Record<string, unknown>[] {
   const filters: Record<string, unknown>[] = [];
   const priceMin = url.searchParams.get('priceMin');
   const priceMax = url.searchParams.get('priceMax');
@@ -14,6 +14,10 @@ function parsePriceFilters(url: URL): Record<string, unknown>[] {
     if (priceMin) range.min = Number(priceMin);
     if (priceMax) range.max = Number(priceMax);
     filters.push({price: range});
+  }
+  const collections = url.searchParams.getAll('collection').filter(Boolean);
+  if (collections.length) {
+    filters.push({collectionHandles: collections});
   }
   return filters;
 }
@@ -26,9 +30,9 @@ export async function loader({request, context}: Route.LoaderArgs) {
   const sort = url.searchParams.get('sort') as SortKey | null;
   const catalogOptions = getCatalogOptions(context);
 
-  const priceFilters = parsePriceFilters(url);
-  if (priceFilters.length) {
-    catalogOptions.filters = priceFilters;
+  const catalogFilters = parseCatalogFilters(url);
+  if (catalogFilters.length) {
+    catalogOptions.filters = catalogFilters;
   }
 
   if (sort === 'featured') {

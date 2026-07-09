@@ -49,7 +49,7 @@ function InventoryRow({
           className={
             featured
               ? 'rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-[0.65rem] tracking-[0.2em] uppercase text-accent'
-              : 'text-[0.65rem] tracking-[0.2em] uppercase text-foreground/80'
+              : 'text-[0.65rem] tracking-[0.2em] uppercase text-[var(--on-photo-muted)]'
           }
         >
           {productCount} {productCount === 1 ? 'piece' : 'pieces'}
@@ -88,7 +88,7 @@ function ExploreCta({featured}: {featured?: boolean}) {
       className={
         featured
           ? 'mt-8 flex w-max items-center gap-3 rounded-full border border-accent/40 bg-accent/5 px-5 py-2.5 text-[0.65rem] tracking-widest text-accent uppercase font-medium transition-all duration-300 md:text-xs group-hover:bg-accent/10'
-          : 'mt-6 flex w-max items-center gap-3 rounded-full border border-accent/40 bg-accent/5 px-5 py-2.5 text-[0.65rem] md:text-xs tracking-widest text-accent uppercase font-medium transition-all duration-300 md:border-transparent md:bg-transparent md:px-0 md:py-0 md:opacity-0 md:translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'
+          : 'mt-6 flex w-max items-center gap-3 rounded-full border border-white/25 bg-black/30 px-5 py-2.5 text-[0.65rem] tracking-widest text-[var(--on-photo-accent)] uppercase font-medium transition-all duration-300 md:border-transparent md:bg-transparent md:px-0 md:py-0 md:text-xs md:opacity-0 md:translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'
       }
     >
       Explore Collection <ArrowRight className="h-3.5 w-3.5" />
@@ -147,7 +147,8 @@ export function CollectionTile({
             <EditorialImage
               src={collection.hero.src}
               alt={collection.hero.alt}
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105"
+              wrapperClassName="absolute inset-0 h-full w-full origin-center will-change-transform transition-transform duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+              className="h-full w-full object-cover"
               sizes="(min-width: 768px) 60vw, 100vw"
             />
             <div className="vignette-overlay pointer-events-none absolute inset-0 hidden md:block" />
@@ -174,12 +175,13 @@ export function CollectionTile({
         <EditorialImage
           src={collection.hero.src}
           alt={collection.hero.alt}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105"
+          wrapperClassName="absolute inset-0 h-full w-full origin-center will-change-transform transition-transform duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+          className="h-full w-full object-cover"
           sizes="(min-width: 640px) 50vw, 100vw"
         />
         <ImageScrim />
 
-        <div className="absolute inset-x-0 bottom-0 p-8">
+        <div className="on-photo absolute inset-x-0 bottom-0 p-8">
           <Eyebrow>{collection.tagline}</Eyebrow>
           <div className="mt-4">
             <CollectionName name={collection.name} />

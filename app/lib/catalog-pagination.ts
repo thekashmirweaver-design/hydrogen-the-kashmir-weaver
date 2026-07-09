@@ -26,13 +26,31 @@ export type SortConfig = {
 export type CatalogFilters = {
   priceMin?: number;
   priceMax?: number;
+  /** Shopify collection handles — match any (OR). */
+  collections?: string[];
 };
 
 export function serializeFilters(filters: CatalogFilters): string {
   const parts: string[] = [];
   if (filters.priceMin !== undefined) parts.push(`pmin:${filters.priceMin}`);
   if (filters.priceMax !== undefined) parts.push(`pmax:${filters.priceMax}`);
+  if (filters.collections?.length) {
+    parts.push(`cols:${[...filters.collections].sort().join('|')}`);
+  }
   return parts.join(',') || '__none__';
+}
+
+/** True when a product belongs to any of the selected collection handles. */
+export function productMatchesCollections(
+  product: Product,
+  handles: string[],
+): boolean {
+  if (!handles.length) return true;
+  const selected = new Set(handles);
+  if (selected.has(product.collectionSlug)) return true;
+  return Boolean(
+    product.allCollections?.some((c) => selected.has(c.handle)),
+  );
 }
 
 export function getSortConfig(

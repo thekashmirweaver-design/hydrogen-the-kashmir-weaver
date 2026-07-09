@@ -9,7 +9,7 @@ import type {FaqPageViewModel} from '~/controllers';
 export function FaqView({faqs, bodyHtml}: FaqPageViewModel) {
   return (
     <div>
-      <section className="mx-auto max-w-[1100px] px-6 pt-[calc(var(--header-h)+4rem)] text-center md:px-10">
+      <section className="mx-auto max-w-[1100px] px-6 pt-16 text-center md:px-10">
         <Reveal>
           <Eyebrow>Help & Support</Eyebrow>
           <h1

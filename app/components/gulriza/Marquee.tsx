@@ -10,7 +10,7 @@ export function Marquee({ messages = DEFAULT_MESSAGES }: { messages?: string[] }
   // to create a seamless infinite scroll.
   return (
     <div
-      className="relative flex overflow-hidden border-b"
+      className="site-marquee relative flex overflow-hidden border-b"
       style={{
         borderColor: "var(--border)",
         background: "var(--surface)",
@@ -25,10 +25,10 @@ export function Marquee({ messages = DEFAULT_MESSAGES }: { messages?: string[] }
             {messages.map((m, i) => (
               <span
                 key={i}
-                className="flex items-center text-[0.75rem] font-medium uppercase tracking-[0.15em] text-foreground/90"
+                className="site-marquee__item flex items-center text-[0.75rem] font-medium uppercase tracking-[0.15em]"
               >
                 <span className="px-8">{m}</span>
-                <span aria-hidden style={{ color: "var(--accent)" }}>
+                <span className="site-marquee__dot" aria-hidden>
                   •
                 </span>
               </span>

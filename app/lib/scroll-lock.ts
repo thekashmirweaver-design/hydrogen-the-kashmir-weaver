@@ -32,7 +32,10 @@ export function unlockScroll() {
 export function resetScrollLock() {
   if (typeof document === 'undefined') return;
   scrollLockCount = 0;
-  document.body.style.overflow = scrollLockSaved.body;
-  document.documentElement.style.overflow = scrollLockSaved.html;
-  document.body.style.overscrollBehavior = scrollLockSaved.overscroll;
+  document.body.style.overflow = '';
+  document.documentElement.style.overflow = '';
+  document.body.style.overscrollBehavior = '';
+  scrollLockSaved.body = '';
+  scrollLockSaved.html = '';
+  scrollLockSaved.overscroll = '';
 }

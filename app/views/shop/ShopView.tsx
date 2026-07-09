@@ -16,7 +16,7 @@ export function ShopView({
 }) {
   return (
     <div>
-      <section className="mx-auto max-w-[1600px] px-6 pt-[calc(var(--header-h)+1.5rem)] pb-12 md:px-10">
+      <section className="mx-auto max-w-[1600px] px-6 pt-8 pb-12 md:px-10">
         <Reveal>
           <Eyebrow>The Atelier</Eyebrow>
           <h1

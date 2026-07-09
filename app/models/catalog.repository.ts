@@ -90,6 +90,16 @@ function applyStaticFilters(products: Product[], options?: CatalogOptions): Prod
         if (pr.min !== undefined && p.price.amount < pr.min) return false;
         if (pr.max !== undefined && p.price.amount > pr.max) return false;
       }
+      if ('collectionHandles' in f) {
+        const handles = f.collectionHandles as string[];
+        if (!handles?.length) continue;
+        const selected = new Set(handles);
+        const inPrimary = selected.has(p.collectionSlug);
+        const inAny = Boolean(
+          p.allCollections?.some((c) => selected.has(c.handle)),
+        );
+        if (!inPrimary && !inAny) return false;
+      }
     }
     return true;
   });
@@ -189,12 +199,17 @@ export async function listFeaturedProductsPage(
   let featuredProducts = await listFeaturedCollectionProducts(options, handle, 0);
 
   if (filter?.collectionHandle) {
-    featuredProducts = featuredProducts.filter(
-      (product) => product.collectionSlug === filter.collectionHandle,
+    featuredProducts = featuredProducts.filter((product) =>
+      product.collectionSlug === filter.collectionHandle ||
+      Boolean(
+        product.allCollections?.some(
+          (c) => c.handle === filter.collectionHandle,
+        ),
+      ),
     );
   }
 
-  return paginateStaticProducts(featuredProducts, first, page?.after);
+  return paginateStaticProducts(featuredProducts, first, page?.after, options);
 }
 
 export async function listCollectionProductsPage(

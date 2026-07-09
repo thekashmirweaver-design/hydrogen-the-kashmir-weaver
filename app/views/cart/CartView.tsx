@@ -43,7 +43,7 @@ export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}
 
   return (
     <div>
-      <section className="mx-auto max-w-[1400px] px-4 pb-28 pt-[calc(var(--header-h)+1rem)] sm:px-6 sm:pb-24 sm:pt-[calc(var(--header-h)+1.5rem)] md:px-10 lg:pb-24">
+      <section className="mx-auto max-w-[1400px] px-4 pb-28 pt-6 sm:px-6 sm:pb-24 sm:pt-8 md:px-10 lg:pb-24">
         <Eyebrow>Your Selection</Eyebrow>
         <h1
           className="font-display mt-4 text-3xl leading-tight sm:mt-6 sm:text-4xl md:text-6xl"

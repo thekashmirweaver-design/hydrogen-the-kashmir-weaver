@@ -12,10 +12,42 @@ import {useTheme} from '~/lib/theme';
  * Visual style mirrors the existing nav icon buttons in `SiteHeader.tsx`
  * (h-[18px] w-[18px] strokeWidth={1}, 11px min-h/w tap targets).
  */
-export function ThemeToggle() {
+export function ThemeToggle({
+  className = '',
+  variant = 'icon',
+}: {
+  className?: string;
+  /** `tile` = square labeled control for the mobile menu preferences row */
+  variant?: 'icon' | 'tile';
+}) {
   const {mode, cycle} = useTheme();
   const next = nextLabelFor(mode);
   const Icon = iconForMode(mode);
+
+  if (variant === 'tile') {
+    return (
+      <button
+        type="button"
+        onClick={cycle}
+        aria-label={`Theme: ${labelForMode(mode)}. ${next}`}
+        title={`Theme: ${labelForMode(mode)} — ${next}`}
+        data-theme-mode={mode}
+        suppressHydrationWarning
+        className={`flex aspect-square w-full min-h-[5.5rem] flex-col items-center justify-center gap-2 border touch-manipulation transition active:opacity-80 ${className}`}
+        style={{
+          borderColor: 'var(--border)',
+          background: 'var(--surface)',
+          color: 'var(--foreground)',
+        }}
+      >
+        <Icon className="h-5 w-5" strokeWidth={1.25} />
+        <span className="tracked text-[0.6rem] text-muted-foreground">Theme</span>
+        <span className="text-[0.65rem] font-medium uppercase tracking-[0.14em]">
+          {labelForMode(mode)}
+        </span>
+      </button>
+    );
+  }
 
   return (
     <button
@@ -24,7 +56,13 @@ export function ThemeToggle() {
       aria-label={`Theme: ${labelForMode(mode)}. ${next}`}
       title={`Theme: ${labelForMode(mode)} — ${next}`}
       data-theme-mode={mode}
-      className="touch-target inline-flex min-h-11 min-w-11 items-center justify-center text-muted-foreground transition hover:text-foreground active:opacity-80"
+      // Mode restores after hydrate; suppress transient icon/aria mismatch noise.
+      suppressHydrationWarning
+      className={
+        className
+          ? `touch-target inline-flex min-h-11 min-w-11 items-center justify-center active:opacity-80 ${className}`
+          : 'touch-target inline-flex min-h-11 min-w-11 items-center justify-center text-muted-foreground transition hover:text-foreground active:opacity-80'
+      }
     >
       <Icon className="h-[18px] w-[18px]" strokeWidth={1} />
     </button>

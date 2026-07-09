@@ -28,6 +28,8 @@
   /* Accent — antique gold */
   --accent: #ceac6c;
   --accent-soft: #876f44;
+  /* Section eyebrows — same gold family as accent */
+  --eyebrow: #ceac6c;
 
   /* Dividers */
   --border: rgba(255, 255, 255, 0.08);
@@ -54,6 +56,13 @@
 
   /* Scrim for vignette overlays (over hero photography) */
   --vignette-base-rgb: 8 16 15;
+  /* Shared RGB for photo gradients / CTAs sitting on imagery */
+  --photo-scrim-rgb: 8 16 15;
+
+  /* Text/icons sitting on photography — always light (both themes) */
+  --on-photo-fg: #f7f3ec;
+  --on-photo-muted: rgba(247, 243, 236, 0.78);
+  --on-photo-accent: #ceac6c;
 
   /* Shadow alpha */
   --shadow-rgb: 0 0 0;
@@ -79,6 +88,8 @@
   /* Accent — same antique gold, deeper for contrast on light */
   --accent: #8a6b34;
   --accent-soft: #b08a52;
+  /* Eyebrows — deep walnut for clear contrast on ivory */
+  --eyebrow: #2a221a;
 
   /* Dividers — walnut hairlines on ivory paper */
   --border: rgba(42, 34, 26, 0.10);
@@ -88,23 +99,29 @@
   /* Backdrops still dark — photography / modal focus never flips */
   --backdrop: rgba(20, 16, 10, 0.72);
   --backdrop-soft: rgba(20, 16, 10, 0.45);
-  --gallery-backdrop: rgba(8, 16, 15, 0.97); /* always dark */
+  --gallery-backdrop: rgba(20, 16, 10, 0.97);
   --overlay-pill-bg: rgba(0, 0, 0, 0.55);    /* always dark over photos */
   --overlay-pill-fg: rgba(255, 255, 255, 0.92);
-  --sold-out-badge-bg: rgba(8, 16, 15, 0.7);
-  --gallery-close-bg: rgba(8, 16, 15, 0.4);
+  --sold-out-badge-bg: rgba(20, 16, 10, 0.7);
+  --gallery-close-bg: rgba(20, 16, 10, 0.4);
 
   /* Glass — light glass: dark ink tint with low alpha */
   --glass-bg: rgba(42, 34, 26, 0.04);
   --glass-border: rgba(42, 34, 26, 0.18);
   --header-glass: rgba(246, 241, 231, 0.72);
 
-  /* Composite scrims (still dark over photos) */
-  --image-scrim-strong: rgba(8, 16, 15, 0.88);
-  --image-scrim-medium: rgba(8, 16, 15, 0.45);
+  /* Warm walnut scrims — no forest-green cast on light theme */
+  --image-scrim-strong: rgba(32, 22, 12, 0.88);
+  --image-scrim-medium: rgba(32, 22, 12, 0.45);
 
-  /* Vignette base (over hero photography) — slightly warmer in light */
+  /* Vignette / photo gradients — warm brown, not deep forest */
   --vignette-base-rgb: 32 22 12;
+  --photo-scrim-rgb: 32 22 12;
+
+  /* On-photo text stays cream/gold so light-theme ink never sits on photos */
+  --on-photo-fg: #f7f3ec;
+  --on-photo-muted: rgba(247, 243, 236, 0.82);
+  --on-photo-accent: #ceac6c;
 
   /* Shadow alpha — warm walnut */
   --shadow-rgb: 60 48 30;

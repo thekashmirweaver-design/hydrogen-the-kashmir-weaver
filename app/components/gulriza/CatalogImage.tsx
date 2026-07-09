@@ -71,6 +71,8 @@ export function CatalogImage({
   const imageStyle: CSSProperties = {
     ...style,
     opacity: loaded ? 1 : 0,
+    // Opacity only — hover zooms belong on the wrapper (see wrapperClassName)
+    // so transform isn't fighting this inline transition.
     transition: 'opacity 320ms ease-out',
   };
 
@@ -134,6 +136,7 @@ export function EditorialImage({
   width,
   height,
   className,
+  wrapperClassName,
   loading = 'lazy',
   fetchPriority,
   sizes = '100vw',
@@ -146,6 +149,7 @@ export function EditorialImage({
   width?: number;
   height?: number;
   className?: string;
+  wrapperClassName?: string;
   loading?: 'lazy' | 'eager';
   fetchPriority?: 'high' | 'low' | 'auto';
   sizes?: string;
@@ -157,6 +161,7 @@ export function EditorialImage({
     <CatalogImage
       image={{src, alt, width, height}}
       className={className}
+      wrapperClassName={wrapperClassName}
       loading={loading}
       fetchPriority={fetchPriority}
       sizes={sizes}
@@ -168,14 +173,15 @@ export function EditorialImage({
 }
 
 /**
- * Hero picture with AVIF-first source plus a JPG <img> fallback. Use only
- * when the AVIF/JPG pair are known to exist beside each other on the same
- * origin (e.g. /assets/hero-portrait.{avif,jpg}). Preload the AVIF srcset
- * from the document head so the browser fetches it before paint.
+ * Hero picture: AVIF → WebP → JPG. Paths should exist as a set on the same
+ * origin (e.g. /assets/hero-portrait.{avif,webp,jpg}). Preload the preferred
+ * format from the document head for LCP.
  */
 export function HeroPicture({
   jpg,
   jpgSmall,
+  webp,
+  webpSmall,
   avif,
   avifSmall,
   alt,
@@ -189,7 +195,9 @@ export function HeroPicture({
 }: {
   jpg: string;
   jpgSmall?: string;
-  avif: string;
+  webp?: string;
+  webpSmall?: string;
+  avif?: string;
   avifSmall?: string;
   alt: string;
   width?: number;
@@ -200,16 +208,27 @@ export function HeroPicture({
   fetchPriority?: 'high' | 'low' | 'auto';
   style?: CSSProperties;
 }) {
-  const jpgSrcSet = jpgSmall
-    ? `${avifSmallToJpg(jpgSmall)} 800w, ${jpg} 1536w`
-    : `${jpg} 1536w`;
-  const avifSrcSet = avifSmall
-    ? `${avifSmall} 800w, ${avif} 1536w`
-    : `${avif} 1536w`;
+  const jpgSrcSet = jpgSmall ? `${jpgSmall} 800w, ${jpg} 1536w` : `${jpg} 1536w`;
+  const webpSrcSet =
+    webp && webpSmall
+      ? `${webpSmall} 800w, ${webp} 1536w`
+      : webp
+        ? `${webp} 1536w`
+        : undefined;
+  const avifSrcSet =
+    avif && avifSmall
+      ? `${avifSmall} 800w, ${avif} 1536w`
+      : avif
+        ? `${avif} 1536w`
+        : undefined;
+
   return (
     <picture>
-      {avif ? (
+      {avifSrcSet ? (
         <source type="image/avif" srcSet={avifSrcSet} sizes={sizes} />
+      ) : null}
+      {webpSrcSet ? (
+        <source type="image/webp" srcSet={webpSrcSet} sizes={sizes} />
       ) : null}
       <img
         src={jpg}
@@ -226,10 +245,4 @@ export function HeroPicture({
       />
     </picture>
   );
-}
-
-// Tiny helper so the JPG srcset mirrors the AVIF density breakpoints
-// without re-stating the path. Pure cosmetics.
-function avifSmallToJpg(avifSmallPath: string) {
-  return avifSmallPath.replace(/\.avif$/, '.jpg');
 }

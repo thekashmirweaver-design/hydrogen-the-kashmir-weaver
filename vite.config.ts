@@ -6,7 +6,13 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  plugins: [hydrogen(), oxygen(), reactRouter(), tsconfigPaths(), tailwindcss()],
+  plugins: [
+    hydrogen(),
+    oxygen(),
+    reactRouter(),
+    tsconfigPaths(),
+    tailwindcss(),
+  ],
   build: {
     // Allow a strict Content-Security-Policy
     // withtout inlining assets as base64:
@@ -41,10 +47,15 @@ export default defineConfig({
        * Include 'example-dep' in the array below.
        * @see https://vitejs.dev/config/dep-optimization-options
        */
-      include: ['set-cookie-parser', 'cookie', 'react-router'],
+      include: [
+        '@shopify/hydrogen',
+        'set-cookie-parser',
+        'cookie',
+        'react-router',
+      ],
     },
   },
   server: {
-    allowedHosts: ['.tryhydrogen.dev', ".ngrok-free.app"],
+    allowedHosts: ['.tryhydrogen.dev', '.ngrok-free.app'],
   },
 });

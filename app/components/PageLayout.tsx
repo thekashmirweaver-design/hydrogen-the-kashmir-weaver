@@ -63,13 +63,11 @@ function RouteTransitionOutlet({
 }
 
 function ChromeHeader({
-  isHome,
   shopSettings,
   publicStoreDomain,
   publicAccessToken,
   customerAccessToken,
 }: {
-  isHome: boolean;
   shopSettings: ShopSettings;
   publicStoreDomain: string;
   publicAccessToken: string;
@@ -90,7 +88,6 @@ function ChromeHeader({
 
   return (
     <SiteHeader
-      transparent={isHome}
       shopSettings={shopSettings}
       publicStoreDomain={publicStoreDomain}
       publicAccessToken={publicAccessToken}
@@ -110,8 +107,6 @@ export function PageLayout({
   customerAccessToken,
   children = null,
 }: PageLayoutProps) {
-  const location = useLocation();
-  const isHome = location.pathname === '/';
   const [resolvedCatalog, setResolvedCatalog] =
     useState<CatalogSnapshot>(EMPTY_CATALOG);
 
@@ -134,7 +129,6 @@ export function PageLayout({
             <WebMcpTools />
           </Suspense>
           <ChromeHeader
-            isHome={isHome}
             shopSettings={shopSettings}
             publicStoreDomain={publicStoreDomain}
             publicAccessToken={publicAccessToken}

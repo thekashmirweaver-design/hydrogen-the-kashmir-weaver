@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import { Pointer } from "lucide-react";
 
-export function ScrollIndicator({ className = "" }: { className?: string }) {
+export function ScrollIndicator({
+  className = "",
+  onPhoto = false,
+}: {
+  className?: string;
+  /** Cream/gold ink when sitting on hero photography (dark theme) */
+  onPhoto?: boolean;
+}) {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
@@ -23,14 +30,25 @@ export function ScrollIndicator({ className = "" }: { className?: string }) {
 
   return (
     <div
-      className={`flex flex-col items-center gap-1 transition-opacity duration-500 md:gap-2 ${
-        hidden ? "opacity-0 pointer-events-none" : "opacity-100"
-      } ${className}`}
+      className={`home-scroll-cue flex flex-col items-center gap-1 transition-opacity duration-500 md:gap-2 ${
+        onPhoto ? "home-scroll-cue--on-photo" : ""
+      } ${hidden ? "opacity-0 pointer-events-none" : "opacity-100"} ${className}`}
       aria-hidden="true"
     >
-      <span className="tracked text-[0.6rem] text-muted-foreground md:text-[0.65rem]">Swipe</span>
+      <span
+        className={`tracked text-[0.6rem] md:text-[0.65rem] ${
+          onPhoto ? "home-scroll-cue__label" : "text-muted-foreground"
+        }`}
+      >
+        Swipe
+      </span>
       <div className="flex h-10 w-10 items-center justify-center">
-        <Pointer className="h-5 w-5 animate-swipe-up text-accent" strokeWidth={1.5} />
+        <Pointer
+          className={`home-scroll-cue__icon h-5 w-5 animate-swipe-up ${
+            onPhoto ? "" : "text-accent"
+          }`}
+          strokeWidth={1.5}
+        />
       </div>
     </div>
   );

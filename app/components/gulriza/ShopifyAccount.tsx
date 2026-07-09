@@ -24,7 +24,8 @@ function useIsLgUp() {
   return useSyncExternalStore(
     (callback) => subscribeMediaQuery(LG_MEDIA_QUERY, callback),
     () => window.matchMedia(LG_MEDIA_QUERY).matches,
-    () => true,
+    // Mobile-first SSR default — must match first client paint on narrow viewports.
+    () => false,
   );
 }
 
@@ -101,12 +102,15 @@ export function ShopifyAccount({
   customerAccessToken,
   className = '',
   compact = false,
+  variant = 'icon',
 }: {
   publicStoreDomain?: string;
   publicAccessToken?: string;
   customerAccessToken?: string | null;
   className?: string;
   compact?: boolean;
+  /** `tile` = square labeled control for the mobile menu preferences row */
+  variant?: 'icon' | 'tile';
 }) {
   const isLoggedIn = Boolean(customerAccessToken);
   const {pathname} = useLocation();
@@ -258,9 +262,11 @@ export function ShopifyAccount({
         )
       : null;
 
+  const isTile = variant === 'tile';
+
   return (
     <>
-      <div ref={wrapRef} className={`relative ${className}`}>
+      <div ref={wrapRef} className={`relative ${isTile ? 'w-full' : ''}`}>
         <button
           ref={triggerRef}
           type="button"
@@ -274,11 +280,39 @@ export function ShopifyAccount({
           onClick={() =>
             open ? (isLgUp ? setOpen(false) : requestClose()) : handleOpen()
           }
-          className={`flex items-center justify-center text-foreground/80 transition hover:text-accent focus:outline-none ${
-            compact ? 'h-10 w-10' : 'h-11 w-11'
-          }`}
+          className={
+            isTile
+              ? `flex aspect-square w-full min-h-[5.5rem] flex-col items-center justify-center gap-2 border touch-manipulation transition active:opacity-80 focus:outline-none ${className}`
+              : `flex items-center justify-center focus:outline-none ${
+                  className ||
+                  'text-foreground/80 transition hover:text-accent'
+                } ${compact ? 'h-10 w-10' : 'h-11 w-11'}`
+          }
+          style={
+            isTile
+              ? {
+                  borderColor: 'var(--border)',
+                  background: 'var(--surface)',
+                  color: 'var(--foreground)',
+                }
+              : undefined
+          }
         >
-          <User className="h-[18px] w-[18px]" strokeWidth={1} aria-hidden />
+          <User
+            className={isTile ? 'h-5 w-5' : 'h-[18px] w-[18px]'}
+            strokeWidth={isTile ? 1.25 : 1}
+            aria-hidden
+          />
+          {isTile ? (
+            <>
+              <span className="tracked text-[0.6rem] text-muted-foreground">
+                Account
+              </span>
+              <span className="text-[0.65rem] font-medium uppercase tracking-[0.14em]">
+                {isLoggedIn ? 'Signed in' : 'Sign in'}
+              </span>
+            </>
+          ) : null}
         </button>
 
         {isLgUp && (

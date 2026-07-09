@@ -9,7 +9,8 @@ export function CartFab() {
   const count = cartQuantity;
 
   if (count === 0) return null;
-  if (pathname === "/cart" || pathname === "/checkout") return null;
+  // Homepage already exposes the bag in the sticky header — skip the duplicate FAB.
+  if (pathname === "/" || pathname === "/cart" || pathname === "/checkout") return null;
 
   return (
     <button

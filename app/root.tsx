@@ -38,12 +38,7 @@ import {
 import {loadSharedCatalog, loadSharedCatalogMenu} from '~/lib/shared-catalog';
 import {needsFullCatalog} from '~/lib/catalog-routes';
 import {resolveStoreUrl} from '~/lib/seo';
-import {
-  heroImage,
-  heroImage800,
-  heroImageAvif,
-  heroImage800Avif,
-} from '~/lib/hero-image-urls';
+import {heroDark, heroLight} from '~/lib/hero-image-urls';
 
 export type RootLoader = typeof loader;
 
@@ -119,18 +114,24 @@ export function links() {
       crossOrigin: 'anonymous',
     },
     {
-      // Responsive preload of the AVIF hero (LCP candidate). Mobile
-      // (≤ 800 CSS px) gets the 800w variant, desktop gets the master.
-      // The JPG variants below remain the <img> fallback for browsers
-      // without AVIF support. Once scripts/upload-shopify-file.ts has
-      // been run, the values in app/lib/hero-image-urls.ts point at the
-      // Shopify CDN and gain a real srcset.
+      // Dark-theme LCP hero. WebP/JPG remain <picture> fallbacks.
       rel: 'preload',
       as: 'image',
       type: 'image/avif',
-      imagesrcset: `${heroImageAvif} 1536w, ${heroImage800Avif} 800w`,
-      imagesizes: '100vw',
+      imagesrcset: `${heroDark.avif} 1536w, ${heroDark.avifSmall} 800w`,
+      imagesizes: '(min-width: 768px) 55vw, 100vw',
       fetchPriority: 'high',
+      media: '(prefers-color-scheme: dark)',
+    },
+    {
+      // Light-theme LCP hero (OS light). Stored theme may differ; CSS still swaps.
+      rel: 'preload',
+      as: 'image',
+      type: 'image/avif',
+      imagesrcset: `${heroLight.avif} 1536w, ${heroLight.avifSmall} 800w`,
+      imagesizes: '(min-width: 768px) 55vw, 100vw',
+      fetchPriority: 'high',
+      media: '(prefers-color-scheme: light)',
     },
     {
       rel: 'preconnect',
@@ -260,7 +261,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
   const nonce = useNonce();
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta
@@ -269,7 +270,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
         />
         <Meta />
         <Links />
-        <ThemeBootScript />
+        <ThemeBootScript nonce={nonce} />
         <Script
           src="https://cdn.shopify.com/storefront/web-components/account.js"
           type="module"

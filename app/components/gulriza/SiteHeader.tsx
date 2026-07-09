@@ -1,7 +1,7 @@
 import {Link, useLocation, useNavigate, useNavigation, useFetchers, type FetcherWithComponents} from "react-router";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { Search, ShoppingBag, Menu, X, ChevronDown, Check, Globe } from "lucide-react";
+import { Search, ShoppingBag, Menu, X, ChevronDown, Check, Globe, ArrowRight } from "lucide-react";
 import { CartForm, useAnalytics } from "@shopify/hydrogen";
 import { useLocalization } from "~/contexts/localization-context";
 import type { ShopCurrencyOption } from "~/lib/localization";
@@ -47,7 +47,8 @@ function useIsLgUp() {
   return useSyncExternalStore(
     (callback) => subscribeMediaQuery(LG_MEDIA_QUERY, callback),
     () => window.matchMedia(LG_MEDIA_QUERY).matches,
-    () => true,
+    // Mobile-first SSR/hydration snapshot — must match getServerSnapshot on client.
+    () => false,
   );
 }
 
@@ -69,8 +70,8 @@ function AnimatedHeaderBrand({
       <Link
         to={homeHref}
         aria-label={condensed ? "The Kashmir Weaver — home" : undefined}
-        className={`relative flex shrink-0 items-center lg:hidden ${
-          condensed ? "h-8 w-8" : "min-h-[2.35rem] min-w-[6.75rem]"
+        className={`relative flex shrink-0 items-center text-foreground lg:hidden ${
+          condensed ? "h-8 w-8" : "min-h-[2.5rem] min-w-[8.25rem]"
         }`}
       >
         <span
@@ -81,7 +82,7 @@ function AnimatedHeaderBrand({
               : "scale-100 opacity-100 translate-y-0"
           }`}
         >
-          <BrandLockup className="text-left text-[0.82rem] tracking-[0.08em] min-[420px]:text-[0.9rem] min-[420px]:tracking-[0.1em]" />
+          <BrandLockup className="text-left text-[0.95rem] tracking-[0.1em] min-[420px]:text-[1.05rem] min-[420px]:tracking-[0.12em]" />
         </span>
         <span
           aria-hidden={!condensed}
@@ -98,22 +99,20 @@ function AnimatedHeaderBrand({
       {/* Desktop: brand name always (scroll does not swap to logo) */}
       <Link
         to={homeHref}
-        className="hidden shrink-0 items-center lg:flex"
+        className="hidden shrink-0 items-center text-foreground lg:flex"
       >
-        <BrandLockup className="w-max shrink-0 text-left text-[1.25rem] tracking-[0.12em] xl:text-[1.5rem] xl:tracking-[0.15em]" />
+        <BrandLockup className="w-max shrink-0 text-left text-[1.35rem] tracking-[0.12em] xl:text-[1.55rem] xl:tracking-[0.14em]" />
       </Link>
     </>
   );
 }
 
 export function SiteHeader({
-  transparent = false,
   shopSettings,
   publicStoreDomain,
   publicAccessToken,
   customerAccessToken = null,
 }: {
-  transparent?: boolean;
   shopSettings?: ShopSettings;
   publicStoreDomain: string;
   publicAccessToken: string;
@@ -203,7 +202,12 @@ export function SiteHeader({
     setSearchOpen(false);
   }, [pathname]);
 
-  const solid = !transparent || scrolled;
+  // In-flow above the page (not overlaid on the hero). Marquee scrolls away;
+  // the nav bar sticks. Theme ink on a solid/glass surface — no photo contrast.
+  const inkClass =
+    "text-foreground/80 transition hover:text-accent";
+  const navInkClass =
+    "tracked text-foreground/90 transition hover:text-accent relative";
   const navItems: NavItem[] =
     shopSettings?.headerMenu?.length ? shopSettings.headerMenu : [...NAV];
 
@@ -215,138 +219,131 @@ export function SiteHeader({
       >
         <Marquee messages={shopSettings?.marquee} />
       </div>
-      <div className="sticky top-0 z-50 h-0 w-full">
-        <header
-          className={`absolute inset-x-0 top-0 transition-all duration-700 ${
-            solid ? "border-b backdrop-blur-md" : "border-b border-transparent"
-          }`}
-          style={{
-            backgroundColor: solid ? "var(--header-glass)" : "transparent",
-            borderColor: solid ? "var(--border)" : "transparent",
-            paddingTop: scrolled ? "env(safe-area-inset-top)" : "0px",
-          }}
-        >
-          <div className="mx-auto flex h-[4.75rem] max-w-[1600px] items-center justify-between gap-3 px-4 min-[420px]:gap-4 min-[420px]:px-5 md:h-20 md:px-6 lg:gap-6 lg:px-8 xl:px-10">
-            {/* LEFT: brand */}
-            <div className="flex shrink-0 items-center lg:mr-2">
-              <AnimatedHeaderBrand condensed={scrolled} homeHref={marketTo("/")} />
+      <header
+        className="sticky top-0 z-50 w-full border-b backdrop-blur-md transition-[padding] duration-500"
+        style={{
+          backgroundColor: "var(--header-glass)",
+          borderColor: "var(--border)",
+          // After the marquee scrolls away, reclaim the notch/safe area.
+          paddingTop: scrolled ? "env(safe-area-inset-top)" : "0px",
+        }}
+      >
+        <div className="mx-auto flex h-[4.75rem] max-w-[1600px] items-center justify-between gap-4 px-5 min-[420px]:gap-5 min-[420px]:px-6 md:h-20 md:px-6 lg:gap-6 lg:px-8 xl:px-10">
+          {/* LEFT: brand */}
+          <div className="min-w-0 flex-1 lg:mr-2 lg:flex-none lg:shrink-0">
+            <AnimatedHeaderBrand condensed={scrolled} homeHref={marketTo("/")} />
+          </div>
+
+          {/* RIGHT: all nav (desktop) · control clusters */}
+          <div className="flex shrink-0 items-center justify-end gap-1 lg:gap-4 xl:gap-6">
+            <nav className="hidden items-center gap-4 lg:flex xl:gap-7">
+              {navItems.map((n) => {
+                const isShop = n.label === "Shop";
+                const isActive = pathname === n.to;
+                return (
+                  <Link
+                    key={n.to}
+                    to={marketTo(n.to)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={
+                      isShop
+                        ? "tracked animate-shimmer relative flex items-center justify-center rounded-full px-5 py-1.5 text-xs font-medium transition hover:opacity-80"
+                        : navInkClass
+                    }
+                    style={
+                      isShop
+                        ? { background: "var(--accent)", color: "var(--background)" }
+                        : isActive
+                          ? { color: "var(--accent)" }
+                          : undefined
+                    }
+                  >
+                    <span className="relative z-20">{n.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Mobile/tablet: Search · Cart · Menu only — currency/account/theme live in the drawer */}
+            <div className="flex shrink-0 items-center gap-0.5 lg:hidden">
+              <button
+                aria-label="Search"
+                className={`flex h-11 w-11 min-h-11 min-w-11 items-center justify-center touch-manipulation active:opacity-80 ${inkClass}`}
+                onClick={() => {
+                  publish('custom_search_opened', {});
+                  setSearchOpen(true);
+                }}
+              >
+                <Search className="h-[18px] w-[18px]" strokeWidth={1} />
+              </button>
+              <button
+                type="button"
+                onClick={openCart}
+                aria-label={count > 0 ? `Bag, ${count} item${count === 1 ? "" : "s"}` : "Bag"}
+                className={`relative flex h-11 w-11 min-h-11 min-w-11 items-center justify-center touch-manipulation active:opacity-80 ${inkClass}`}
+              >
+                <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1} />
+                {count > 0 && (
+                  <span
+                    className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-medium"
+                    style={{ background: "var(--accent)", color: "var(--background)" }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+              <button
+                ref={menuTriggerRef}
+                className={`flex h-11 w-11 min-h-11 min-w-11 items-center justify-center touch-manipulation active:opacity-80 ${inkClass}`}
+                aria-label="Open menu"
+                aria-expanded={open}
+                onClick={() => setOpen(true)}
+              >
+                <Menu className="h-[18px] w-[18px]" strokeWidth={1} />
+              </button>
             </div>
 
-            {/* RIGHT: all nav (desktop) · control clusters */}
-            <div className="flex shrink-0 items-center justify-end gap-2 lg:gap-4 xl:gap-6">
-              <nav className="hidden items-center gap-4 lg:flex xl:gap-7">
-                {navItems.map((n) => {
-                  const isShop = n.label === "Shop";
-                  return (
-                    <Link
-                      key={n.to}
-                      to={marketTo(n.to)}
-                      className={
-                        isShop
-                          ? "tracked animate-shimmer relative flex items-center justify-center rounded-full px-5 py-1.5 text-xs font-medium transition hover:opacity-80"
-                          : "tracked text-foreground/90 transition hover:text-accent relative"
-                      }
-                      style={
-                        isShop
-                          ? { background: "var(--accent)", color: "var(--background)" }
-                          : pathname === n.to
-                            ? { color: "var(--accent)" }
-                            : undefined
-                      }
-                    >
-                      <span className="relative z-20">{n.label}</span>
-                    </Link>
-                  );
-                })}
-              </nav>
-
-              {/* Mobile/tablet cluster: Search → Currency → Account → Cart → Hamburger (theme lives in the menu drawer) */}
-              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:hidden">
-                <button
-                  aria-label="Search"
-                  className="flex h-10 w-10 min-h-10 min-w-10 items-center justify-center touch-manipulation text-foreground/80 transition hover:text-accent active:opacity-80"
-                  onClick={() => {
-                    publish('custom_search_opened', {});
-                    setSearchOpen(true);
-                  }}
-                >
-                  <Search className="h-[18px] w-[18px]" strokeWidth={1} />
-                </button>
-                <CurrencyDropdown compact />
-                <ShopifyAccount
-                  publicStoreDomain={publicStoreDomain}
-                  publicAccessToken={publicAccessToken}
-                  customerAccessToken={customerAccessToken}
-                  compact
-                />
-                <button
-                  type="button"
-                  onClick={openCart}
-                  aria-label={count > 0 ? `Bag, ${count} item${count === 1 ? "" : "s"}` : "Bag"}
-                  className="relative flex h-10 w-10 min-h-10 min-w-10 items-center justify-center touch-manipulation text-foreground/80 transition hover:text-accent active:opacity-80"
-                >
-                  <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1} />
-                  {count > 0 && (
-                    <span
-                      className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-medium"
-                      style={{ background: "var(--accent)", color: "var(--background)" }}
-                    >
-                      {count}
-                    </span>
-                  )}
-                </button>
-                <button
-                  ref={menuTriggerRef}
-                  className="flex h-10 w-10 min-h-10 min-w-10 items-center justify-center touch-manipulation text-foreground/80 transition hover:text-accent active:opacity-80"
-                  aria-label="Open menu"
-                  aria-expanded={open}
-                  onClick={() => setOpen(true)}
-                >
-                  <Menu className="h-[18px] w-[18px]" strokeWidth={1} />
-                </button>
-              </div>
-
-              {/* Desktop cluster: Currency → Search → Account → Theme → Cart */}
-              <div className="hidden items-center gap-2 lg:flex xl:gap-4">
-                <CurrencyDropdown />
-                <button
-                  aria-label="Search"
-                  className="touch-target flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent active:opacity-80"
-                  onClick={() => {
-                    publish('custom_search_opened', {});
-                    setSearchOpen(true);
-                  }}
-                >
-                  <Search className="h-[18px] w-[18px]" strokeWidth={1} />
-                </button>
-                <ShopifyAccount
-                  publicStoreDomain={publicStoreDomain}
-                  publicAccessToken={publicAccessToken}
-                  customerAccessToken={customerAccessToken}
-                />
-                <ThemeToggle />
-                <button
-                  type="button"
-                  onClick={openCart}
-                  aria-label={count > 0 ? `Bag, ${count} item${count === 1 ? "" : "s"}` : "Bag"}
-                  className="relative touch-target flex h-11 w-11 items-center justify-center text-foreground/80 transition hover:text-accent active:opacity-80"
-                >
-                  <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1} />
-                  {count > 0 && (
-                    <span
-                      className="absolute right-1 top-1.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-medium"
-                      style={{
-                        background: "var(--accent)",
-                        color: "var(--background)",
-                      }}
-                    >
-                      {count}
-                    </span>
-                  )}
-                </button>
-              </div>
+            {/* Desktop cluster: Currency → Search → Account → Theme → Cart */}
+            <div className="hidden items-center gap-2 lg:flex xl:gap-4">
+              <CurrencyDropdown />
+              <button
+                aria-label="Search"
+                className={`touch-target flex h-11 w-11 items-center justify-center active:opacity-80 ${inkClass}`}
+                onClick={() => {
+                  publish('custom_search_opened', {});
+                  setSearchOpen(true);
+                }}
+              >
+                <Search className="h-[18px] w-[18px]" strokeWidth={1} />
+              </button>
+              <ShopifyAccount
+                publicStoreDomain={publicStoreDomain}
+                publicAccessToken={publicAccessToken}
+                customerAccessToken={customerAccessToken}
+              />
+              <ThemeToggle />
+              <button
+                type="button"
+                onClick={openCart}
+                aria-label={count > 0 ? `Bag, ${count} item${count === 1 ? "" : "s"}` : "Bag"}
+                className={`relative touch-target flex h-11 w-11 items-center justify-center active:opacity-80 ${inkClass}`}
+              >
+                <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1} />
+                {count > 0 && (
+                  <span
+                    className="absolute right-1 top-1.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-medium"
+                    style={{
+                      background: "var(--accent)",
+                      color: "var(--background)",
+                    }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
+        </div>
 
           {open && (
             <div
@@ -365,48 +362,78 @@ export function SiteHeader({
               }}
             >
               <div
-                className="flex h-[4.75rem] shrink-0 items-center justify-between gap-4 border-b px-4 min-[420px]:px-5"
+                className="flex h-[4.75rem] shrink-0 items-center justify-between gap-4 border-b px-5 min-[420px]:px-6"
                 style={{ borderColor: "var(--border)" }}
               >
                 <Link
                   to={marketTo("/")}
                   onClick={requestMenuClose}
-                  className="group flex min-w-0 items-center gap-2.5"
+                  className="group flex min-w-0 items-center gap-3"
                 >
                   <BrandMark className="h-8 w-8 shrink-0" />
-                  <BrandLockup className="text-left text-[1rem] tracking-[0.1em]" />
+                  <BrandLockup className="text-left text-[1.05rem] tracking-[0.1em]" />
                 </Link>
                 <button
                   onClick={requestMenuClose}
                   aria-label="Close menu"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center touch-manipulation text-foreground/80 transition hover:text-accent active:opacity-80"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center touch-manipulation text-foreground/80 transition hover:text-accent active:opacity-80"
                 >
                   <X className="h-[18px] w-[18px]" strokeWidth={1} />
                 </button>
               </div>
-              <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 pb-12 pt-8">
-                {navItems.map((n) => (
-                  <Link
-                    key={n.to}
-                    to={marketTo(n.to)}
-                    onClick={requestMenuClose}
-                    className="font-display flex min-h-11 items-center py-2 text-3xl tracking-wide transition hover:text-accent active:opacity-80"
-                    style={pathname === n.to ? { color: "var(--accent)" } : undefined}
-                  >
-                    {n.label}
-                  </Link>
-                ))}
-              </nav>
 
-              {/* Theme control — mobile/tablet only. Mirrors the desktop
-                  nav-cluster ThemeToggle but lives inside the menu drawer
-                  because the mobile/tablet header is already crowded. */}
-              <div
-                className="flex shrink-0 items-center justify-between gap-4 border-t px-5 py-4 min-[420px]:px-6"
-                style={{borderColor: "var(--border)"}}
-              >
-                <span className="tracked text-muted-foreground">Theme</span>
-                <ThemeToggle />
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+                <nav className="flex flex-col px-5 pt-6 pb-4 min-[420px]:px-6">
+                  <p className="eyebrow mb-5 text-[var(--eyebrow)]">Explore</p>
+                  <ul className="flex flex-col">
+                    {navItems.map((n, i) => {
+                      const isActive = pathname === n.to;
+                      return (
+                        <li key={n.to}>
+                          {i > 0 ? (
+                            <div
+                              className="h-px w-full"
+                              style={{ background: "var(--hairline)" }}
+                              aria-hidden
+                            />
+                          ) : null}
+                          <Link
+                            to={marketTo(n.to)}
+                            onClick={requestMenuClose}
+                            aria-current={isActive ? "page" : undefined}
+                            className="font-display flex min-h-14 items-center justify-between gap-4 py-4 text-[1.75rem] leading-none tracking-wide transition hover:text-accent active:opacity-80"
+                            style={isActive ? { color: "var(--accent)" } : undefined}
+                          >
+                            <span>{n.label}</span>
+                            <ArrowRight
+                              className="h-4 w-4 shrink-0 opacity-40"
+                              strokeWidth={1.25}
+                              aria-hidden
+                            />
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </nav>
+
+                {/* Preferences — square labeled tiles in one touch-friendly row */}
+                <div
+                  className="mt-auto border-t px-5 pt-6 pb-8 min-[420px]:px-6"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <p className="eyebrow mb-4 text-[var(--eyebrow)]">Preferences</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <CurrencyDropdown variant="tile" />
+                    <ShopifyAccount
+                      publicStoreDomain={publicStoreDomain}
+                      publicAccessToken={publicAccessToken}
+                      customerAccessToken={customerAccessToken}
+                      variant="tile"
+                    />
+                    <ThemeToggle variant="tile" />
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -415,12 +442,18 @@ export function SiteHeader({
             <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
           </Suspense>
         </header>
-      </div>
     </>
   );
 }
 
-function CurrencyDropdown({compact = false}: {compact?: boolean}) {
+function CurrencyDropdown({
+  compact = false,
+  variant = "default",
+}: {
+  compact?: boolean;
+  /** `tile` = square labeled control for the mobile menu preferences row */
+  variant?: "default" | "tile";
+}) {
   const {currencies, selectedCurrency} = useLocalization();
   const {pathname, search} = useLocation();
   const navigate = useNavigate();
@@ -669,9 +702,11 @@ function CurrencyDropdown({compact = false}: {compact?: boolean}) {
         )
       : null;
 
+  const isTile = variant === "tile";
+
   return (
     <>
-      <div ref={wrapRef} className="relative">
+      <div ref={wrapRef} className={`relative ${isTile ? "w-full" : ""}`}>
         <button
           ref={triggerRef}
           type="button"
@@ -679,20 +714,45 @@ function CurrencyDropdown({compact = false}: {compact?: boolean}) {
           aria-expanded={open}
           aria-label={`Select currency, current ${displayCode}`}
           onClick={() => (open ? (isLgUp ? setOpen(false) : requestClose()) : handleOpen())}
-          className={`flex items-center justify-center gap-1 px-1 text-[0.65rem] uppercase tracking-[0.15em] text-foreground/90 transition hover:text-accent focus:outline-none min-[480px]:gap-1.5 min-[480px]:px-1.5 min-[480px]:text-xs min-[480px]:tracking-[0.25em] lg:justify-start ${
-            compact
-              ? "h-10 w-10 min-w-10 min-[480px]:w-auto"
-              : "h-11 w-11 min-w-11 min-[480px]:w-auto"
-          }`}
-          style={{opacity: isUpdating ? 0.65 : 1}}
+          className={
+            isTile
+              ? "flex aspect-square w-full min-h-[5.5rem] flex-col items-center justify-center gap-2 border touch-manipulation transition active:opacity-80 focus:outline-none"
+              : `flex items-center justify-center gap-1 px-1 text-[0.65rem] uppercase tracking-[0.15em] text-foreground/90 transition hover:text-accent focus:outline-none min-[480px]:gap-1.5 min-[480px]:px-1.5 min-[480px]:text-xs min-[480px]:tracking-[0.25em] lg:justify-start ${
+                  compact
+                    ? "h-10 w-10 min-w-10 min-[480px]:w-auto"
+                    : "h-11 w-11 min-w-11 min-[480px]:w-auto"
+                }`
+          }
+          style={
+            isTile
+              ? {
+                  borderColor: "var(--border)",
+                  background: "var(--surface)",
+                  color: "var(--foreground)",
+                  opacity: isUpdating ? 0.65 : 1,
+                }
+              : {opacity: isUpdating ? 0.65 : 1}
+          }
         >
-          <Globe className="h-3.5 w-3.5 shrink-0" strokeWidth={1} aria-hidden />
-          <span className="hidden min-[480px]:inline">{displayCode}</span>
-          <ChevronDown
-            className="hidden h-3 w-3 shrink-0 transition-transform min-[480px]:block min-[480px]:h-3.5 min-[480px]:w-3.5"
-            strokeWidth={1}
-            style={{transform: open ? "rotate(180deg)" : undefined}}
-          />
+          {isTile ? (
+            <>
+              <Globe className="h-5 w-5 shrink-0" strokeWidth={1.25} aria-hidden />
+              <span className="tracked text-[0.6rem] text-muted-foreground">Currency</span>
+              <span className="text-[0.7rem] font-medium uppercase tracking-[0.14em]">
+                {displayCode}
+              </span>
+            </>
+          ) : (
+            <>
+              <Globe className="h-3.5 w-3.5 shrink-0" strokeWidth={1} aria-hidden />
+              <span className="hidden min-[480px]:inline">{displayCode}</span>
+              <ChevronDown
+                className="hidden h-3 w-3 shrink-0 transition-transform min-[480px]:block min-[480px]:h-3.5 min-[480px]:w-3.5"
+                strokeWidth={1}
+                style={{transform: open ? "rotate(180deg)" : undefined}}
+              />
+            </>
+          )}
         </button>
 
         {isLgUp && (

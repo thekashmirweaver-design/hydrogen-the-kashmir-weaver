@@ -62,7 +62,8 @@
 :root {
   --marquee-h: 36px;
   --nav-h: 4.75rem;
-  --header-h: calc(var(--marquee-h) + var(--nav-h) + env(safe-area-inset-top, 0px));
+  /* Sticky nav height only — marquee scrolls away; header is in-flow above content. */
+  --header-h: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
   --font-display-next: "Cormorant Garamond", ui-serif, Georgia, serif;
   --font-sans-next: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-body-next: "EB Garamond", "EB Garamond 400", ui-serif, Georgia, serif;
@@ -112,10 +113,10 @@
 @utility eyebrow {
   font-family: var(--font-sans);
   font-size: 0.6875rem;
-  font-weight: 400;
+  font-weight: 500;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--eyebrow);
 }
 
 @utility tracked {
@@ -387,6 +388,152 @@
   );
 }
 
+/* Theme-swapped homepage heroes — boot script sets data-theme before paint. */
+.hero-theme-layer {
+  position: absolute;
+  inset: 0;
+}
+.hero-theme-layer--light {
+  display: none;
+}
+:root[data-theme='light'] .hero-theme-layer--dark {
+  display: none;
+}
+:root[data-theme='light'] .hero-theme-layer--light {
+  display: block;
+}
+
+/*
+ * Copy / controls over photography. Light theme ink is walnut — unreadable on
+ * dark heroes — so force cream + gold whenever content sits on an image.
+ */
+.on-photo {
+  color: var(--on-photo-fg);
+}
+.on-photo .eyebrow {
+  color: var(--on-photo-accent);
+}
+
+/*
+ * Homepage hero copy over photography.
+ * Dark: cream/gold over the dusk hero.
+ * Light: walnut ink at ALL breakpoints — the light hero is bright, so
+ * cream/gold (--on-photo-*) washes out on mobile full-bleed.
+ */
+.home-hero-copy {
+  color: var(--on-photo-fg);
+  text-shadow: 0 2px 24px rgb(8 16 15 / 0.45);
+}
+.home-hero-copy .eyebrow {
+  color: var(--on-photo-accent);
+}
+.home-hero-copy .text-muted-foreground,
+.home-hero-copy .text-foreground\/85 {
+  color: var(--on-photo-muted) !important;
+}
+.home-hero-copy .text-accent {
+  color: var(--on-photo-accent) !important;
+}
+
+:root[data-theme='light'] .home-hero-copy {
+  color: var(--foreground);
+  text-shadow: none;
+}
+:root[data-theme='light'] .home-hero-copy .eyebrow {
+  color: var(--eyebrow) !important;
+}
+:root[data-theme='light'] .home-hero-copy .text-muted-foreground {
+  color: var(--muted-foreground) !important;
+}
+:root[data-theme='light'] .home-hero-copy .text-foreground\/85 {
+  color: color-mix(in srgb, var(--foreground) 85%, transparent) !important;
+}
+:root[data-theme='light'] .home-hero-copy .text-accent {
+  color: var(--accent) !important;
+}
+:root[data-theme='light'] .home-hero-copy .tracked {
+  color: var(--muted-foreground);
+}
+:root[data-theme='light'] .home-hero-copy .hero-rotating-slot__word {
+  color: var(--eyebrow) !important;
+}
+:root[data-theme='light'] .home-hero-delivery,
+:root[data-theme='light'] .home-hero-delivery .text-muted-foreground {
+  color: var(--muted-foreground) !important;
+}
+:root[data-theme='light'] .home-hero-delivery__tail {
+  color: color-mix(in srgb, var(--foreground) 88%, transparent) !important;
+}
+:root[data-theme='light'] .home-hero-cta {
+  background-color: rgb(var(--photo-scrim-rgb) / 0.22) !important;
+  border-color: color-mix(in srgb, var(--foreground) 28%, transparent) !important;
+  color: var(--foreground) !important;
+}
+:root[data-theme='light'] .home-hero-cta-arrow {
+  color: var(--eyebrow) !important;
+}
+
+/*
+ * Light theme mobile: ivory bottom fade so walnut eyebrow/copy sits on a
+ * readable panel over the bright golden-hour hero (not cream-on-cream).
+ */
+:root[data-theme='light'] .hero-photo-scrim {
+  background:
+    linear-gradient(
+      to top,
+      rgb(246 241 231 / 0.97) 0%,
+      rgb(246 241 231 / 0.88) 28%,
+      rgb(246 241 231 / 0.45) 52%,
+      transparent 78%
+    ) !important;
+}
+
+.home-hero-rail-rule {
+  background: var(--on-photo-accent);
+}
+:root[data-theme='light'] .home-hero-rail-rule {
+  background: var(--eyebrow);
+}
+
+/* Hero scroll cue — cream on dark photo; walnut on light photo */
+.home-scroll-cue--on-photo .home-scroll-cue__label {
+  color: var(--on-photo-muted);
+  text-shadow: 0 1px 10px rgb(var(--photo-scrim-rgb) / 0.55);
+}
+.home-scroll-cue--on-photo .home-scroll-cue__icon {
+  color: var(--on-photo-accent);
+}
+:root[data-theme='light'] .home-scroll-cue--on-photo .home-scroll-cue__label {
+  color: var(--muted-foreground);
+  text-shadow: none;
+}
+:root[data-theme='light'] .home-scroll-cue--on-photo .home-scroll-cue__icon {
+  color: var(--eyebrow);
+}
+
+@media (min-width: 768px) {
+  /* Desktop light: photo is a side panel; restore warm side/bottom scrim */
+  :root[data-theme='light'] .hero-photo-scrim {
+    background:
+      linear-gradient(
+        to right,
+        rgb(var(--photo-scrim-rgb) / 0.72) 0%,
+        rgb(var(--photo-scrim-rgb) / 0.35) 42%,
+        transparent 68%
+      ),
+      linear-gradient(
+        to top,
+        rgb(var(--photo-scrim-rgb) / 0.78) 0%,
+        rgb(var(--photo-scrim-rgb) / 0.28) 38%,
+        transparent 62%
+      ) !important;
+  }
+  :root[data-theme='light'] .home-hero-cta {
+    background-color: var(--glass-bg) !important;
+    border-color: var(--glass-border) !important;
+  }
+}
+
 @utility hero-bottom-scrim {
   background: linear-gradient(
     to top,
@@ -429,6 +576,23 @@
 
 .marquee-track:hover {
   animation-play-state: paused;
+}
+
+/* Announcement strip — explicit ink so light theme never inherits cream */
+.site-marquee__item {
+  color: var(--foreground);
+}
+.site-marquee__dot {
+  color: var(--accent);
+}
+:root[data-theme='light'] .site-marquee {
+  background: var(--surface-2);
+}
+:root[data-theme='light'] .site-marquee__item {
+  color: #2a221a;
+}
+:root[data-theme='light'] .site-marquee__dot {
+  color: var(--eyebrow);
 }
 
 @media (min-width: 768px) {
@@ -572,6 +736,15 @@
 
   button,
   [role='button'] {
+    touch-action: manipulation;
+  }
+
+  /*
+   * Links inside horizontal carousels must still allow pan-x + pan-y.
+   * `manipulation` alone is fine; never inherit a pan-x-only ancestor onto
+   * the hit target — ProductTile/ProductCarousel set pan-x pan-y explicitly.
+   */
+  a {
     touch-action: manipulation;
   }
 }

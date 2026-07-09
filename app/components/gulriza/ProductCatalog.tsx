@@ -11,7 +11,7 @@ import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 import { ShadeDropdown } from "~/components/gulriza/ShadeDropdown";
 import { collectShadesFromProducts, getDefaultSolidShadeCode } from "~/lib/solid-product";
 import type { CatalogPageInfo, CatalogFilters, ProductListScope, SortKey } from "~/lib/catalog-pagination";
-import { DEFAULT_CATALOG_SORT } from "~/lib/catalog-pagination";
+import { DEFAULT_CATALOG_SORT, productMatchesCollections } from "~/lib/catalog-pagination";
 import { usePagePagination } from "~/hooks/use-page-pagination";
 import { PagePagination } from "~/components/gulriza/PagePagination";
 
@@ -57,11 +57,13 @@ export function ProductCatalog({
   const [sort, setSort] = useState<SortKey>(DEFAULT_CATALOG_SORT);
   const [priceMinFilter, setPriceMinFilter] = useState<number | undefined>();
   const [priceMaxFilter, setPriceMaxFilter] = useState<number | undefined>();
+  const [collectionFilter, setCollectionFilter] = useState<string[]>([]);
   const priceFilterTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const catalogFilters: CatalogFilters = useMemo(() => ({
     priceMin: priceMinFilter,
     priceMax: priceMaxFilter,
-  }), [priceMinFilter, priceMaxFilter]);
+    collections: collectionFilter.length ? collectionFilter : undefined,
+  }), [priceMinFilter, priceMaxFilter, collectionFilter]);
 
   const pagination = usePagePagination({
     initialProducts,
@@ -146,8 +148,12 @@ export function ProductCatalog({
 
   const filtered = useMemo(() => {
     let list = products.slice();
-    if (enabled.includes("collection") && resolvedFilters.collections.size)
-      list = list.filter((p) => resolvedFilters.collections.has(p.collectionSlug));
+    const selected = [...resolvedFilters.collections];
+    if (enabled.includes("collection") && resolvedFilters.collections.size) {
+      // Server already filters by collection when pagination is on; keep a
+      // client pass for non-paginated catalogs / stale pages.
+      list = list.filter((p) => productMatchesCollections(p, selected));
+    }
     if (enabled.includes("price"))
       list = list.filter(
         (p) =>
@@ -177,6 +183,9 @@ export function ProductCatalog({
       const s = next[key] as Set<string>;
       if (s.has(value)) s.delete(value);
       else s.add(value);
+      if (paginationEnabled) {
+        setCollectionFilter([...s]);
+      }
       return next;
     });
   };
@@ -190,7 +199,10 @@ export function ProductCatalog({
       : 0) +
     (showColorFilter && resolvedFilters.colorCode !== defaultColorCode ? 1 : 0);
 
-  const reset = () => setFilters(initial);
+  const reset = () => {
+    setFilters(initial);
+    if (paginationEnabled) setCollectionFilter([]);
+  };
 
   const FilterPanel = (
     <div className="space-y-8">

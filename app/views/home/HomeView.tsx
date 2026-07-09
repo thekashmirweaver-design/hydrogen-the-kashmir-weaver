@@ -11,16 +11,10 @@ import {ProductTile} from '~/components/gulriza/ProductTile';
 import {ScrollIndicator} from '~/components/gulriza/ScrollIndicator';
 import {ProductCarousel} from '~/components/gulriza/ProductCarousel';
 import {EditorialImage, HeroPicture} from '~/components/gulriza/CatalogImage';
-import {
-  heroImage as heroImageUrl,
-  heroImage800,
-  heroImageAvif,
-  heroImage800Avif,
-} from '~/lib/hero-image-urls';
+import {heroDark, heroLight} from '~/lib/hero-image-urls';
 import type {Collection, Product} from '~/models/types';
 import type {JournalPost} from '~/models/static/journal';
 
-const heroPortrait = '/assets/hero-portrait.jpg';
 const artisan = '/assets/craft-artisan.png';
 
 function bestSellingScore(p: Product): number {
@@ -96,36 +90,73 @@ function Hero({
   heroImageUrl?: string;
   heroAlt?: string;
 }) {
-  const src = heroImageUrlProp || heroPortrait;
-  const alt =
+  const darkAlt =
     heroAlt ||
     'A woman wrapped in an emerald pashmina shawl, framed by a stone arch overlooking a Himalayan lake at dusk.';
+  const lightAlt =
+    'A woman wrapped in a cream embroidered pashmina shawl, framed by a stone arch overlooking a Himalayan lake at golden hour.';
+  const sizes = '(min-width: 768px) 55vw, 100vw';
+  const pictureClass =
+    'absolute inset-0 h-full w-full object-cover edge-fade-left';
+  const pictureStyle = {objectPosition: 'center'} as const;
+
+  // Optional Shopify/metafield override replaces the dark hero only.
+  const darkJpg = heroImageUrlProp || heroDark.jpg;
+  const darkUsesLocalSet = !heroImageUrlProp;
+
   return (
     <section className="relative min-h-[100dvh] w-full overflow-hidden">
       <div className="absolute inset-y-0 right-0 w-full md:w-[62%] lg:w-[55%]">
-        <HeroPicture
-          jpg={src}
-          jpgSmall={heroImage800}
-          avif={heroImageAvif}
-          avifSmall={heroImage800Avif}
-          alt={alt}
-          className="absolute inset-0 h-full w-full object-cover edge-fade-left"
-          style={{objectPosition: 'center'}}
-          sizes="(min-width: 768px) 55vw, 100vw"
-        />
+        <div className="hero-theme-layer hero-theme-layer--dark">
+          <HeroPicture
+            jpg={darkJpg}
+            jpgSmall={darkUsesLocalSet ? heroDark.jpgSmall : undefined}
+            webp={darkUsesLocalSet ? heroDark.webp : undefined}
+            webpSmall={darkUsesLocalSet ? heroDark.webpSmall : undefined}
+            avif={darkUsesLocalSet ? heroDark.avif : undefined}
+            avifSmall={darkUsesLocalSet ? heroDark.avifSmall : undefined}
+            alt={darkAlt}
+            className={pictureClass}
+            style={pictureStyle}
+            sizes={sizes}
+          />
+        </div>
+        <div className="hero-theme-layer hero-theme-layer--light">
+          <HeroPicture
+            jpg={heroLight.jpg}
+            jpgSmall={heroLight.jpgSmall}
+            webp={heroLight.webp}
+            webpSmall={heroLight.webpSmall}
+            avif={heroLight.avif}
+            avifSmall={heroLight.avifSmall}
+            alt={lightAlt}
+            className={pictureClass}
+            style={pictureStyle}
+            sizes={sizes}
+            fetchPriority="low"
+          />
+        </div>
         <div className="vignette-overlay pointer-events-none absolute inset-0" />
+        {/* Left/bottom scrim — uses --photo-scrim-rgb (warm in light, forest in dark) */}
+        <div
+          className="hero-photo-scrim pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(to right, rgb(var(--photo-scrim-rgb) / 0.72) 0%, rgb(var(--photo-scrim-rgb) / 0.35) 42%, transparent 68%), linear-gradient(to top, rgb(var(--photo-scrim-rgb) / 0.78) 0%, rgb(var(--photo-scrim-rgb) / 0.28) 38%, transparent 62%)',
+          }}
+        />
       </div>
 
-      <div className="absolute left-6 top-1/2 z-10 hidden -translate-y-1/2 flex-col items-center gap-3 md:flex lg:left-10 xl:left-16">
-        <span className="eyebrow text-foreground">01</span>
-        <span className="h-10 w-px" style={{background: 'var(--accent)'}} />
+      <div className="home-hero-copy absolute left-6 top-1/2 z-10 hidden -translate-y-1/2 flex-col items-center gap-3 md:flex lg:left-10 xl:left-16">
+        <span className="eyebrow">01</span>
+        <span className="h-10 w-px home-hero-rail-rule" />
         <span className="tracked text-muted-foreground">02</span>
         <span className="tracked text-muted-foreground">03</span>
         <span className="tracked text-muted-foreground">04</span>
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1600px] items-center px-6 pb-44 pt-[calc(var(--header-h)+2rem)] md:px-20 md:py-0 lg:px-28 xl:px-36">
-        <Reveal className="mt-auto max-w-2xl md:-mt-32 lg:-mt-10">
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1600px] items-center px-6 pb-44 pt-10 md:px-20 md:py-0 lg:px-28 xl:px-36">
+        <Reveal className="home-hero-copy mt-auto max-w-2xl md:-mt-32 lg:-mt-10">
           <Eyebrow>Pure Origin · Rare Luxury</Eyebrow>
           <h1
             className="font-display mt-8 text-[2.5rem] leading-[1.05] tracking-tight sm:text-[3.5rem] md:text-[4.75rem]"
@@ -142,23 +173,30 @@ function Hero({
 
           <Link
             to="/collections"
-            className="mt-8 md:mt-10 inline-flex items-center gap-6 rounded-full border px-8 py-4 text-foreground backdrop-blur-md transition-all duration-300 group animate-glass-glaze"
+            className="home-hero-cta mt-8 md:mt-10 inline-flex items-center gap-6 rounded-full border px-8 py-4 backdrop-blur-md transition-all duration-300 group animate-glass-glaze"
             style={{
-              backgroundColor: 'var(--glass-bg)',
-              borderColor: 'var(--glass-border)',
+              backgroundColor: 'rgb(var(--photo-scrim-rgb) / 0.4)',
+              borderColor: 'color-mix(in srgb, var(--on-photo-fg) 28%, transparent)',
+              color: 'var(--on-photo-fg)',
             }}
           >
             <span className="relative z-20 tracked text-xs md:text-sm font-medium uppercase tracking-[0.15em] md:tracking-[0.2em]">
               Explore Collection
             </span>
-            <span className="relative z-20 flex items-center justify-center transition-transform duration-300 group-hover:translate-x-1.5 text-accent">
+            <span
+              className="home-hero-cta-arrow relative z-20 flex items-center justify-center transition-transform duration-300 group-hover:translate-x-1.5"
+              style={{color: 'var(--on-photo-accent)'}}
+            >
               <ArrowRight className="h-4 w-4 md:h-4 md:w-4" strokeWidth={1.5} />
             </span>
           </Link>
         </Reveal>
       </div>
 
-      <ScrollIndicator className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-10 -translate-x-1/2 md:bottom-10" />
+      <ScrollIndicator
+        onPhoto
+        className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-10 -translate-x-1/2 md:bottom-10"
+      />
     </section>
   );
 }
@@ -208,12 +246,33 @@ function ProductCarouselSection({
   );
 }
 
-function ExploreCollectionCta({handle, name}: {handle: string; name: string}) {
+function ExploreCollectionCta({
+  handle,
+  name,
+  onPhoto = false,
+}: {
+  handle: string;
+  name: string;
+  onPhoto?: boolean;
+}) {
   return (
     <Link
       to={`/collections/${handle}`}
       prefetch="intent"
-      className="mt-8 inline-flex min-h-11 w-max items-center gap-3 rounded-full border border-accent/40 bg-accent/5 px-5 py-3 text-[0.65rem] font-medium tracking-widest text-accent uppercase transition-all duration-300 hover:bg-accent/10 active:opacity-80 md:mt-10 md:text-xs"
+      className={
+        onPhoto
+          ? 'mt-8 inline-flex min-h-11 w-max items-center gap-3 rounded-full border px-5 py-3 text-[0.65rem] font-medium tracking-widest uppercase transition-all duration-300 hover:opacity-90 active:opacity-80 md:mt-10 md:text-xs'
+          : 'mt-8 inline-flex min-h-11 w-max items-center gap-3 rounded-full border border-accent/40 bg-accent/5 px-5 py-3 text-[0.65rem] font-medium tracking-widest text-accent uppercase transition-all duration-300 hover:bg-accent/10 active:opacity-80 md:mt-10 md:text-xs'
+      }
+      style={
+        onPhoto
+          ? {
+              borderColor: 'color-mix(in srgb, var(--on-photo-accent) 55%, transparent)',
+              color: 'var(--on-photo-accent)',
+              background: 'rgb(var(--photo-scrim-rgb) / 0.32)',
+            }
+          : undefined
+      }
     >
       Explore {name} <ArrowRight className="h-3.5 w-3.5" />
     </Link>
@@ -262,11 +321,11 @@ function SignatureCollections({
                 </div>
               )}
               <Reveal className="relative w-full">
-                <CollectionHeroBanner hero={c.hero}>
+                <CollectionHeroBanner hero={c.hero} zoomOnHover>
                   <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1600px] px-6 pb-10 md:px-10 md:pb-16">
                     <Eyebrow>{c.tagline}</Eyebrow>
                     <h3
-                      className="font-display mt-4 text-3xl leading-[1.1] sm:text-4xl md:mt-6 md:text-5xl"
+                      className="font-display mt-4 text-3xl leading-[1.1] text-[var(--on-photo-fg)] sm:text-4xl md:mt-6 md:text-5xl"
                       style={{fontWeight: 400}}
                     >
                       {firstName}{' '}
@@ -274,11 +333,11 @@ function SignatureCollections({
                         <span style={{fontStyle: 'italic'}}>{restName}</span>
                       ) : null}
                     </h3>
-                    <p className="mt-6 hidden max-w-xl text-base leading-relaxed text-muted-foreground md:block">
+                    <p className="mt-6 hidden max-w-xl text-base leading-relaxed text-[var(--on-photo-muted)] md:block">
                       {c.story}
                     </p>
                     <div className="hidden md:block">
-                      <ExploreCollectionCta handle={c.handle} name={c.name} />
+                      <ExploreCollectionCta handle={c.handle} name={c.name} onPhoto />
                     </div>
                   </div>
                 </CollectionHeroBanner>
@@ -476,7 +535,7 @@ function BespokeSection() {
     <section className="relative py-32 md:py-40" style={{background: 'var(--surface)'}}>
       <div className="mx-auto max-w-[1100px] px-6 md:px-10">
         <Reveal className="text-center">
-          <Eyebrow>The The Kashmir Weaver Experience</Eyebrow>
+          <Eyebrow>The Kashmir Weaver Experience</Eyebrow>
           <h2
             className="font-display mx-auto mt-6 max-w-3xl text-4xl leading-[1.1] sm:text-5xl md:text-[3.5rem]"
             style={{fontWeight: 400}}

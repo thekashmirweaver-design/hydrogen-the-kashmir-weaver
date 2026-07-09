@@ -140,8 +140,15 @@ export function ProductTile({product, disableSwipe}: {product: Product; disableS
         className="block"
       >
         <div
-          className="relative aspect-[4/5] w-full touch-pan-y select-none overflow-hidden"
-          style={{background: "var(--surface)"}}
+          className={`relative aspect-[4/5] w-full select-none overflow-hidden ${
+            // Standalone tiles: allow vertical page scroll while JS handles image swipe.
+            // Inside carousels (disableSwipe): do not restrict — parent needs pan-x + pan-y.
+            disableSwipe ? "" : "touch-pan-y"
+          }`}
+          style={{
+            background: "var(--surface)",
+            ...(disableSwipe ? {touchAction: "pan-x pan-y"} : undefined),
+          }}
           {...tileSwipe}
         >
           {imagesToRender.map((img, i) => (

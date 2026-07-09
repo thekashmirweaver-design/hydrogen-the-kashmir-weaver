@@ -37,7 +37,7 @@ export function SearchView({
   }, [currentPage]);
 
   return (
-    <section className="mx-auto max-w-[1400px] px-6 pt-[calc(var(--header-h)+1.5rem)] pb-24 md:px-10">
+    <section className="mx-auto max-w-[1400px] px-6 pt-8 pb-24 md:px-10">
       <Eyebrow>Search</Eyebrow>
       <h1
         className="font-display mt-6 text-4xl leading-tight md:text-6xl"

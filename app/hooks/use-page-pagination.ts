@@ -88,6 +88,9 @@ export function usePagePagination({
     const params = new URLSearchParams({scope: listSource.scope, sort: sortKey});
     if (filters.priceMin !== undefined) params.set('priceMin', String(filters.priceMin));
     if (filters.priceMax !== undefined) params.set('priceMax', String(filters.priceMax));
+    for (const handle of filters.collections ?? []) {
+      params.append('collection', handle);
+    }
     if (listSource.scope === 'collection') {
       params.set('handle', listSource.handle);
     }
@@ -141,6 +144,9 @@ export function usePagePagination({
     const params = new URLSearchParams({scope: listSource.scope, sort: sortKey});
     if (filters.priceMin !== undefined) params.set('priceMin', String(filters.priceMin));
     if (filters.priceMax !== undefined) params.set('priceMax', String(filters.priceMax));
+    for (const handle of filters.collections ?? []) {
+      params.append('collection', handle);
+    }
     if (prevEntry.pageInfo.endCursor) {
       params.set('after', prevEntry.pageInfo.endCursor);
     }

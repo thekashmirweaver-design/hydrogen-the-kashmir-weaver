@@ -29,13 +29,13 @@ export function CollectionView({
 
   return (
     <div>
-      <section className="relative pt-[calc(var(--header-h)+1rem)]">
+      <section className="relative">
         <CollectionHeroBanner hero={collection.hero} priority>
           <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1600px] px-6 pb-10 md:px-10 md:pb-20">
             <Reveal>
               <Eyebrow>{collection.tagline}</Eyebrow>
               <h1
-                className="font-display mt-4 text-4xl leading-[1.05] sm:text-5xl md:mt-6 md:text-7xl"
+                className="font-display mt-4 text-4xl leading-[1.05] text-[var(--on-photo-fg)] sm:text-5xl md:mt-6 md:text-7xl"
                 style={{fontWeight: 300}}
               >
                 {firstName}{' '}
@@ -43,7 +43,7 @@ export function CollectionView({
                   <span style={{fontStyle: 'italic'}}>{restName}.</span>
                 ) : null}
               </h1>
-              <p className="mt-6 hidden max-w-xl text-base leading-relaxed text-muted-foreground md:block">
+              <p className="mt-6 hidden max-w-xl text-base leading-relaxed text-[var(--on-photo-muted)] md:block">
                 {collection.story}
               </p>
             </Reveal>

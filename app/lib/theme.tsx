@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import {useIsomorphicLayoutEffect} from "~/hooks/use-isomorphic-layout-effect";
 
 /**
  * The Kashmir Weaver — theme controller.
@@ -17,8 +18,8 @@ import {
  * value, called `resolved`, is what we paint on `<html data-theme>`.
  *
  * Storage + the boot script use the same `tkw-theme` localStorage key.
- * The provider reads from the DOM attribute that the boot script sets so
- * there's no flash on first paint and no hydration mismatch.
+ * The boot script paints <html> before first paint; React state restores
+ * after hydration so ThemeToggle markup matches SSR (no mismatch).
  */
 
 export type ThemeMode = "light" | "dark" | "system";
@@ -100,14 +101,35 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
  * preference; reflects OS changes when mode === "system".
  */
 export function ThemeProvider({children}: {children: ReactNode}) {
-  // SSR-safe initial reads come from the DOM attribute that the boot
-  // script set during the page load. Hydration is consistent because the
-  // server renders without the attribute (defaults) and the client picks
-  // up the boot result immediately.
-  const [mode, setModeState] = useState<ThemeMode>(() => readBootModeFromDom());
-  const [systemPref, setSystemPref] = useState<ResolvedTheme>(() =>
-    typeof window === "undefined" ? "dark" : systemPreference(),
-  );
+  // SSR + first client render MUST share these defaults. Reading
+  // localStorage / boot attributes in useState makes ThemeToggle's icon
+  // and aria differ from the server HTML → hydration failure.
+  const [mode, setModeState] = useState<ThemeMode>("system");
+  const [systemPref, setSystemPref] = useState<ResolvedTheme>("dark");
+  const [hydrated, setHydrated] = useState(false);
+
+  // Restore preference after hydrate (boot script already set <html> attrs).
+  useIsomorphicLayoutEffect(() => {
+    const fromDom = readBootModeFromDom();
+    const fromStore = readStoredMode();
+    const next = readBootAttribute("data-theme-mode") ? fromDom : fromStore;
+    setModeState((current) => (current === next ? current : next));
+    setSystemPref(systemPreference());
+    setHydrated(true);
+  }, []);
+
+  // Keep other tabs in sync via the `storage` event.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== STORAGE_KEY) return;
+      const next = isThemeMode(e.newValue) ? e.newValue : "system";
+      setModeState(next);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   // Sync the OS-preference while in `system` mode.
   useEffect(() => {
@@ -125,14 +147,14 @@ export function ThemeProvider({children}: {children: ReactNode}) {
 
   const resolved: ResolvedTheme = mode === "system" ? systemPref : mode;
 
-  // Apply DOM + storage + transition class whenever mode/resolved changes.
+  // Apply DOM + ensure storage whenever mode/resolved changes.
+  // Skip until after restore so the SSR default never overwrites localStorage
+  // or fights the boot script's pre-paint attributes.
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!hydrated || typeof window === "undefined") return;
     const root = document.documentElement;
+    persist(mode);
 
-    // If the new resolved theme differs from what's currently on <html>,
-    // play the transition. (First paint has no previous; skip to avoid a
-    // perceived flicker on hydration mismatch recovery.)
     const previous = readResolvedFromDom();
     if (previous !== resolved) {
       root.classList.add("theme-animating");
@@ -148,11 +170,11 @@ export function ThemeProvider({children}: {children: ReactNode}) {
 
     writeDom(mode, resolved);
     return undefined;
-  }, [mode, resolved]);
+  }, [hydrated, mode, resolved]);
 
   const setMode = useCallback((next: ThemeMode) => {
-    setModeState(next);
     persist(next);
+    setModeState(next);
   }, []);
 
   const cycle = useCallback(() => {

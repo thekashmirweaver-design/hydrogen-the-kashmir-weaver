@@ -132,10 +132,9 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
   const hasQuery = trimmed.length > 0;
   const noMatches = hasQuery && results.length === 0 && collectionResults.length === 0;
 
-  // Rendered from SiteHeader, whose solid state applies a `backdrop-blur`
-  // (a backdrop-filter). That makes the header the containing block for
-  // `position: fixed` descendants, trapping this `fixed inset-0` overlay inside
-  // the short header box on any page with a solid header (e.g. the PDP).
+  // Rendered from SiteHeader, which applies `backdrop-blur` (a backdrop-filter).
+  // That makes the header the containing block for `position: fixed` descendants,
+  // trapping this `fixed inset-0` overlay inside the short header box.
   // Portalling to <body> escapes that containing block + stacking context so
   // the overlay reliably covers the viewport.
   return createPortal(

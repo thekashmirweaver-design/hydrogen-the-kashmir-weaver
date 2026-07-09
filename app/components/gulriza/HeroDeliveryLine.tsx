@@ -34,7 +34,7 @@ export function HeroDeliveryLine({className = ''}: {className?: string}) {
 
   return (
     <p
-      className={`mt-6 flex flex-nowrap items-baseline gap-x-2 whitespace-nowrap font-display text-sm leading-relaxed tracking-tight text-muted-foreground sm:gap-x-3 sm:text-[1.0625rem] sm:tracking-normal md:mt-8 md:text-xl ${className}`}
+      className={`home-hero-delivery mt-6 flex flex-nowrap items-baseline gap-x-2 whitespace-nowrap font-display text-sm leading-relaxed tracking-tight text-muted-foreground sm:gap-x-3 sm:text-[1.0625rem] sm:tracking-normal md:mt-8 md:text-xl ${className}`}
       style={{fontWeight: 300}}
     >
       <span>Hand-woven Pashmina</span>
@@ -53,7 +53,9 @@ export function HeroDeliveryLine({className = ''}: {className?: string}) {
         </span>
       </span>
 
-      <span className="shrink-0 text-foreground/85">— sent worldwide</span>
+      <span className="home-hero-delivery__tail shrink-0 text-foreground/85">
+        — sent worldwide
+      </span>
 
       <span className="sr-only">
         Hand-woven Kashmiri {WORDS.join(', ')} — sent worldwide

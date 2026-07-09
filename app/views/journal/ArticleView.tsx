@@ -20,7 +20,7 @@ export function ArticleView({
 }) {
   return (
     <div>
-      <section className="relative h-[80dvh] w-full overflow-hidden pt-[calc(var(--header-h)+1rem)]">
+      <section className="relative h-[80dvh] w-full overflow-hidden">
         <EditorialImage
           src={article.img}
           alt={article.alt ?? article.title}
