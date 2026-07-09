@@ -62,10 +62,10 @@ function InventoryRow({
               key={p.handle}
               className={
                 featured
-                  ? 'h-14 w-11 overflow-hidden border border-white/15'
-                  : 'h-10 w-8 overflow-hidden border border-white/20'
+                  ? 'h-14 w-11 overflow-hidden border'
+                  : 'h-10 w-8 overflow-hidden border'
               }
-              style={{background: 'var(--surface)'}}
+              style={{borderColor: 'var(--hairline-strong)', background: 'var(--surface)'}}
             >
               {p.images[0] && (
                 <CatalogImage
@@ -104,7 +104,7 @@ function ImageScrim() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'linear-gradient(to right, rgba(8,16,15,0.88) 0%, rgba(8,16,15,0.35) 45%, transparent 70%), linear-gradient(to top, rgba(8,16,15,0.95) 0%, rgba(8,16,15,0.4) 40%, transparent 65%)',
+            `linear-gradient(to right, var(--image-scrim-strong) 0%, var(--image-scrim-medium) 45%, transparent 70%), linear-gradient(to top, var(--image-scrim-strong) 0%, var(--image-scrim-medium) 40%, transparent 65%)`,
         }}
       />
     </>

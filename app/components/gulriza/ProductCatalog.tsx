@@ -336,7 +336,7 @@ export function ProductCatalog({
             type="button"
             aria-label="Close filters"
             className="absolute inset-0 cursor-pointer"
-            style={{ background: "rgba(0,0,0,0.55)" }}
+            style={{ background: "var(--backdrop-soft)" }}
             onClick={() => setDrawer(false)}
           />
           <div

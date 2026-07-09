@@ -142,10 +142,10 @@ function Hero({
 
           <Link
             to="/collections"
-            className="mt-8 md:mt-10 inline-flex items-center gap-6 rounded-full border px-8 py-4 text-foreground backdrop-blur-md transition-all duration-300 hover:bg-white/10 hover:border-white/30 group animate-glass-glaze"
+            className="mt-8 md:mt-10 inline-flex items-center gap-6 rounded-full border px-8 py-4 text-foreground backdrop-blur-md transition-all duration-300 group animate-glass-glaze"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderColor: 'rgba(255, 255, 255, 0.15)',
+              backgroundColor: 'var(--glass-bg)',
+              borderColor: 'var(--glass-border)',
             }}
           >
             <span className="relative z-20 tracked text-xs md:text-sm font-medium uppercase tracking-[0.15em] md:tracking-[0.2em]">

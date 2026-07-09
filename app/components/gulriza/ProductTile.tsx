@@ -23,7 +23,8 @@ function TileImageIndicator({
             key={i}
             className="h-1.5 w-1.5 rounded-full transition-colors duration-300"
             style={{
-              background: i === active ? "var(--accent)" : "rgba(255,255,255,0.35)",
+              background: i === active ? "var(--accent)" : "var(--overlay-pill-fg)",
+              opacity: i === active ? 1 : 0.45,
             }}
           />
         ))}
@@ -35,16 +36,23 @@ function TileImageIndicator({
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 flex flex-col items-center gap-2 px-4">
-      <span className="rounded-full bg-black/35 px-2.5 py-0.5 text-[0.65rem] tracking-[0.2em] text-white/90 backdrop-blur-sm">
+      <span
+        className="rounded-full px-2.5 py-0.5 text-[0.65rem] tracking-[0.2em] backdrop-blur-sm"
+        style={{
+          background: "var(--overlay-pill-bg)",
+          color: "var(--overlay-pill-fg)",
+        }}
+      >
         {active + 1} / {total}
       </span>
       <div
-        className="h-0.5 w-[min(72%,7rem)] overflow-hidden rounded-full bg-white/25"
+        className="h-0.5 w-[min(72%,7rem)] overflow-hidden rounded-full"
         role="progressbar"
         aria-valuenow={active + 1}
         aria-valuemin={1}
         aria-valuemax={total}
         aria-label={`Image ${active + 1} of ${total}`}
+        style={{background: "var(--overlay-pill-fg)", opacity: 0.25}}
       >
         <span
           className="block h-full rounded-full bg-accent transition-[width] duration-300 ease-out"

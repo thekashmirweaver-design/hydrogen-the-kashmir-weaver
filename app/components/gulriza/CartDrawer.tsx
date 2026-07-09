@@ -102,7 +102,7 @@ export function CartDrawer({
       onClick={requestClose}
       className="fixed inset-0 z-[100] flex items-end justify-center backdrop-blur-sm motion-reduce:transition-none md:items-stretch md:justify-end"
       style={{
-        background: "rgba(8,16,15,0.86)",
+        background: "var(--backdrop)",
         opacity: backdropOpacity,
         transition: isDragging
           ? "none"
@@ -162,7 +162,7 @@ export function CartDrawer({
               to="/collections/all"
               onClick={requestClose}
               className="group mt-10 flex w-full max-w-sm items-center justify-center gap-3 border py-3.5 transition-all duration-300 hover:opacity-90 sm:py-4"
-              style={{ background: "#ceac6c", color: "var(--background)", borderColor: "#ceac6c" }}
+              style={{ background: "var(--accent)", color: "var(--background)", borderColor: "var(--accent)" }}
             >
               <span className="tracked text-[0.75rem] font-medium uppercase tracking-[0.15em] sm:text-[0.8rem]">
                 Discover Collections
@@ -222,7 +222,7 @@ export function CartDrawer({
                   onClick={requestClose}
                   className="tracked shrink-0 px-5 py-3.5 text-[0.7rem] uppercase tracking-[0.1em] transition hover:opacity-90 touch-manipulation"
                   style={{
-                    background: "#ceac6c",
+                    background: "var(--accent)",
                     color: "var(--background)",
                   }}
                 >
@@ -253,9 +253,9 @@ export function CartDrawer({
                 onClick={requestClose}
                 className="group flex w-full items-center justify-center gap-2 border py-3.5 transition-all duration-300 hover:opacity-90 touch-manipulation"
                 style={{
-                  background: "#ceac6c",
+                  background: "var(--accent)",
                   color: "var(--background)",
-                  borderColor: "#ceac6c",
+                  borderColor: "var(--accent)",
                 }}
               >
                 <span className="tracked text-center text-[0.8rem] font-medium uppercase leading-snug tracking-[0.15em]">

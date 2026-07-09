@@ -403,7 +403,7 @@ export function ProductView({
                     className="flex h-12 w-12 items-center justify-center rounded-full border text-foreground/90"
                     style={{
                       borderColor: 'var(--border)',
-                      background: 'rgba(8,16,15,0.45)',
+                      background: 'var(--overlay-pill-bg)',
                     }}
                   >
                     <ZoomIn className="h-5 w-5" strokeWidth={1} />
@@ -414,7 +414,7 @@ export function ProductView({
                   <div
                     className="pointer-events-none absolute left-3 top-3 px-3 py-1 text-[0.65rem] tracking-[0.3em] uppercase md:left-4 md:top-4"
                     style={{
-                      background: 'rgba(8,16,15,0.7)',
+                      background: 'var(--sold-out-badge-bg)',
                       color: 'var(--accent)',
                       border: '1px solid var(--accent)',
                     }}
@@ -787,7 +787,7 @@ export function ProductView({
               aria-label={`${product.name} — full screen gallery`}
               onClick={() => setFullOpen(false)}
               className="fixed inset-0 z-[100] flex flex-col outline-none md:flex-row"
-              style={{background: 'rgba(8,16,15,0.97)'}}
+              style={{background: 'var(--gallery-backdrop)'}}
             >
               <button
                 onClick={() => setFullOpen(false)}
@@ -795,7 +795,7 @@ export function ProductView({
                 className="touch-target absolute z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full border transition hover:text-accent active:opacity-80"
                 style={{
                   borderColor: 'var(--border)',
-                  background: 'rgba(8,16,15,0.4)',
+                  background: 'var(--gallery-close-bg)',
                   top: 'max(1.25rem, env(safe-area-inset-top))',
                   right: 'max(1.25rem, env(safe-area-inset-right))',
                 }}

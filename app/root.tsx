@@ -23,6 +23,8 @@ import ebGaramond400Woff2 from '@fontsource/eb-garamond/files/eb-garamond-latin-
 import appStylesUrl from '~/styles/globals.css?url';
 import '~/styles/globals.css';
 import {PageLayout, NotFoundView} from './components/PageLayout';
+import {ThemeBootScript} from '~/components/gulriza/ThemeBootScript';
+import {ThemeProvider} from '~/lib/theme';
 import {getCatalogOptions} from '~/lib/catalog-options';
 import {loadShopSettings} from '~/lib/shop-settings';
 import {loadLocalization} from '~/lib/localization';
@@ -267,6 +269,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
         />
         <Meta />
         <Links />
+        <ThemeBootScript />
         <Script
           src="https://cdn.shopify.com/storefront/web-components/account.js"
           type="module"
@@ -275,7 +278,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
         />
       </head>
       <body>
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
       </body>

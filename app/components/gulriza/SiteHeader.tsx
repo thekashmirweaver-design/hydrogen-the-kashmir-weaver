@@ -15,6 +15,7 @@ import { ShopifyAccount } from "~/components/gulriza/ShopifyAccount";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
 import type {ShopSettings, NavItem} from "~/lib/shop-settings";
 import {BrandLockup, BrandMark} from "~/components/gulriza/BrandLockup";
+import {ThemeToggle} from "~/components/gulriza/ThemeToggle";
 
 // Code-split the 400-line SearchModal — only needed when the user opens
 // search. The modal is portaled and mounted hidden, so a null fallback is
@@ -220,7 +221,7 @@ export function SiteHeader({
             solid ? "border-b backdrop-blur-md" : "border-b border-transparent"
           }`}
           style={{
-            backgroundColor: solid ? "rgba(8,16,15,0.78)" : "transparent",
+            backgroundColor: solid ? "var(--header-glass)" : "transparent",
             borderColor: solid ? "var(--border)" : "transparent",
             paddingTop: scrolled ? "env(safe-area-inset-top)" : "0px",
           }}
@@ -259,7 +260,7 @@ export function SiteHeader({
                 })}
               </nav>
 
-              {/* Mobile/tablet cluster: Search → Currency → Account → Cart → Hamburger */}
+              {/* Mobile/tablet cluster: Search → Theme → Currency → Account → Cart → Hamburger */}
               <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:hidden">
                 <button
                   aria-label="Search"
@@ -271,6 +272,7 @@ export function SiteHeader({
                 >
                   <Search className="h-[18px] w-[18px]" strokeWidth={1} />
                 </button>
+                <ThemeToggle />
                 <CurrencyDropdown compact />
                 <ShopifyAccount
                   publicStoreDomain={publicStoreDomain}
@@ -305,7 +307,7 @@ export function SiteHeader({
                 </button>
               </div>
 
-              {/* Desktop cluster: Currency → Search → Account → Cart */}
+              {/* Desktop cluster: Currency → Search → Theme → Account → Cart */}
               <div className="hidden items-center gap-2 lg:flex xl:gap-4">
                 <CurrencyDropdown />
                 <button
@@ -323,6 +325,7 @@ export function SiteHeader({
                   publicAccessToken={publicAccessToken}
                   customerAccessToken={customerAccessToken}
                 />
+                <ThemeToggle />
                 <button
                   type="button"
                   onClick={openCart}
@@ -608,8 +611,11 @@ function CurrencyDropdown({compact = false}: {compact?: boolean}) {
             <button
               type="button"
               aria-label="Close currency picker"
-              className="fixed inset-0 z-[80] bg-black/50 transition-opacity duration-300 ease-out motion-reduce:transition-none"
-              style={{opacity: sheetVisible ? 1 : 0}}
+              className="fixed inset-0 z-[80] transition-opacity duration-300 ease-out motion-reduce:transition-none"
+              style={{
+                background: "var(--backdrop-soft)",
+                opacity: sheetVisible ? 1 : 0,
+              }}
               onClick={requestClose}
             />
             <div

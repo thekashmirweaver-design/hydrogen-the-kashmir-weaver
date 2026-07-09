@@ -13,7 +13,7 @@ export function Marquee({ messages = DEFAULT_MESSAGES }: { messages?: string[] }
       className="relative flex overflow-hidden border-b"
       style={{
         borderColor: "var(--border)",
-        background: "var(--surface, rgba(0,0,0,0.35))",
+        background: "var(--surface)",
         height: "var(--marquee-h, 36px)",
       }}
       role="region"

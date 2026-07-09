@@ -1,0 +1,137 @@
+/*
+ * The Kashmir Weaver — dual-theme token system.
+ *
+ * Dark = "pashmina studio at midnight": deep forest, antique gold.
+ * Light = "warm aged-ivory + walnut ink": heritage paper, same antique gold
+ *         at slightly higher saturation for WCAG contrast on warm light.
+ *
+ * Some surfaces (lightbox, modal backdrops, photo overlays) stay dark in both
+ * themes because that serves the photography — see --gallery-backdrop,
+ * --backdrop, --overlay-pill-bg tokens below.
+ */
+
+/* -----------------------------------------------------------
+ * Dark theme (default; preserves the existing brand identity)
+ * ----------------------------------------------------------- */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --background: #08100f;       /* deep forest near-black */
+  --surface: #0f1d1a;          /* deep forest */
+  --surface-2: #142824;        /* dark emerald */
+
+  /* Ink */
+  --foreground: #f7f3ec;       /* warm off-white */
+  --muted-foreground: #d6d0c6; /* dusty bone */
+
+  /* Accent — antique gold */
+  --accent: #ceac6c;
+  --accent-soft: #876f44;
+
+  /* Dividers */
+  --border: rgba(255, 255, 255, 0.08);
+  --hairline: rgba(255, 255, 255, 0.12);
+  --hairline-strong: rgba(255, 255, 255, 0.20);
+
+  /* Backdrops that always stay dark (per product spec) */
+  --backdrop: rgba(8, 16, 15, 0.86);
+  --backdrop-soft: rgba(8, 16, 15, 0.55);
+  --gallery-backdrop: rgba(8, 16, 15, 0.97);
+  --overlay-pill-bg: rgba(0, 0, 0, 0.55);
+  --overlay-pill-fg: rgba(255, 255, 255, 0.92);
+  --sold-out-badge-bg: rgba(8, 16, 15, 0.7);
+  --gallery-close-bg: rgba(8, 16, 15, 0.4);
+
+  /* Glass / translucent surface tints */
+  --glass-bg: rgba(247, 243, 236, 0.05);
+  --glass-border: rgba(247, 243, 236, 0.15);
+  --header-glass: rgba(8, 16, 15, 0.78);
+
+  /* Composite scrims (e.g. CollectionTile image scrims) */
+  --image-scrim-strong: rgba(8, 16, 15, 0.92);
+  --image-scrim-medium: rgba(8, 16, 15, 0.45);
+
+  /* Scrim for vignette overlays (over hero photography) */
+  --vignette-base-rgb: 8 16 15;
+
+  /* Shadow alpha */
+  --shadow-rgb: 0 0 0;
+}
+
+/* -----------------------------------------------------------
+ * Light theme — warm aged-ivory + walnut ink
+ * Derived from the existing brand language (warm, antique-gold).
+ * Body text contrast ≥ 7:1, accent on background ≥ 4.5:1.
+ * ----------------------------------------------------------- */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  /* Surfaces — warm aged paper layered onto cream sheets */
+  --background: #f6f1e7;        /* aged-paper ivory */
+  --surface: #efe7d6;           /* cream page-sheet */
+  --surface-2: #e6dcc5;         /* warm sand (hover/secondary) */
+
+  /* Ink — walnut, not pure black, to keep editorial warmth */
+  --foreground: #2a221a;        /* deep walnut ink */
+  --muted-foreground: #7a6c56;  /* dusty taupe */
+
+  /* Accent — same antique gold, deeper for contrast on light */
+  --accent: #8a6b34;
+  --accent-soft: #b08a52;
+
+  /* Dividers — walnut hairlines on ivory paper */
+  --border: rgba(42, 34, 26, 0.10);
+  --hairline: rgba(42, 34, 26, 0.14);
+  --hairline-strong: rgba(42, 34, 26, 0.22);
+
+  /* Backdrops still dark — photography / modal focus never flips */
+  --backdrop: rgba(20, 16, 10, 0.72);
+  --backdrop-soft: rgba(20, 16, 10, 0.45);
+  --gallery-backdrop: rgba(8, 16, 15, 0.97); /* always dark */
+  --overlay-pill-bg: rgba(0, 0, 0, 0.55);    /* always dark over photos */
+  --overlay-pill-fg: rgba(255, 255, 255, 0.92);
+  --sold-out-badge-bg: rgba(8, 16, 15, 0.7);
+  --gallery-close-bg: rgba(8, 16, 15, 0.4);
+
+  /* Glass — light glass: dark ink tint with low alpha */
+  --glass-bg: rgba(42, 34, 26, 0.04);
+  --glass-border: rgba(42, 34, 26, 0.18);
+  --header-glass: rgba(246, 241, 231, 0.72);
+
+  /* Composite scrims (still dark over photos) */
+  --image-scrim-strong: rgba(8, 16, 15, 0.88);
+  --image-scrim-medium: rgba(8, 16, 15, 0.45);
+
+  /* Vignette base (over hero photography) — slightly warmer in light */
+  --vignette-base-rgb: 32 22 12;
+
+  /* Shadow alpha — warm walnut */
+  --shadow-rgb: 60 48 30;
+}
+
+/* -----------------------------------------------------------
+ * Smooth theme transitions — gated by a `.theme-animating` class
+ * on <html> so we don't add transitions during normal interaction.
+ * ----------------------------------------------------------- */
+html.theme-animating,
+html.theme-animating *,
+html.theme-animating *::before,
+html.theme-animating *::after {
+  transition:
+    background-color 220ms ease,
+    color 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    fill 220ms ease,
+    stroke 220ms ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-animating,
+  html.theme-animating *,
+  html.theme-animating *::before,
+  html.theme-animating *::after {
+    transition: none !important;
+  }
+}

@@ -146,13 +146,13 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
       aria-label="Search the collection"
       onClick={requestClose}
       className="fixed inset-0 z-[100] flex justify-center overflow-y-auto backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none"
-      style={{ background: "rgba(8,16,15,0.86)", opacity: visible ? 1 : 0 }}
+      style={{ background: "var(--backdrop)", opacity: visible ? 1 : 0 }}
     >
       <button
         onClick={requestClose}
         aria-label="Close search"
         className="touch-target fixed right-5 top-5 z-10 flex h-11 w-11 items-center justify-center rounded-full border text-muted-foreground transition hover:border-accent hover:text-accent active:opacity-80"
-        style={{ borderColor: "var(--border)", background: "rgba(8,16,15,0.5)" }}
+        style={{ borderColor: "var(--border)", background: "var(--backdrop-soft)" }}
       >
         <X className="h-5 w-5" strokeWidth={1} />
       </button>

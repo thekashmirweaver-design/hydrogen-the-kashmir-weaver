@@ -32,10 +32,10 @@ export function OriginMap() {
               )}
             </div>
             <div>
-              <div className="text-[0.65rem] tracking-[0.2em] text-[#F7F3EC] uppercase">
+              <div className="text-[0.65rem] tracking-[0.2em] text-foreground uppercase">
                 0{i + 1} — {p.label}
               </div>
-              <div className="mt-1 text-xs text-[#D6D0C6] opacity-70">{p.sub}</div>
+              <div className="mt-1 text-xs text-muted-foreground opacity-70">{p.sub}</div>
             </div>
           </div>
         ))}
@@ -69,7 +69,7 @@ export function OriginMap() {
                 x={p.x + 14}
                 y={p.y - 6}
                 fontSize="9"
-                fill="#F7F3EC"
+                fill="var(--foreground)"
                 letterSpacing="2"
                 style={{
                   fontFamily: "var(--font-sans)",
@@ -82,7 +82,7 @@ export function OriginMap() {
                 x={p.x + 14}
                 y={p.y + 8}
                 fontSize="8"
-                fill="#D6D0C6"
+                fill="var(--muted-foreground)"
                 opacity="0.7"
                 style={{ fontFamily: "var(--font-sans)" }}
               >
