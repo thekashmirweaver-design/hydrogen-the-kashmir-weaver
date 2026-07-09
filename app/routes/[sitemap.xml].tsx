@@ -8,6 +8,9 @@ export async function loader({
   const response = await getSitemapIndex({
     storefront,
     request,
+    // Journal lives at /journal/* (editorial.xml). Exclude Shopify articles/blogs
+    // sitemaps — those URLs are not canonical on this storefront.
+    types: ['products', 'pages', 'collections'],
     customChildSitemaps: ['/sitemap/editorial.xml'],
   });
 

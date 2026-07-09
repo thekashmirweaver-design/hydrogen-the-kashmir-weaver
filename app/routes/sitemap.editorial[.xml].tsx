@@ -11,6 +11,7 @@ const EDITORIAL_PATHS = [
   '/craft',
   '/faq',
   '/care-guide',
+  '/shade-cards',
   '/concierge',
   '/terms',
   '/privacy',
