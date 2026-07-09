@@ -1,6 +1,6 @@
 import {Link} from 'react-router';
 import {useState} from 'react';
-import {ArrowRight} from 'lucide-react';
+import {ArrowLeft, ArrowRight} from 'lucide-react';
 import {HorizontalScrollCue} from '~/components/gulriza/HorizontalScrollCue';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {EditorialImage} from '~/components/gulriza/CatalogImage';
@@ -8,11 +8,28 @@ import {Reveal} from '~/components/gulriza/Reveal';
 import {JOURNAL_CATEGORIES, type JournalPost} from '~/models/static/journal';
 import {journalEyebrow} from '~/lib/parse-page-content';
 
-export function JournalView({posts}: {posts: JournalPost[]}) {
+export type JournalViewPageInfo = {
+  currentPage: number;
+  totalPages: number;
+  totalPosts: number;
+  perPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
+export function JournalView({
+  posts,
+  pageInfo,
+}: {
+  posts: JournalPost[];
+  pageInfo?: JournalViewPageInfo;
+}) {
   const [cat, setCat] = useState('All');
   const sorted = [...posts].sort((a, b) => b.date.localeCompare(a.date));
   const list = cat === 'All' ? sorted : sorted.filter((p) => p.cat === cat);
   const [feature, ...rest] = list;
+  const showPagination =
+    pageInfo && pageInfo.totalPages > 1 && posts.length > 0;
 
   return (
     <div>
@@ -51,8 +68,20 @@ export function JournalView({posts}: {posts: JournalPost[]}) {
       {posts.length === 0 ? (
         <section className="mx-auto max-w-[1600px] px-6 py-20 md:px-10">
           <p className="text-base text-muted-foreground">
-            New stories from the valley are on their way. Check back soon.
+            {pageInfo && pageInfo.totalPosts > 0
+              ? 'No stories on this page. Browse the latest below or use the pagination to find more.'
+              : 'New stories from the valley are on their way. Check back soon.'}
           </p>
+          {pageInfo && pageInfo.totalPosts > 0 ? (
+            <Link
+              to="/journal"
+              className="tracked mt-6 inline-flex min-h-11 items-center gap-2 px-6 py-3 text-xs uppercase tracking-[0.25em] transition hover:opacity-90 active:opacity-80"
+              style={{background: 'var(--surface)', color: 'var(--foreground)'}}
+            >
+              <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Latest stories
+            </Link>
+          ) : null}
         </section>
       ) : null}
 
@@ -134,6 +163,61 @@ export function JournalView({posts}: {posts: JournalPost[]}) {
             </Reveal>
           ))}
         </div>
+
+        {showPagination ? (
+          <nav
+            className="mt-24 flex flex-col items-center justify-between gap-6 sm:flex-row"
+            aria-label="Journal pagination"
+          >
+            {pageInfo.hasPreviousPage ? (
+              <Link
+                to={`/journal?page=${pageInfo.currentPage - 1}`}
+                rel="prev"
+                prefetch="intent"
+                className="tracked inline-flex min-h-11 items-center gap-2 px-6 py-3 text-xs uppercase tracking-[0.25em] transition hover:opacity-90 active:opacity-80"
+                style={{background: 'var(--surface)', color: 'var(--foreground)'}}
+              >
+                <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Previous
+              </Link>
+            ) : (
+              <span
+                aria-hidden
+                className="inline-flex min-h-11 items-center gap-2 px-6 py-3 text-xs uppercase tracking-[0.25em] opacity-30"
+                style={{background: 'var(--surface)', color: 'var(--foreground)'}}
+              >
+                <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Previous
+              </span>
+            )}
+
+            <span className="text-sm text-muted-foreground tabular-nums">
+              Page {pageInfo.currentPage} of {pageInfo.totalPages}
+            </span>
+
+            {pageInfo.hasNextPage ? (
+              <Link
+                to={`/journal?page=${pageInfo.currentPage + 1}`}
+                rel="next"
+                prefetch="intent"
+                className="tracked inline-flex min-h-11 items-center gap-2 px-6 py-3 text-xs uppercase tracking-[0.25em] transition hover:opacity-90 active:opacity-80"
+                style={{background: 'var(--surface)', color: 'var(--foreground)'}}
+              >
+                Next
+                <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+              </Link>
+            ) : (
+              <span
+                aria-hidden
+                className="inline-flex min-h-11 items-center gap-2 px-6 py-3 text-xs uppercase tracking-[0.25em] opacity-30"
+                style={{background: 'var(--surface)', color: 'var(--foreground)'}}
+              >
+                Next
+                <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+              </span>
+            )}
+          </nav>
+        ) : null}
       </section>
 
       <section className="mx-auto max-w-[1600px] px-6 py-20 md:px-10">

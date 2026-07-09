@@ -1,11 +1,6 @@
 import type {Route} from './+types/sitemap.editorial[.xml]';
 import {getJournalOptions} from '~/lib/catalog-options';
-import {blogCache} from '~/lib/storefront-cache';
-import {
-  JOURNAL_BLOG_HANDLE,
-  JOURNAL_BLOG_QUERY,
-} from '~/models/shopify/journal.queries';
-import {POSTS} from '~/models/static/journal';
+import {listAllJournalPosts} from '~/controllers';
 
 const EDITORIAL_PATHS = [
   '/',
@@ -31,21 +26,9 @@ const EDITORIAL_PATHS = [
 async function journalArticlePaths(
   context: Route.LoaderArgs['context'],
 ): Promise<string[]> {
-  const {useStatic} = getJournalOptions(context);
-  try {
-    const {blog} = await context.storefront.query(JOURNAL_BLOG_QUERY, {
-      variables: {blogHandle: JOURNAL_BLOG_HANDLE, first: 250},
-      cache: blogCache(context.storefront),
-    });
-    if (blog) {
-      return (blog.articles?.nodes ?? []).map(
-        (article: {handle: string}) => `/journal/${article.handle}`,
-      );
-    }
-  } catch {
-    // Storefront unavailable — optional static demo when enabled.
-  }
-  return useStatic ? POSTS.map((post) => `/journal/${post.slug}`) : [];
+  const journalOptions = getJournalOptions(context);
+  const posts = await listAllJournalPosts(journalOptions);
+  return posts.map((post) => `/journal/${post.slug}`);
 }
 
 export async function loader({request, context}: Route.LoaderArgs) {

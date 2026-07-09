@@ -21,6 +21,21 @@ export type JournalPageViewModel = {
   posts: JournalPost[];
   categories: typeof JOURNAL_CATEGORIES;
   metadata: PageMetadata;
+  pageInfo: {
+    currentPage: number;
+    totalPages: number;
+    totalPosts: number;
+    perPage: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+};
+
+export type JournalPageOptions = {
+  page?: number;
+  perPage?: number;
+  /** Hard cap on articles fetched from Shopify (cursor loop stops early). */
+  maxArticles?: number;
 };
 
 export type ArticlePageViewModel = {
@@ -31,6 +46,14 @@ export type ArticlePageViewModel = {
 };
 
 const VALID_CATEGORIES = new Set<string>(JOURNAL_CATEGORIES);
+
+/** Default articles rendered per /journal page. */
+const JOURNAL_PER_PAGE = 12;
+/** Per-page GraphQL fetch size while cursor-looping. */
+const JOURNAL_FETCH_PAGE_SIZE = 50;
+/** Safety caps for the cursor loop (prevents runaway pagination). */
+const JOURNAL_MAX_PAGES = 25;
+const JOURNAL_MAX_ARTICLES = JOURNAL_FETCH_PAGE_SIZE * JOURNAL_MAX_PAGES;
 
 const DEFAULT_JOURNAL_METADATA: PageMetadata = {
   title: 'Journal — The Kashmir Weaver',
@@ -43,19 +66,54 @@ function mapCategory(tags: string[] | null | undefined): JournalCategory {
   return (match as JournalCategory | undefined) ?? 'Heritage';
 }
 
-function emptyJournalPage(): JournalPageViewModel {
+function emptyJournalPage(options: JournalPageOptions = {}): JournalPageViewModel {
+  const perPage = options.perPage ?? JOURNAL_PER_PAGE;
+  const page = Math.max(1, options.page ?? 1);
   return {
     posts: [],
     categories: JOURNAL_CATEGORIES,
     metadata: DEFAULT_JOURNAL_METADATA,
+    pageInfo: emptyPagination({page, perPage, totalPosts: 0}),
   };
 }
 
-function staticJournalPage(): JournalPageViewModel {
+function paginate<T>(
+  items: T[],
+  page: number,
+  perPage: number,
+): {slice: T[]; pageInfo: JournalPageViewModel['pageInfo']} {
+  const safePage = Math.max(1, Math.floor(page));
+  const safePerPage = Math.max(1, Math.floor(perPage));
+  const totalPosts = items.length;
+  const totalPages = totalPosts === 0 ? 0 : Math.ceil(totalPosts / safePerPage);
+  const start = (safePage - 1) * safePerPage;
+  const slice = items.slice(start, start + safePerPage);
   return {
-    posts: POSTS,
-    categories: JOURNAL_CATEGORIES,
-    metadata: DEFAULT_JOURNAL_METADATA,
+    slice,
+    pageInfo: {
+      currentPage: safePage,
+      totalPages,
+      totalPosts,
+      perPage: safePerPage,
+      hasNextPage: safePage < totalPages,
+      hasPreviousPage: safePage > 1,
+    },
+  };
+}
+
+function emptyPagination(input: {
+  page: number;
+  perPage: number;
+  totalPosts: number;
+}): JournalPageViewModel['pageInfo'] {
+  const totalPages = input.totalPosts === 0 ? 0 : Math.ceil(input.totalPosts / input.perPage);
+  return {
+    currentPage: input.page,
+    totalPages,
+    totalPosts: input.totalPosts,
+    perPage: input.perPage,
+    hasNextPage: input.page < totalPages,
+    hasPreviousPage: input.page > 1,
   };
 }
 
@@ -120,61 +178,162 @@ function mapShopifyArticleToArticle(article: {
   };
 }
 
-async function fetchShopifyJournalPosts(
-  storefront: Storefront,
-): Promise<JournalPageViewModel | null> {
-  const data = await storefront.query<{
-    blog?: {
-      seo?: {title?: string | null; description?: string | null} | null;
-      articles?: {
-        nodes?: Array<{
-          handle: string;
-          title: string;
-          excerpt?: string | null;
-          contentHtml?: string | null;
-          publishedAt?: string | null;
-          tags?: string[] | null;
-          image?:
-            | {
-                url?: string | null;
-                altText?: string | null;
-                width?: number | null;
-                height?: number | null;
-              }
-            | null;
-        }> | null;
-      } | null;
+type ShopifyArticleNode = {
+  handle: string;
+  title: string;
+  excerpt?: string | null;
+  contentHtml?: string | null;
+  publishedAt?: string | null;
+  tags?: string[] | null;
+  image?:
+    | {
+        url?: string | null;
+        altText?: string | null;
+        width?: number | null;
+        height?: number | null;
+      }
+    | null;
+};
+
+type ShopifyArticlesResponse = {
+  blog?: {
+    seo?: ShopifyBlogSeo;
+    articles?: {
+      nodes?: ShopifyArticleNode[] | null;
+      pageInfo?: ShopifyArticlePageInfo;
     } | null;
-  }>(JOURNAL_BLOG_QUERY, {
-    variables: {blogHandle: JOURNAL_BLOG_HANDLE, first: 50},
-    cache: blogCache(storefront),
-  });
+  } | null;
+};
 
-  if (!data.blog) return null;
+type ShopifyBlogSeo = {title?: string | null; description?: string | null} | null | undefined;
+type ShopifyArticlePageInfo = {hasNextPage: boolean; endCursor: string | null} | null | undefined;
 
-  const nodes = data.blog.articles?.nodes ?? [];
-  return {
-    posts: nodes.map(mapShopifyArticleToPost),
-    categories: JOURNAL_CATEGORIES,
-    metadata: {
-      title: data.blog.seo?.title ?? DEFAULT_JOURNAL_METADATA.title,
-      description:
-        data.blog.seo?.description ?? DEFAULT_JOURNAL_METADATA.description,
-    },
-  };
+/**
+ * Fetch every published journal article via cursor pagination, bounded by
+ * `maxArticles` (defaults to JOURNAL_MAX_ARTICLES). Returns the merged list of
+ * nodes plus the SEO metadata for the blog.
+ */
+async function fetchAllShopifyJournalNodes(
+  storefront: Storefront,
+  options: {maxArticles?: number} = {},
+): Promise<
+  | {
+      nodes: ShopifyArticleNode[];
+      hasMore: boolean;
+      seo: ShopifyBlogSeo;
+    }
+  | null
+> {
+  const maxArticles = options.maxArticles ?? JOURNAL_MAX_ARTICLES;
+  const collected: ShopifyArticleNode[] = [];
+  let cursor: string | null = null;
+  let hasMore = false;
+  let seo: ShopifyBlogSeo;
+
+  for (let page = 0; page < JOURNAL_MAX_PAGES; page++) {
+    const remaining = Math.max(0, maxArticles - collected.length);
+    if (remaining === 0) break;
+
+    const first = Math.min(JOURNAL_FETCH_PAGE_SIZE, remaining);
+    const data: ShopifyArticlesResponse = await storefront.query<ShopifyArticlesResponse>(
+      JOURNAL_BLOG_QUERY,
+      {
+        variables: {
+          blogHandle: JOURNAL_BLOG_HANDLE,
+          first,
+          after: cursor,
+        },
+        cache: blogCache(storefront),
+      },
+    );
+
+    const blog: ShopifyArticlesResponse['blog'] = data.blog;
+    if (!blog) {
+      hasMore = false;
+      break;
+    }
+
+    if (seo === undefined) seo = blog.seo;
+
+    const nodes: ShopifyArticleNode[] = blog.articles?.nodes ?? [];
+    if (nodes.length) collected.push(...nodes);
+
+    const info: ShopifyArticlePageInfo = blog.articles?.pageInfo ?? null;
+    if (info && info.hasNextPage && info.endCursor && collected.length < maxArticles) {
+      cursor = info.endCursor;
+      hasMore = true;
+    } else {
+      hasMore = false;
+      break;
+    }
+  }
+
+  return {nodes: collected, hasMore, seo};
 }
 
 export async function getJournalPage(
   options: JournalOptions,
+  pagination: JournalPageOptions = {},
 ): Promise<JournalPageViewModel> {
+  const perPage = pagination.perPage ?? JOURNAL_PER_PAGE;
+  const page = Math.max(1, Math.floor(pagination.page ?? 1));
+  const maxArticles = pagination.maxArticles ?? JOURNAL_MAX_ARTICLES;
+
   try {
-    const fromShopify = await fetchShopifyJournalPosts(options.storefront);
-    if (fromShopify) return fromShopify;
+    const result = await fetchAllShopifyJournalNodes(options.storefront, {
+      maxArticles,
+    });
+    if (result) {
+      const sorted = sortPostsByDate(result.nodes.map(mapShopifyArticleToPost));
+      const {slice, pageInfo} = paginate(sorted, page, perPage);
+      return {
+        posts: slice,
+        categories: JOURNAL_CATEGORIES,
+        metadata: {
+          title: result.seo?.title ?? DEFAULT_JOURNAL_METADATA.title,
+          description:
+            result.seo?.description ?? DEFAULT_JOURNAL_METADATA.description,
+        },
+        pageInfo,
+      };
+    }
   } catch {
     // Storefront unavailable — optional static demo when enabled.
   }
 
-  return options.useStatic ? staticJournalPage() : emptyJournalPage();
+  if (!options.useStatic) return emptyJournalPage({page, perPage});
+
+  const sorted = sortPostsByDate(POSTS);
+  const {slice, pageInfo} = paginate(sorted, page, perPage);
+  return {
+    posts: slice,
+    categories: JOURNAL_CATEGORIES,
+    metadata: DEFAULT_JOURNAL_METADATA,
+    pageInfo,
+  };
+}
+
+/** Fetch and map every journal article (used by sitemap/llms-full). */
+export async function listAllJournalPosts(
+  options: JournalOptions,
+  pagination: {maxArticles?: number} = {},
+): Promise<JournalPost[]> {
+  try {
+    const result = await fetchAllShopifyJournalNodes(options.storefront, {
+      maxArticles: pagination.maxArticles ?? JOURNAL_MAX_ARTICLES,
+    });
+    if (result) {
+      return sortPostsByDate(result.nodes.map(mapShopifyArticleToPost));
+    }
+  } catch {
+    // Storefront unavailable — optional static demo when enabled.
+  }
+
+  return options.useStatic ? sortPostsByDate(POSTS) : [];
+}
+
+function sortPostsByDate(posts: JournalPost[]): JournalPost[] {
+  return [...posts].sort((a, b) => b.date.localeCompare(a.date));
 }
 
 export async function getArticlePage(
@@ -253,17 +412,9 @@ export async function listArticleSlugs(
   options: JournalOptions,
 ): Promise<string[]> {
   try {
-    const data = await options.storefront.query<{
-      blog?: {
-        articles?: {nodes?: Array<{handle: string}> | null} | null;
-      } | null;
-    }>(JOURNAL_BLOG_QUERY, {
-      variables: {blogHandle: JOURNAL_BLOG_HANDLE, first: 100},
-      cache: blogCache(options.storefront),
-    });
-
-    if (data.blog) {
-      return data.blog.articles?.nodes?.map((node) => node.handle) ?? [];
+    const result = await fetchAllShopifyJournalNodes(options.storefront);
+    if (result) {
+      return result.nodes.map((node) => node.handle);
     }
   } catch {
     // Storefront unavailable — optional static demo when enabled.

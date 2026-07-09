@@ -32,14 +32,14 @@ export async function loader({context, request}: Route.LoaderArgs) {
   const journalOptions = getJournalOptions(context);
   const [featured, journal, catalog] = await Promise.all([
     loadHomepageFeatured(context.storefront),
-    getJournalPage(journalOptions),
+    getJournalPage(journalOptions, {page: 1, perPage: 3, maxArticles: 12}),
     loadSharedCatalog(request, catalogOptions),
   ]);
   const home = await getHomePage(catalogOptions, featured, catalog);
   return {
     featuredProducts: home.featuredProducts,
     featuredCollections: home.featuredCollections,
-    journalPosts: journal.posts.slice(0, 3),
+    journalPosts: journal.posts,
     heroImageUrl: featured.heroImageUrl,
     heroAlt: featured.heroAlt,
     bestSellingCount: featured.bestSellingCount,

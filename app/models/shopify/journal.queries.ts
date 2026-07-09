@@ -2,6 +2,7 @@ export const JOURNAL_BLOG_QUERY = `#graphql
   query JournalBlog(
     $blogHandle: String!
     $first: Int
+    $after: String
     $country: CountryCode
     $language: LanguageCode
   ) @inContext(language: $language, country: $country) {
@@ -12,7 +13,7 @@ export const JOURNAL_BLOG_QUERY = `#graphql
         title
         description
       }
-      articles(first: $first) {
+      articles(first: $first, after: $after) {
         nodes {
           handle
           title
@@ -26,6 +27,10 @@ export const JOURNAL_BLOG_QUERY = `#graphql
             width
             height
           }
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
         }
       }
     }

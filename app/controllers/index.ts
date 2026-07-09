@@ -20,6 +20,7 @@ export {
 export {
   getArticlePage,
   getJournalPage,
+  listAllJournalPosts,
   listArticleSlugs,
   type ArticlePageViewModel,
   type JournalPageViewModel,

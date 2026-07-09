@@ -1,21 +1,22 @@
 import type {Route} from './+types/llms-full[.txt]';
 import {getCatalogOptions, getJournalOptions} from '~/lib/catalog-options';
+import {listAllJournalPosts} from '~/controllers';
 import {buildLlmsFullFromRequest} from '~/lib/llms-full';
 import {loadSharedCatalog} from '~/lib/shared-catalog';
-import {getJournalPage} from '~/controllers/journal.controller';
 
 export async function loader({request, context}: Route.LoaderArgs) {
   const catalogOptions = getCatalogOptions(context);
-  const [catalog, journal] = await Promise.all([
+  const journalOptions = getJournalOptions(context);
+  const [catalog, journalPosts] = await Promise.all([
     loadSharedCatalog(request, catalogOptions),
-    getJournalPage(getJournalOptions(context)),
+    listAllJournalPosts(journalOptions),
   ]);
 
   const body = buildLlmsFullFromRequest(
     request,
     catalog.products,
     catalog.collections,
-    journal.posts,
+    journalPosts,
   );
 
   return new Response(body, {

@@ -5,6 +5,12 @@ import {getJournalOptions} from '~/lib/catalog-options';
 import {JournalView} from '~/views/journal/JournalView';
 import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
 
+function parsePageParam(value: string | null): number {
+  if (!value) return 1;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
 export const meta: Route.MetaFunction = ({data, location, matches}) => {
   const metadata = data?.metadata ?? {
     title: 'Journal — The Kashmir Weaver',
@@ -19,8 +25,10 @@ export const meta: Route.MetaFunction = ({data, location, matches}) => {
   });
 };
 
-export async function loader({context}: Route.LoaderArgs) {
-  return getJournalPage(getJournalOptions(context));
+export async function loader({context, request}: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const page = parsePageParam(url.searchParams.get('page'));
+  return getJournalPage(getJournalOptions(context), {page});
 }
 
 export default function JournalRoute() {
