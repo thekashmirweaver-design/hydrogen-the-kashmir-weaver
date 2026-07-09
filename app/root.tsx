@@ -36,7 +36,12 @@ import {
 import {loadSharedCatalog, loadSharedCatalogMenu} from '~/lib/shared-catalog';
 import {needsFullCatalog} from '~/lib/catalog-routes';
 import {resolveStoreUrl} from '~/lib/seo';
-import {heroImage, heroImage800} from '~/lib/hero-image-urls';
+import {
+  heroImage,
+  heroImage800,
+  heroImageAvif,
+  heroImage800Avif,
+} from '~/lib/hero-image-urls';
 
 export type RootLoader = typeof loader;
 
@@ -112,13 +117,16 @@ export function links() {
       crossOrigin: 'anonymous',
     },
     {
-      // Responsive preload: mobile (≤ 800 CSS px) gets the 800w variant,
-      // desktop gets the master. Once scripts/upload-shopify-file.ts has
+      // Responsive preload of the AVIF hero (LCP candidate). Mobile
+      // (≤ 800 CSS px) gets the 800w variant, desktop gets the master.
+      // The JPG variants below remain the <img> fallback for browsers
+      // without AVIF support. Once scripts/upload-shopify-file.ts has
       // been run, the values in app/lib/hero-image-urls.ts point at the
       // Shopify CDN and gain a real srcset.
       rel: 'preload',
       as: 'image',
-      imagesrcset: `${heroImage} 1536w, ${heroImage800} 800w`,
+      type: 'image/avif',
+      imagesrcset: `${heroImageAvif} 1536w, ${heroImage800Avif} 800w`,
       imagesizes: '100vw',
       fetchPriority: 'high',
     },
@@ -160,7 +168,7 @@ export async function loader(args: Route.LoaderArgs) {
     consent: {
       checkoutDomain: env.PUBLIC_CHECKOUT_DOMAIN,
       storefrontAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
-      withPrivacyBanner: true,
+      withPrivacyBanner: false,
       country: args.context.storefront.i18n.country,
       language: args.context.storefront.i18n.language,
     },

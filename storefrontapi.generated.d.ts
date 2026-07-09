@@ -558,6 +558,7 @@ export type ShopPolicyQuery = {
 export type JournalBlogQueryVariables = StorefrontAPI.Exact<{
   blogHandle: StorefrontAPI.Scalars['String']['input'];
   first?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
+  after?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['String']['input']>;
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
 }>;
@@ -584,6 +585,7 @@ export type JournalBlogQuery = {
             >;
           }
         >;
+        pageInfo: Pick<StorefrontAPI.PageInfo, 'hasNextPage' | 'endCursor'>;
       };
     }
   >;
@@ -930,7 +932,7 @@ interface GeneratedQueryTypes {
     return: ShopPolicyQuery;
     variables: ShopPolicyQueryVariables;
   };
-  '#graphql\n  query JournalBlog(\n    $blogHandle: String!\n    $first: Int\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    blog(handle: $blogHandle) {\n      handle\n      title\n      seo {\n        title\n        description\n      }\n      articles(first: $first) {\n        nodes {\n          handle\n          title\n          excerpt\n          contentHtml\n          publishedAt\n          tags\n          image {\n            url\n            altText\n            width\n            height\n          }\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  query JournalBlog(\n    $blogHandle: String!\n    $first: Int\n    $after: String\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    blog(handle: $blogHandle) {\n      handle\n      title\n      seo {\n        title\n        description\n      }\n      articles(first: $first, after: $after) {\n        nodes {\n          handle\n          title\n          excerpt\n          contentHtml\n          publishedAt\n          tags\n          image {\n            url\n            altText\n            width\n            height\n          }\n        }\n        pageInfo {\n          hasNextPage\n          endCursor\n        }\n      }\n    }\n  }\n': {
     return: JournalBlogQuery;
     variables: JournalBlogQueryVariables;
   };

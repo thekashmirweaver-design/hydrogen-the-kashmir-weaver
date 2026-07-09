@@ -146,7 +146,7 @@ export function EditorialImage({
   width?: number;
   height?: number;
   className?: string;
-  loading?: 'eager' | 'lazy';
+  loading?: 'lazy' | 'eager';
   fetchPriority?: 'high' | 'low' | 'auto';
   sizes?: string;
   style?: CSSProperties;
@@ -165,4 +165,71 @@ export function EditorialImage({
       srcSet={srcSet}
     />
   );
+}
+
+/**
+ * Hero picture with AVIF-first source plus a JPG <img> fallback. Use only
+ * when the AVIF/JPG pair are known to exist beside each other on the same
+ * origin (e.g. /assets/hero-portrait.{avif,jpg}). Preload the AVIF srcset
+ * from the document head so the browser fetches it before paint.
+ */
+export function HeroPicture({
+  jpg,
+  jpgSmall,
+  avif,
+  avifSmall,
+  alt,
+  width,
+  height,
+  className = '',
+  sizes = '100vw',
+  loading = 'eager',
+  fetchPriority = 'high',
+  style,
+}: {
+  jpg: string;
+  jpgSmall?: string;
+  avif: string;
+  avifSmall?: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  className?: string;
+  sizes?: string;
+  loading?: 'lazy' | 'eager';
+  fetchPriority?: 'high' | 'low' | 'auto';
+  style?: CSSProperties;
+}) {
+  const jpgSrcSet = jpgSmall
+    ? `${avifSmallToJpg(jpgSmall)} 800w, ${jpg} 1536w`
+    : `${jpg} 1536w`;
+  const avifSrcSet = avifSmall
+    ? `${avifSmall} 800w, ${avif} 1536w`
+    : `${avif} 1536w`;
+  return (
+    <picture>
+      {avif ? (
+        <source type="image/avif" srcSet={avifSrcSet} sizes={sizes} />
+      ) : null}
+      <img
+        src={jpg}
+        srcSet={jpgSrcSet}
+        sizes={sizes}
+        alt={alt}
+        width={width}
+        height={height}
+        loading={loading}
+        decoding={loading === 'eager' ? 'sync' : 'async'}
+        fetchPriority={fetchPriority}
+        className={className}
+        style={style}
+      />
+    </picture>
+  );
+}
+
+// Tiny helper so the JPG srcset mirrors the AVIF density breakpoints
+// without re-stating the path. Pure cosmetics.
+function avifSmallToJpg(avifSmallPath: string) {
+  return avifSmallPath.replace(/\.avif$/, '.jpg');
 }

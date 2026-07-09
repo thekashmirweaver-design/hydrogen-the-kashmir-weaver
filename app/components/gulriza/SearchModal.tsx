@@ -208,7 +208,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
           {!hasQuery && (
             <div className="flex flex-col gap-10">
               <div>
-                <p className="eyebrow opacity-70">Collections</p>
+                <p className="tracked text-muted-foreground">Collections</p>
                 <div className="mt-4 flex flex-wrap gap-2.5">
                   {collections.map((c) => (
                     <Link
@@ -225,7 +225,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
               </div>
 
               <div>
-                <p className="eyebrow opacity-70">Featured</p>
+                <p className="tracked text-muted-foreground">Featured</p>
                 <div className="relative mt-3">
                   <ul
                     className="no-scrollbar flex max-h-[40dvh] flex-col overflow-y-auto pb-8"
@@ -260,7 +260,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
             <div className="flex flex-col gap-10">
               {collectionResults.length > 0 && (
                 <div>
-                  <p className="eyebrow opacity-70">Collections</p>
+                  <p className="tracked text-muted-foreground">Collections</p>
                   <ul className="mt-3 flex flex-col">
                     {collectionResults.map((c) => (
                       <CollectionRow key={c.handle} collection={c} onClose={requestClose} />
@@ -271,7 +271,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
 
               {results.length > 0 && (
                 <div>
-                  <p className="eyebrow opacity-70">
+                  <p className="tracked text-muted-foreground">
                     {results.length} {results.length === 1 ? "Piece" : "Pieces"}
                   </p>
                   <ul className="no-scrollbar mt-3 flex max-h-[40dvh] flex-col overflow-y-auto">

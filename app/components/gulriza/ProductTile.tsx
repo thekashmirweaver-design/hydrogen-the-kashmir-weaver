@@ -165,7 +165,7 @@ export function ProductTile({product, disableSwipe}: {product: Product; disableS
       </Link>
 
       <div className="mt-4 flex min-h-0 flex-1 flex-col gap-2 sm:mt-5">
-        <p className="eyebrow truncate opacity-70">{product.collectionName}</p>
+        <p className="tracked text-muted-foreground truncate">{product.collectionName}</p>
         <Link
           to={`/products/${product.handle}`}
           prefetch="intent"

@@ -2,10 +2,18 @@
 // Re-run the script with --replace to update a constant.
 //
 // Until the upload script has been run, these are local fallbacks. The
-// <link rel="preload"> in app/root.tsx and the hero <img> in
+// <link rel="preload"> in app/root.tsx and the hero <picture> in
 // app/views/home/HomeView.tsx will use the local /assets/* file as a
 // fallback when a URL is missing (i.e. an empty string), and switch to
 // the Shopify CDN URL once populated.
 
 export const heroImage = '/assets/hero-portrait.jpg';
 export const heroImage800 = '/assets/hero-portrait-800.jpg';
+
+/**
+ * AVIF variants kept beside the JPGs in /public/assets for the hero. Browsers
+ * that support AVIF save ~75 % bytes; the JPG `heroImage` / `heroImage800`
+ * remain the fallback in the <picture> below.
+ */
+export const heroImageAvif = '/assets/hero-portrait.avif';
+export const heroImage800Avif = '/assets/hero-portrait-800.avif';

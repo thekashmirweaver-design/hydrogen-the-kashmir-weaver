@@ -10,8 +10,13 @@ import {OriginMap} from '~/components/gulriza/OriginMap';
 import {ProductTile} from '~/components/gulriza/ProductTile';
 import {ScrollIndicator} from '~/components/gulriza/ScrollIndicator';
 import {ProductCarousel} from '~/components/gulriza/ProductCarousel';
-import {EditorialImage} from '~/components/gulriza/CatalogImage';
-import {heroImage as heroImageUrl, heroImage800} from '~/lib/hero-image-urls';
+import {EditorialImage, HeroPicture} from '~/components/gulriza/CatalogImage';
+import {
+  heroImage as heroImageUrl,
+  heroImage800,
+  heroImageAvif,
+  heroImage800Avif,
+} from '~/lib/hero-image-urls';
 import type {Collection, Product} from '~/models/types';
 import type {JournalPost} from '~/models/static/journal';
 
@@ -98,15 +103,15 @@ function Hero({
   return (
     <section className="relative min-h-[100dvh] w-full overflow-hidden">
       <div className="absolute inset-y-0 right-0 w-full md:w-[62%] lg:w-[55%]">
-        <EditorialImage
-          src={src}
+        <HeroPicture
+          jpg={src}
+          jpgSmall={heroImage800}
+          avif={heroImageAvif}
+          avifSmall={heroImage800Avif}
           alt={alt}
           className="absolute inset-0 h-full w-full object-cover edge-fade-left"
           style={{objectPosition: 'center'}}
-          loading="eager"
-          fetchPriority="high"
           sizes="(min-width: 768px) 55vw, 100vw"
-          srcSet={`${heroImageUrl} 1536w, ${heroImage800} 800w`}
         />
         <div className="vignette-overlay pointer-events-none absolute inset-0" />
       </div>
@@ -114,9 +119,9 @@ function Hero({
       <div className="absolute left-6 top-1/2 z-10 hidden -translate-y-1/2 flex-col items-center gap-3 md:flex lg:left-10 xl:left-16">
         <span className="eyebrow text-foreground">01</span>
         <span className="h-10 w-px" style={{background: 'var(--accent)'}} />
-        <span className="eyebrow text-muted-foreground opacity-70">02</span>
-        <span className="eyebrow text-muted-foreground opacity-70">03</span>
-        <span className="eyebrow text-muted-foreground opacity-70">04</span>
+        <span className="tracked text-muted-foreground">02</span>
+        <span className="tracked text-muted-foreground">03</span>
+        <span className="tracked text-muted-foreground">04</span>
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1600px] items-center px-6 pb-44 pt-[calc(var(--header-h)+2rem)] md:px-20 md:py-0 lg:px-28 xl:px-36">
