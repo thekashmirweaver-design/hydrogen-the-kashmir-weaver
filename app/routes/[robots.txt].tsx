@@ -50,7 +50,7 @@ Crawl-delay: 10
 ${generalDisallowRules({sitemapUrl, shopId})}
 
 User-agent: MJ12bot
-Crawl-Delay: 10
+Crawl-delay: 10
 
 User-agent: Pinterest
 Crawl-delay: 1
@@ -59,7 +59,8 @@ Crawl-delay: 1
 
 /**
  * This function generates disallow rules that generally follow what Shopify's
- * Online Store has as defaults for their robots.txt
+ * Online Store has as defaults for their robots.txt, plus our own legacy
+ * /blogs/ + /articles/ prefix block (both permanently redirected to /journal).
  */
 function generalDisallowRules({
   shopId,
@@ -77,6 +78,8 @@ ${shopId ? `Disallow: /${shopId}/checkouts` : ''}
 ${shopId ? `Disallow: /${shopId}/orders` : ''}
 Disallow: /carts
 Disallow: /account
+Disallow: /blogs/
+Disallow: /articles/
 Disallow: /collections/*sort_by*
 Disallow: /*/collections/*sort_by*
 Disallow: /collections/*+*
@@ -86,12 +89,6 @@ Disallow: /*/collections/*+*
 Disallow: /*/collections/*%2B*
 Disallow: /*/collections/*%2b*
 Disallow: */collections/*filter*&*filter*
-Disallow: /blogs/*+*
-Disallow: /blogs/*%2B*
-Disallow: /blogs/*%2b*
-Disallow: /*/blogs/*+*
-Disallow: /*/blogs/*%2B*
-Disallow: /*/blogs/*%2b*
 Disallow: /*?*oseid=*
 Disallow: /*preview_theme_id*
 Disallow: /*preview_script_id*
