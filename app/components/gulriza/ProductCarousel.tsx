@@ -59,13 +59,14 @@ export function ProductCarousel({products}: {products: Product[]}) {
     const el = scrollRef.current;
     if (!el) return;
 
+    // Do NOT setPointerCapture here — capturing on pointerdown retargets
+    // pointerup/click away from product Links and blocks navigation.
     dragRef.current = {
       pointerId: e.pointerId,
       startX: e.clientX,
       startScroll: el.scrollLeft,
       moved: false,
     };
-    el.setPointerCapture(e.pointerId);
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -76,6 +77,8 @@ export function ProductCarousel({products}: {products: Product[]}) {
     const dx = e.clientX - drag.startX;
     if (!drag.moved && Math.abs(dx) > 4) {
       drag.moved = true;
+      // Capture only after a real drag starts so simple clicks still hit Links.
+      el.setPointerCapture(e.pointerId);
       el.classList.add("cursor-grabbing");
     }
     if (!drag.moved) return;
