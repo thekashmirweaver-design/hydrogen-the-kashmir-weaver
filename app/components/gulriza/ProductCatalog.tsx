@@ -147,7 +147,7 @@ export function ProductCatalog({
   }, [enabled, filters, priceBounds]);
 
   const filtered = useMemo(() => {
-    let list = products.slice();
+    let list = products.filter((p) => p.stock !== 'out');
     const selected = [...resolvedFilters.collections];
     if (enabled.includes("collection") && resolvedFilters.collections.size) {
       // Server already filters by collection when pagination is on; keep a

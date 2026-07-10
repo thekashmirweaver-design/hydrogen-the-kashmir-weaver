@@ -7,6 +7,7 @@ import {PRODUCT_LIST_PAGE_SIZE} from '~/lib/catalog-constants';
 import type {PaginatedProducts} from '~/lib/catalog-pagination';
 import {DEFAULT_FEATURED_COLLECTION_HANDLE} from '~/lib/featured-collection';
 import {loadHomepageFeatured} from '~/lib/homepage-featured';
+import {excludeUnavailableFromListing} from '~/lib/product-inventory';
 
 export type CatalogSource = 'shopify' | 'static';
 
@@ -56,7 +57,9 @@ export async function listProducts(
     () => StaticRepository.products,
     options,
   );
-  return withStaticDummyProducts(products, options);
+  return excludeUnavailableFromListing(
+    withStaticDummyProducts(products, options),
+  );
 }
 
 function sortStaticProducts(products: Product[], sortKey?: string, sortReverse?: boolean): Product[] {
@@ -111,7 +114,10 @@ function paginateStaticProducts(
   after: string | null | undefined,
   options?: CatalogOptions,
 ): PaginatedProducts {
-  const filtered = applyStaticFilters(products, options);
+  const filtered = applyStaticFilters(
+    excludeUnavailableFromListing(products),
+    options,
+  );
   const sorted = sortStaticProducts(filtered, options?.sortKey, options?.sortReverse);
   const offset = after ? Number.parseInt(after, 10) : 0;
   const start = Number.isFinite(offset) ? offset : 0;
@@ -154,7 +160,10 @@ export async function listProductsPage(
         after: page?.after,
         sortKey: options.sortKey,
         sortReverse: options.sortReverse,
-      });
+      }).then((result) => ({
+        ...result,
+        products: excludeUnavailableFromListing(result.products),
+      }));
     } catch (error) {
       console.warn('[catalog] Shopify paginated fetch failed', error);
       if (options.useStatic) {
@@ -237,11 +246,15 @@ export async function listCollectionProductsPage(
 
   if (options?.storefront) {
     try {
-      return await ShopifyRepository.listCollectionProductsPage(
+      const result = await ShopifyRepository.listCollectionProductsPage(
         options.storefront,
         handle,
         {first, after: page?.after, sortKey: options.sortKey, sortReverse: options.sortReverse, filters: options.filters},
       );
+      return {
+        ...result,
+        products: excludeUnavailableFromListing(result.products),
+      };
     } catch (error) {
       console.warn('[catalog] Shopify collection page fetch failed', error);
       throw error;
@@ -307,7 +320,9 @@ export async function listProductsByCollection(
     () => StaticRepository.productsByCollection(handle),
     options,
   );
-  return withStaticDummyProducts(products, options);
+  return excludeUnavailableFromListing(
+    withStaticDummyProducts(products, options),
+  );
 }
 
 export async function listWeaveFacets(
@@ -343,7 +358,9 @@ export async function getCatalogMenuSnapshot(
   );
   return {
     ...snapshot,
-    products: withStaticDummyProducts(snapshot.products, options),
+    products: excludeUnavailableFromListing(
+      withStaticDummyProducts(snapshot.products, options),
+    ),
   };
 }
 
@@ -360,6 +377,8 @@ export async function getCatalogSnapshot(
   );
   return {
     ...snapshot,
-    products: withStaticDummyProducts(snapshot.products, options),
+    products: excludeUnavailableFromListing(
+      withStaticDummyProducts(snapshot.products, options),
+    ),
   };
 }

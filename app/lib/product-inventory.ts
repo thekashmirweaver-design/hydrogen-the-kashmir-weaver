@@ -15,6 +15,19 @@ function isTrackedInventory(variant: ProductVariant): boolean {
   );
 }
 
+/** True when at least one variant (or the product stock flag) can still be sold. */
+export function isProductAvailableForListing(product: Product): boolean {
+  if (product.variants?.length) {
+    return product.variants.some((v) => v.availableForSale);
+  }
+  return product.stock === 'in';
+}
+
+/** Drop sold-out products from browse surfaces (shop, collections, carousels). */
+export function excludeUnavailableFromListing(products: Product[]): Product[] {
+  return products.filter(isProductAvailableForListing);
+}
+
 /**
  * Quantity +/- rules:
  * - Not tracked (quantityAvailable is null/undefined, or <= 0 with oversell
