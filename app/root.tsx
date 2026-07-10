@@ -24,6 +24,10 @@ import appStylesUrl from '~/styles/globals.css?url';
 import '~/styles/globals.css';
 import {PageLayout, NotFoundView} from './components/PageLayout';
 import {ThemeBootScript} from '~/components/gulriza/ThemeBootScript';
+import {
+  GA_MEASUREMENT_ID,
+  GoogleAnalytics,
+} from '~/components/GoogleAnalytics';
 import {ThemeProvider} from '~/lib/theme';
 import {getCatalogOptions} from '~/lib/catalog-options';
 import {loadShopSettings} from '~/lib/shop-settings';
@@ -271,6 +275,18 @@ export function Layout({children}: {children?: React.ReactNode}) {
         <Meta />
         <Links />
         <ThemeBootScript nonce={nonce} />
+        {/* Google Analytics (gtag.js) */}
+        <Script
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          nonce={nonce}
+        />
+        <Script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}');`,
+          }}
+        />
         <Script
           src="https://cdn.shopify.com/storefront/web-components/account.js"
           type="module"
@@ -314,6 +330,7 @@ export default function App() {
       >
         <Outlet />
       </PageLayout>
+      <GoogleAnalytics />
     </Analytics.Provider>
   );
 }

@@ -63,17 +63,28 @@ export default async function handleRequest(
     },
     // Bundled @fontsource assets are served from Oxygen CDN, not the storefront origin.
     fontSrc: ["'self'", 'https://cdn.shopify.com'],
-    ...(extraOrigins.length || devOrigins.length || crossStorefrontImgOrigins.length
-      ? {
-          connectSrc: [...extraOrigins, ...devOrigins],
-          imgSrc: [
-            "'self'",
-            'https://cdn.shopify.com',
-            ...crossStorefrontImgOrigins,
-            ...devOrigins,
-          ],
-        }
-      : {}),
+    // Google Analytics (gtag.js) — same domains as Hydrogen GTM cookbook.
+    scriptSrc: [
+      "'self'",
+      'https://cdn.shopify.com',
+      'https://*.googletagmanager.com',
+    ],
+    imgSrc: [
+      "'self'",
+      'https://cdn.shopify.com',
+      'https://*.google-analytics.com',
+      'https://*.googletagmanager.com',
+      ...crossStorefrontImgOrigins,
+      ...devOrigins,
+    ],
+    connectSrc: [
+      "'self'",
+      'https://*.google-analytics.com',
+      'https://*.analytics.google.com',
+      'https://*.googletagmanager.com',
+      ...extraOrigins,
+      ...devOrigins,
+    ],
   });
 
   const body = await renderToReadableStream(
