@@ -339,6 +339,31 @@ export async function listOriginFacets(
   return Array.from(new Set(items.map((product) => product.origin))).sort();
 }
 
+async function attachFeaturedProducts(
+  snapshot: {products: Product[]; collections: Collection[]},
+  options?: CatalogOptions,
+): Promise<CatalogSnapshot> {
+  let handle = DEFAULT_FEATURED_COLLECTION_HANDLE;
+  let count = 8;
+  if (options?.storefront) {
+    const featured = await loadHomepageFeatured(options.storefront);
+    handle = featured.featuredCollectionHandle;
+    count = featured.featuredCount;
+  }
+  const featuredProducts = await listFeaturedCollectionProducts(
+    options,
+    handle,
+    count,
+  );
+  return {
+    ...snapshot,
+    products: excludeUnavailableFromListing(
+      withStaticDummyProducts(snapshot.products, options),
+    ),
+    featuredProducts,
+  };
+}
+
 export async function getCatalogMenuSnapshot(
   options?: CatalogOptions,
 ): Promise<CatalogSnapshot> {
@@ -356,12 +381,7 @@ export async function getCatalogMenuSnapshot(
     }),
     options,
   );
-  return {
-    ...snapshot,
-    products: excludeUnavailableFromListing(
-      withStaticDummyProducts(snapshot.products, options),
-    ),
-  };
+  return attachFeaturedProducts(snapshot, options);
 }
 
 export async function getCatalogSnapshot(
@@ -375,10 +395,5 @@ export async function getCatalogSnapshot(
     }),
     options,
   );
-  return {
-    ...snapshot,
-    products: excludeUnavailableFromListing(
-      withStaticDummyProducts(snapshot.products, options),
-    ),
-  };
+  return attachFeaturedProducts(snapshot, options);
 }

@@ -12,8 +12,12 @@ const MAX_RESULTS = 10;
 const CLOSE_MS = 220;
 
 export function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { products, collections } = useCatalog();
-  const suggested = useMemo(() => products.slice(0, 5), [products]);
+  const { products, collections, featuredProducts = [] } = useCatalog();
+  // Idle Featured list = homepage-featured collection (manual Admin order), not newest-first catalog.
+  const suggested = useMemo(
+    () => (featuredProducts.length ? featuredProducts : products).slice(0, 5),
+    [featuredProducts, products],
+  );
   const [query, setQuery] = useState("");
   const [visible, setVisible] = useState(false);
   const [active, setActive] = useState(-1);

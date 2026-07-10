@@ -105,4 +105,6 @@ export type Product = {
 export type CatalogSnapshot = {
   products: Product[];
   collections: Collection[];
+  /** Manual-sort `homepage-featured` products (search Featured, homepage carousel source). */
+  featuredProducts?: Product[];
 };

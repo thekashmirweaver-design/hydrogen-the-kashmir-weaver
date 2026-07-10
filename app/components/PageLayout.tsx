@@ -21,7 +21,11 @@ const WebMcpTools = lazy(() =>
   import('~/components/gulriza/WebMcpTools').then((m) => ({default: m.WebMcpTools})),
 );
 
-const EMPTY_CATALOG: CatalogSnapshot = {products: [], collections: []};
+const EMPTY_CATALOG: CatalogSnapshot = {
+  products: [],
+  collections: [],
+  featuredProducts: [],
+};
 
 interface PageLayoutProps {
   routeKey: string;
