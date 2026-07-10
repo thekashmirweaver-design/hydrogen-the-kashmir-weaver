@@ -40,7 +40,7 @@ type SitemapEntry = {
   loc: string;
   lastmod: string;
   alternates: HreflangAlternate[];
-  image?: {url: string; alt?: string | null; width?: number | null; height?: number | null};
+  image?: {url: string};
 };
 
 const HREFLANG_QUERY = `#graphql
@@ -129,16 +129,11 @@ function entryToXml(entry: SitemapEntry, priority: string): string {
   parts.push(`    <changefreq>weekly</changefreq>`);
   parts.push(`    <priority>${priority}</priority>`);
   if (entry.image) {
-    const img = entry.image;
-    const imgInner: string[] = [`      <image:loc>${xmlEscape(img.url)}</image:loc>`];
-    if (img.alt) {
-      imgInner.push(`      <image:title>${xmlEscape(img.alt)}</image:title>`);
-    }
-    if (img.width && img.height) {
-      imgInner.push(`      <image:width>${img.width}</image:width>`);
-      imgInner.push(`      <image:height>${img.height}</image:height>`);
-    }
-    parts.push(`    <image:image>\n${imgInner.join('\n')}\n    </image:image>`);
+    // Google image sitemaps only recognise <image:loc> inside <image:image>.
+    // width/height were never valid; title/caption/etc. were deprecated in 2022.
+    parts.push(
+      `    <image:image>\n      <image:loc>${xmlEscape(entry.image.url)}</image:loc>\n    </image:image>`,
+    );
   }
   return `  <url>\n${parts.join('\n')}\n  </url>`;
 }
@@ -171,9 +166,6 @@ function journalEntry(
     alternates: buildAlternates(pathname, baseUrl, locales),
     image: {
       url: imageSrc,
-      alt: post.alt ?? post.title,
-      width: post.width ?? undefined,
-      height: post.height ?? undefined,
     },
   };
 }
