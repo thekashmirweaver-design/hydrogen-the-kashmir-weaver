@@ -159,6 +159,22 @@ Shopify Admin **SEO title/description** fields feed meta tags when set (products
 | `/sitemap/editorial.xml` | Static editorial routes + journal article slugs |
 | `/sitemap/{type}/{page}.xml` | Hydrogen-generated Shopify resources (single URL per item, no locale prefixes) |
 
+### RSS & Atom feeds
+
+Public syndication endpoints (no auth). Content-Type is `application/rss+xml` or `application/atom+xml`; cached for 1 hour.
+
+| URL | Contents |
+| --- | --- |
+| `/feed.xml` / `/feed.atom` | Site-wide feed (all journal articles) |
+| `/journal.rss` / `/journal.atom` | Journal feed |
+| `/journal/category/:category.rss` (+ `.atom`) | Journal filtered by category |
+| `/journal/tag/:tag.rss` (+ `.atom`) | Journal filtered by tag |
+| `/journal/author/:author.rss` (+ `.atom`) | Journal filtered by author slug |
+| `/products.rss` / `/products.atom` | Product updates (newest first) |
+| `/collections/:handle.rss` (+ `.atom`) | Products in a collection |
+
+Discovery: `/journal` includes `<link rel="alternate">` for the site and journal feeds.
+
 ### robots.txt
 
 Generated at `/robots.txt`. Policy pages under `/policies/*` are **allowed** (trust/E-E-A-T). Cart, account, checkout, and search query URLs are disallowed.

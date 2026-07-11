@@ -151,6 +151,18 @@ export function links() {
       as: 'style',
     },
     {rel: 'icon', type: 'image/x-icon', href: '/favicon.ico'},
+    {
+      rel: 'alternate',
+      type: 'application/rss+xml',
+      title: 'The Kashmir Weaver',
+      href: '/feed.xml',
+    },
+    {
+      rel: 'alternate',
+      type: 'application/atom+xml',
+      title: 'The Kashmir Weaver',
+      href: '/feed.atom',
+    },
   ];
 };
 

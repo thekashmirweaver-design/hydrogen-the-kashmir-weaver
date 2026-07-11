@@ -15,12 +15,16 @@ export const JOURNAL_BLOG_QUERY = `#graphql
       }
       articles(first: $first, after: $after) {
         nodes {
+          id
           handle
           title
           excerpt
           contentHtml
           publishedAt
           tags
+          authorV2 {
+            name
+          }
           image {
             url
             altText

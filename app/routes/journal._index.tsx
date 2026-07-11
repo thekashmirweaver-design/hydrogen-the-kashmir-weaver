@@ -11,6 +11,33 @@ function parsePageParam(value: string | null): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
+export const links: Route.LinksFunction = () => [
+  {
+    rel: 'alternate',
+    type: 'application/rss+xml',
+    title: 'The Kashmir Weaver',
+    href: '/feed.xml',
+  },
+  {
+    rel: 'alternate',
+    type: 'application/atom+xml',
+    title: 'The Kashmir Weaver',
+    href: '/feed.atom',
+  },
+  {
+    rel: 'alternate',
+    type: 'application/rss+xml',
+    title: 'Journal — The Kashmir Weaver',
+    href: '/journal.rss',
+  },
+  {
+    rel: 'alternate',
+    type: 'application/atom+xml',
+    title: 'Journal — The Kashmir Weaver',
+    href: '/journal.atom',
+  },
+];
+
 export const meta: Route.MetaFunction = ({data, location, matches}) => {
   const metadata = data?.metadata ?? {
     title: 'Journal — The Kashmir Weaver',

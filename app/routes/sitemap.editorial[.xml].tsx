@@ -3,6 +3,7 @@ import type {Storefront} from '@shopify/hydrogen';
 import {getJournalOptions} from '~/lib/catalog-options';
 import {listAllJournalPosts} from '~/controllers';
 import type {JournalPost} from '~/models/static/journal';
+import {xmlEscape} from '~/lib/xml';
 
 /**
  * Static editorial surfaces. They share a single `lastmod` anchor below
@@ -59,15 +60,6 @@ type HreflangQueryResult = {
     availableCountries?: Array<{isoCode?: string | null} | null> | null;
   } | null;
 };
-
-function xmlEscape(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
 
 /**
  * The Kashmir Weaver is English-only content, so every supported Shopify

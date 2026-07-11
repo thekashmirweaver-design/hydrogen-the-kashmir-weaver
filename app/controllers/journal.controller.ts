@@ -16,6 +16,12 @@ import {
 } from '~/models/shopify/journal.queries';
 import {estimateReadMinutes, htmlToPlainText} from '~/lib/parse-page-content';
 import type {PageMetadata} from '~/controllers/catalog.controller';
+import {
+  mapJournalSourceToFeedItem,
+  sortFeedItemsNewestFirst,
+  type FeedItem,
+  type JournalFeedSource,
+} from '~/lib/feeds';
 
 export type JournalPageViewModel = {
   posts: JournalPost[];
@@ -179,12 +185,14 @@ function mapShopifyArticleToArticle(article: {
 }
 
 type ShopifyArticleNode = {
+  id?: string | null;
   handle: string;
   title: string;
   excerpt?: string | null;
   contentHtml?: string | null;
   publishedAt?: string | null;
   tags?: string[] | null;
+  authorV2?: {name?: string | null} | null;
   image?:
     | {
         url?: string | null;
@@ -330,6 +338,73 @@ export async function listAllJournalPosts(
   }
 
   return options.useStatic ? sortPostsByDate(POSTS) : [];
+}
+
+function nodeToFeedSource(node: ShopifyArticleNode): JournalFeedSource {
+  return {
+    handle: node.handle,
+    title: node.title,
+    excerpt: node.excerpt,
+    contentHtml: node.contentHtml,
+    publishedAt: node.publishedAt,
+    tags: node.tags,
+    author: node.authorV2?.name,
+    category: mapCategory(node.tags),
+    image: node.image,
+  };
+}
+
+function staticPostsToFeedSources(): JournalFeedSource[] {
+  return POSTS.map((post) => {
+    const article = ARTICLES[post.slug];
+    const bodyHtml =
+      article?.bodyHtml ||
+      article?.body?.map((p) => `<p>${p}</p>`).join('') ||
+      undefined;
+    return {
+      handle: post.slug,
+      title: post.title,
+      excerpt: post.excerpt,
+      contentHtml: bodyHtml,
+      publishedAt: `${post.date}T00:00:00.000Z`,
+      tags: [post.cat],
+      author: 'The Kashmir Weaver',
+      category: post.cat,
+      image: {url: post.img, altText: post.alt},
+    };
+  });
+}
+
+/**
+ * Full journal items for RSS/Atom syndication (includes HTML body + author).
+ */
+export async function listAllJournalFeedItems(
+  options: JournalOptions,
+  storeUrl: string,
+  pagination: {maxArticles?: number} = {},
+): Promise<FeedItem[]> {
+  try {
+    const result = await fetchAllShopifyJournalNodes(options.storefront, {
+      maxArticles: pagination.maxArticles ?? JOURNAL_MAX_ARTICLES,
+    });
+    if (result) {
+      return sortFeedItemsNewestFirst(
+        result.nodes.map((node) =>
+          mapJournalSourceToFeedItem(nodeToFeedSource(node), storeUrl),
+        ),
+      );
+    }
+  } catch {
+    // Storefront unavailable — optional static demo when enabled.
+  }
+
+  if (!options.useStatic) return [];
+
+  return sortFeedItemsNewestFirst(
+    staticPostsToFeedSources().map((source) =>
+      mapJournalSourceToFeedItem(source, storeUrl),
+    ),
+  );
 }
 
 function sortPostsByDate(posts: JournalPost[]): JournalPost[] {
