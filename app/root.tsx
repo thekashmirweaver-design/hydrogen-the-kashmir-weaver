@@ -272,6 +272,10 @@ export function Layout({children}: {children?: React.ReactNode}) {
           name="viewport"
           content="width=device-width,initial-scale=1,viewport-fit=cover"
         />
+        <meta
+          name="p:domain_verify"
+          content="cd185cc54ba7583aaa8909b821744b15"
+        />
         <Meta />
         <Links />
         <ThemeBootScript nonce={nonce} />
