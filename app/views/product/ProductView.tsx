@@ -563,7 +563,7 @@ export function ProductView({
 
               <div className="space-y-2.5">{purchaseActions}</div>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Certificate of authenticity ·{' '}
+                Authentic ·{' '}
                 <Link to="/shipping" className="underline-offset-2 hover:text-accent hover:underline">
                   Free shipping over $200
                 </Link>

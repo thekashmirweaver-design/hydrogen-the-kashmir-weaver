@@ -2,7 +2,7 @@ import {Link} from "react-router";
 import {useCallback, useEffect, useState} from "react";
 import type {Product} from "~/models/types";
 import {useFormatPrice} from "~/lib/currency-store";
-import {CatalogImage} from "~/components/gulriza/CatalogImage";
+import {CatalogImage, PRODUCT_GRID_SIZES} from "~/components/gulriza/CatalogImage";
 import {useHorizontalSwipe} from "~/hooks/use-horizontal-swipe";
 
 const TILE_CAROUSEL_MS = 1400;
@@ -63,7 +63,18 @@ function TileImageIndicator({
   );
 }
 
-export function ProductTile({product, disableSwipe}: {product: Product; disableSwipe?: boolean}) {
+export function ProductTile({
+  product,
+  disableSwipe,
+  priority = false,
+  sizes = PRODUCT_GRID_SIZES,
+}: {
+  product: Product;
+  disableSwipe?: boolean;
+  /** Eager-load primary image (first visible carousel tiles only). */
+  priority?: boolean;
+  sizes?: string;
+}) {
   const [hover, setHover] = useState(false);
   const [active, setActive] = useState(0);
   const [loadExtras, setLoadExtras] = useState(false);
@@ -141,8 +152,6 @@ export function ProductTile({product, disableSwipe}: {product: Product; disableS
       >
         <div
           className={`relative aspect-[4/5] w-full select-none overflow-hidden ${
-            // Standalone tiles: allow vertical page scroll while JS handles image swipe.
-            // Inside carousels (disableSwipe): do not restrict — parent needs pan-x + pan-y.
             disableSwipe ? "" : "touch-pan-y"
           }`}
           style={{
@@ -168,7 +177,9 @@ export function ProductTile({product, disableSwipe}: {product: Product; disableS
                 style={{
                   filter: soldOut ? "grayscale(0.6)" : undefined,
                 }}
-                loading={i === 0 ? "eager" : "lazy"}
+                sizes={sizes}
+                priority={priority && i === 0}
+                loading={priority && i === 0 ? "eager" : "lazy"}
               />
             </div>
           ))}

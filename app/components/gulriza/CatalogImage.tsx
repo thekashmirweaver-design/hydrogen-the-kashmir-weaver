@@ -15,6 +15,8 @@ type CatalogImageProps = {
   onClick?: (e: MouseEvent) => void;
   showSkeleton?: boolean;
   srcSet?: string;
+  /** LCP / above-fold: no opacity hide, eager + high fetchPriority by default. */
+  priority?: boolean;
 };
 
 function isShopifyCdn(src: string) {
@@ -48,32 +50,40 @@ export function CatalogImage({
   className = '',
   wrapperClassName = '',
   wrapperStyle,
-  loading = 'lazy',
-  fetchPriority,
+  loading: loadingProp,
+  fetchPriority: fetchPriorityProp,
   sizes = '(min-width: 1024px) 280px, (min-width: 640px) 50vw, 100vw',
   style,
   onClick,
-  showSkeleton = true,
+  showSkeleton: showSkeletonProp,
   srcSet,
+  priority = false,
 }: CatalogImageProps) {
-  const [loaded, setLoaded] = useState(false);
+  const loading = loadingProp ?? (priority ? 'eager' : 'lazy');
+  const fetchPriority =
+    fetchPriorityProp ?? (priority ? 'high' : undefined);
+  const showSkeleton = showSkeletonProp ?? !priority;
+  const [loaded, setLoaded] = useState(priority);
   const imgRef = useRef<HTMLImageElement>(null);
   const decoding = loading === 'eager' ? 'sync' : 'async';
 
   useEffect(() => {
+    if (priority) {
+      setLoaded(true);
+      return;
+    }
     setLoaded(false);
     const img = imgRef.current;
     if (img?.complete && img.naturalWidth > 0) {
       setLoaded(true);
     }
-  }, [image.src]);
+  }, [image.src, priority]);
 
   const imageStyle: CSSProperties = {
     ...style,
-    opacity: loaded ? 1 : 0,
-    // Opacity only — hover zooms belong on the wrapper (see wrapperClassName)
-    // so transform isn't fighting this inline transition.
-    transition: 'opacity 320ms ease-out',
+    // Priority images paint immediately — opacity:0 until onLoad delays LCP.
+    opacity: priority || loaded ? 1 : 0,
+    transition: priority ? undefined : 'opacity 320ms ease-out',
   };
 
   const inner = isShopifyCdn(image.src) ? (
@@ -143,6 +153,7 @@ export function EditorialImage({
   style,
   showSkeleton = true,
   srcSet,
+  priority = false,
 }: {
   src: string;
   alt: string;
@@ -156,6 +167,7 @@ export function EditorialImage({
   style?: CSSProperties;
   showSkeleton?: boolean;
   srcSet?: string;
+  priority?: boolean;
 }) {
   return (
     <CatalogImage
@@ -168,6 +180,7 @@ export function EditorialImage({
       style={style}
       showSkeleton={showSkeleton}
       srcSet={srcSet}
+      priority={priority}
     />
   );
 }
@@ -246,3 +259,10 @@ export function HeroPicture({
     </picture>
   );
 }
+
+/** Carousel / grid product tile sizes — matches ProductCarousel slot widths. */
+export const PRODUCT_TILE_SIZES =
+  '(min-width: 1280px) 300px, (min-width: 1024px) 280px, (min-width: 768px) 32vw, (min-width: 640px) 50vw, 85vw';
+
+export const PRODUCT_GRID_SIZES =
+  '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw';

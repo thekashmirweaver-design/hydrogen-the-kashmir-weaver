@@ -39,6 +39,7 @@ export function CollectionHeroBanner({
           sizes="100vw"
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : undefined}
+          priority={priority}
         />
       </div>
       <div className="vignette-overlay pointer-events-none absolute inset-0" />

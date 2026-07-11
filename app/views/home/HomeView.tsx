@@ -14,6 +14,7 @@ import {ScrollIndicator} from '~/components/gulriza/ScrollIndicator';
 import {TrustStrip} from '~/components/gulriza/TrustStrip';
 import {EditorialImage, HeroPicture} from '~/components/gulriza/CatalogImage';
 import {heroDark, heroLight} from '~/lib/hero-image-urls';
+import {useTheme} from '~/lib/theme';
 import type {Collection, Product} from '~/models/types';
 
 const artisan = '/assets/craft-artisan.png';
@@ -60,6 +61,8 @@ function Hero({
   heroImageUrl?: string;
   heroAlt?: string;
 }) {
+  const {resolved} = useTheme();
+  const isLight = resolved === 'light';
   const darkAlt =
     heroAlt ||
     'A woman wrapped in an emerald pashmina shawl, framed by a stone arch overlooking a Himalayan lake at dusk.';
@@ -71,6 +74,7 @@ function Hero({
   const pictureStyle = {objectPosition: 'center'} as const;
 
   // Optional Shopify/metafield override replaces the dark hero only.
+  const shopifyHero = Boolean(heroImageUrlProp);
   const darkJpg = heroImageUrlProp || heroDark.jpg;
   const darkUsesLocalSet = !heroImageUrlProp;
 
@@ -78,18 +82,36 @@ function Hero({
     <section className="relative min-h-[100dvh] w-full overflow-hidden">
       <div className="absolute inset-y-0 right-0 w-full md:w-[62%] lg:w-[55%]">
         <div className="hero-theme-layer hero-theme-layer--dark">
-          <HeroPicture
-            jpg={darkJpg}
-            jpgSmall={darkUsesLocalSet ? heroDark.jpgSmall : undefined}
-            webp={darkUsesLocalSet ? heroDark.webp : undefined}
-            webpSmall={darkUsesLocalSet ? heroDark.webpSmall : undefined}
-            avif={darkUsesLocalSet ? heroDark.avif : undefined}
-            avifSmall={darkUsesLocalSet ? heroDark.avifSmall : undefined}
-            alt={darkAlt}
-            className={pictureClass}
-            style={pictureStyle}
-            sizes={sizes}
-          />
+          {shopifyHero ? (
+            <EditorialImage
+              src={darkJpg}
+              alt={darkAlt}
+              className={pictureClass}
+              style={pictureStyle}
+              sizes={sizes}
+              priority={!isLight}
+              loading={isLight ? 'lazy' : 'eager'}
+              fetchPriority={isLight ? 'low' : 'high'}
+              showSkeleton={false}
+            />
+          ) : (
+            <HeroPicture
+              jpg={darkJpg}
+              jpgSmall={darkUsesLocalSet ? heroDark.jpgSmall : undefined}
+              webp={darkUsesLocalSet ? heroDark.webp : undefined}
+              webpSmall={darkUsesLocalSet ? heroDark.webpSmall : undefined}
+              avif={darkUsesLocalSet ? heroDark.avif : undefined}
+              avifSmall={darkUsesLocalSet ? heroDark.avifSmall : undefined}
+              alt={darkAlt}
+              className={pictureClass}
+              style={pictureStyle}
+              sizes={sizes}
+              width={1536}
+              height={2048}
+              loading={isLight ? 'lazy' : 'eager'}
+              fetchPriority={isLight ? 'low' : 'high'}
+            />
+          )}
         </div>
         <div className="hero-theme-layer hero-theme-layer--light">
           <HeroPicture
@@ -103,7 +125,10 @@ function Hero({
             className={pictureClass}
             style={pictureStyle}
             sizes={sizes}
-            fetchPriority="low"
+            width={1536}
+            height={2048}
+            loading={isLight ? 'eager' : 'lazy'}
+            fetchPriority={isLight ? 'high' : 'low'}
           />
         </div>
         <div className="vignette-overlay pointer-events-none absolute inset-0" />
@@ -126,7 +151,7 @@ function Hero({
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1600px] items-center px-6 pb-44 pt-10 md:px-20 md:py-0 lg:px-28 xl:px-36">
-        <Reveal className="home-hero-copy mt-auto max-w-2xl md:-mt-32 lg:-mt-10">
+        <div className="home-hero-copy mt-auto max-w-2xl md:-mt-32 lg:-mt-10">
           <Eyebrow>Hand-woven Kashmiri pashmina</Eyebrow>
           <h1
             className="font-display mt-8 text-[2.5rem] leading-[1.05] tracking-tight sm:text-[3.5rem] md:text-[4.75rem]"
@@ -158,7 +183,7 @@ function Hero({
               <ArrowRight className="h-4 w-4 md:h-4 md:w-4" strokeWidth={1.5} />
             </span>
           </Link>
-        </Reveal>
+        </div>
       </div>
 
       <ScrollIndicator
@@ -276,7 +301,11 @@ function SignatureCollections({
                 <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 md:gap-x-8 lg:grid-cols-3">
                   {previewProducts.map((p, j) => (
                     <Reveal key={p.handle} delay={j * 120}>
-                      <ProductTile product={p} />
+                      <ProductTile
+                        product={p}
+                        priority={false}
+                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                      />
                     </Reveal>
                   ))}
                 </div>

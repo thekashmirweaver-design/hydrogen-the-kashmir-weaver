@@ -137,7 +137,12 @@ export function ProductCarousel({products}: {products: Product[]}) {
             className="w-[min(85vw,320px)] shrink-0 snap-start sm:w-[min(58vw,340px)] md:w-[min(32vw,300px)] lg:w-[280px] xl:w-[300px]"
           >
             <Reveal delay={idx * 100}>
-              <ProductTile product={product} disableSwipe />
+              <ProductTile
+                product={product}
+                disableSwipe
+                priority={idx < 2}
+                sizes="(min-width: 1280px) 300px, (min-width: 1024px) 280px, (min-width: 768px) 32vw, 85vw"
+              />
             </Reveal>
           </div>
         ))}

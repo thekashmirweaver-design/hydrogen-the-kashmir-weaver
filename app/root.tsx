@@ -25,7 +25,6 @@ import '~/styles/globals.css';
 import {PageLayout, NotFoundView} from './components/PageLayout';
 import {ThemeBootScript} from '~/components/gulriza/ThemeBootScript';
 import {
-  GA_MEASUREMENT_ID,
   GoogleAnalytics,
 } from '~/components/GoogleAnalytics';
 import {ThemeProvider} from '~/lib/theme';
@@ -42,7 +41,6 @@ import {
 import {loadSharedCatalog, loadSharedCatalogMenu} from '~/lib/shared-catalog';
 import {needsFullCatalog} from '~/lib/catalog-routes';
 import {resolveStoreUrl} from '~/lib/seo';
-import {heroDark, heroLight} from '~/lib/hero-image-urls';
 
 export type RootLoader = typeof loader;
 
@@ -118,28 +116,13 @@ export function links() {
       crossOrigin: 'anonymous',
     },
     {
-      // Dark-theme LCP hero. WebP/JPG remain <picture> fallbacks.
-      rel: 'preload',
-      as: 'image',
-      type: 'image/avif',
-      imagesrcset: `${heroDark.avif} 1536w, ${heroDark.avifSmall} 800w`,
-      imagesizes: '(min-width: 768px) 55vw, 100vw',
-      fetchPriority: 'high',
-      media: '(prefers-color-scheme: dark)',
-    },
-    {
-      // Light-theme LCP hero (OS light). Stored theme may differ; CSS still swaps.
-      rel: 'preload',
-      as: 'image',
-      type: 'image/avif',
-      imagesrcset: `${heroLight.avif} 1536w, ${heroLight.avifSmall} 800w`,
-      imagesizes: '(min-width: 768px) 55vw, 100vw',
-      fetchPriority: 'high',
-      media: '(prefers-color-scheme: light)',
-    },
-    {
       rel: 'preconnect',
       href: 'https://cdn.shopify.com',
+    },
+    {
+      // ThemeBootScript injects the LCP hero preload for the resolved theme.
+      rel: 'preconnect',
+      href: 'https://www.googletagmanager.com',
     },
     {
       // Preload the bundled app CSS in parallel with the HTML download so
@@ -291,18 +274,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
         <Meta />
         <Links />
         <ThemeBootScript nonce={nonce} />
-        {/* Google Analytics (gtag.js) */}
-        <Script
-          async
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          nonce={nonce}
-        />
-        <Script
-          nonce={nonce}
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}');`,
-          }}
-        />
+        {/* gtag loads deferred via <GoogleAnalytics /> after idle — keeps LCP clear */}
         <Script
           src="https://cdn.shopify.com/storefront/web-components/account.js"
           type="module"
