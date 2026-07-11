@@ -284,6 +284,16 @@ export async function findProductByHandle(
   );
 }
 
+function isHomepageFeaturedCollection(
+  handle: string,
+  featuredCollectionHandle: string = DEFAULT_FEATURED_COLLECTION_HANDLE,
+) {
+  return (
+    handle === featuredCollectionHandle ||
+    handle === DEFAULT_FEATURED_COLLECTION_HANDLE
+  );
+}
+
 export async function listCollections(
   options?: CatalogOptions,
 ): Promise<Collection[]> {
@@ -292,8 +302,14 @@ export async function listCollections(
     () => StaticRepository.collections,
     options,
   );
+  let featuredHandle = DEFAULT_FEATURED_COLLECTION_HANDLE;
+  if (options?.storefront) {
+    featuredHandle = (await loadHomepageFeatured(options.storefront))
+      .featuredCollectionHandle;
+  }
   return collections.filter(
-    (collection) => collection.handle !== DEFAULT_FEATURED_COLLECTION_HANDLE,
+    (collection) =>
+      !isHomepageFeaturedCollection(collection.handle, featuredHandle),
   );
 }
 
@@ -357,6 +373,10 @@ async function attachFeaturedProducts(
   );
   return {
     ...snapshot,
+    // Curation-only collection — keep off /collections, nav, and filters.
+    collections: snapshot.collections.filter(
+      (collection) => !isHomepageFeaturedCollection(collection.handle, handle),
+    ),
     products: excludeUnavailableFromListing(
       withStaticDummyProducts(snapshot.products, options),
     ),
