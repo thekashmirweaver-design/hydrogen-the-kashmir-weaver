@@ -6,15 +6,43 @@ function cdata(value: string): string {
   return `<![CDATA[${value.replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
 }
 
+/** MIME type for Pinterest `<enclosure>` / `media:content` from the image URL. */
+function imageMimeType(url: string): string {
+  const path = url.split('?')[0]?.toLowerCase() ?? '';
+  if (path.endsWith('.png')) return 'image/png';
+  if (path.endsWith('.webp')) return 'image/webp';
+  if (path.endsWith('.gif')) return 'image/gif';
+  if (path.endsWith('.avif')) return 'image/avif';
+  return 'image/jpeg';
+}
+
+/**
+ * Emit all three image tags Pinterest reads under each `<item>`:
+ * `<image>`, `<enclosure>`, and `<media:content>`.
+ */
+function itemImageXml(item: FeedItem): string {
+  if (!item.image?.url) return '';
+
+  const url = xmlEscape(item.image.url);
+  const title = xmlEscape(item.image.title || item.title);
+  const link = xmlEscape(item.link);
+  const type = xmlEscape(imageMimeType(item.image.url));
+
+  return `
+      <image>
+        <url>${url}</url>
+        <title>${title}</title>
+        <link>${link}</link>
+      </image>
+      <enclosure url="${url}" type="${type}" length="0" />
+      <media:content url="${url}" medium="image" type="${type}" />`;
+}
+
 function itemXml(item: FeedItem): string {
   const categories = item.categories
     .filter(Boolean)
     .map((cat) => `      <category>${xmlEscape(cat)}</category>`)
     .join('\n');
-
-  const media = item.image
-    ? `\n      <media:content url="${xmlEscape(item.image.url)}" medium="image" />`
-    : '';
 
   const content = item.contentHtml
     ? `\n      <content:encoded>${cdata(item.contentHtml)}</content:encoded>`
@@ -28,7 +56,7 @@ function itemXml(item: FeedItem): string {
       <description>${cdata(item.summary)}</description>
       <dc:creator>${xmlEscape(item.author)}</dc:creator>${
         categories ? `\n${categories}` : ''
-      }${content}${media}
+      }${content}${itemImageXml(item)}
     </item>`;
 }
 
