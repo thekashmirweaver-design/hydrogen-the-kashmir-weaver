@@ -48,7 +48,6 @@ Each definition must have **Storefront API access** enabled so the Storefront AP
 ```json
 {
   "featuredCollectionHandle": "homepage-featured",
-  "featuredCount": 6,
   "bestSellingCount": 8,
   "newestCount": 8,
   "collectionHandles": ["jamawar-embroidery", "kani-pashmina"],
@@ -62,7 +61,7 @@ Each definition must have **Storefront API access** enabled so the Storefront AP
 | Field | Purpose |
 | --- | --- |
 | `featuredCollectionHandle` | Manual-sort collection for **Featured Pieces** (default `homepage-featured`) |
-| `featuredCount` | Max products shown from that collection on the homepage |
+| `featuredCount` | Optional cap on Featured Pieces. Omit, `0`, or `"all"` = show **all** products in the collection; a positive number caps the list |
 | `bestSellingCount` | Max products in the **Best Selling** carousel |
 | `newestCount` | Max products in the **Newest Pieces** carousel |
 | `collectionHandles` | **Signature Collections** — collection handles in display order |
@@ -79,7 +78,7 @@ Create a **manual-sort** collection in Shopify Admin (handle `homepage-featured`
 3. Set **Sort** to **Manual**
 4. Add products and drag to reorder
 
-That order drives the homepage **Featured Pieces** carousel (up to `featuredCount`) and the shop **Featured** sort on `/collections/all`. This collection is hidden from the public `/collections` index.
+That order drives the homepage **Featured Pieces** carousel (all products by default, or up to `featuredCount` when set) and the shop **Featured** sort on `/collections/all`. This collection is hidden from the public `/collections` index.
 
 **Best Selling / Newest:** Sorted from the full catalog; counts are capped by `bestSellingCount` and `newestCount` (default `8` each).
 

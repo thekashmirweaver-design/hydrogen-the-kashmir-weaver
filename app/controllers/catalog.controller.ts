@@ -97,7 +97,7 @@ export async function getHomePage(
   const featuredProducts = await CatalogRepository.listFeaturedCollectionProducts(
     options,
     featured?.featuredCollectionHandle,
-    featured?.featuredCount ?? 8,
+    featured?.featuredCount,
   );
   const featuredCollections = pickCollectionsByHandles(
     collections,

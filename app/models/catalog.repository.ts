@@ -184,7 +184,7 @@ export async function listProductsPage(
 export async function listFeaturedCollectionProducts(
   options?: CatalogOptions,
   featuredCollectionHandle: string = DEFAULT_FEATURED_COLLECTION_HANDLE,
-  count?: number,
+  count?: number | null,
 ): Promise<Product[]> {
   const products = await listProductsByCollection(
     featuredCollectionHandle,
@@ -360,7 +360,7 @@ async function attachFeaturedProducts(
   options?: CatalogOptions,
 ): Promise<CatalogSnapshot> {
   let handle = DEFAULT_FEATURED_COLLECTION_HANDLE;
-  let count = 8;
+  let count: number | null | undefined;
   if (options?.storefront) {
     const featured = await loadHomepageFeatured(options.storefront);
     handle = featured.featuredCollectionHandle;

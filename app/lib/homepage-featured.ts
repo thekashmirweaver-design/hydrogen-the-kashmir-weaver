@@ -8,8 +8,11 @@ export type HomepageFeatured = {
   collectionHandles: string[];
   heroImageUrl?: string;
   heroAlt?: string;
-  /** Max products in the homepage Featured Pieces carousel. */
-  featuredCount: number;
+  /**
+   * Max products in the homepage Featured Pieces carousel.
+   * `null` / omitted / 0 / `"all"` = show every product in the featured collection.
+   */
+  featuredCount: number | null;
   bestSellingCount: number;
   newestCount: number;
   /** Max collections in the homepage Signature Collections section (order from collectionHandles). */
@@ -17,6 +20,16 @@ export type HomepageFeatured = {
   /** Product tiles shown under each homepage collection. */
   collectionPreviewCount: number;
 };
+
+/** Resolve metafield featuredCount: positive int caps; null/0/"all" = uncapped. */
+export function resolveFeaturedCount(
+  value: number | string | null | undefined,
+): number | null {
+  if (value == null || value === '' || value === 'all') return null;
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.floor(n);
+}
 
 const HOMEPAGE_FEATURED_QUERY = `#graphql
   query HomepageFeatured($country: CountryCode, $language: LanguageCode)
@@ -63,7 +76,8 @@ export async function loadHomepageFeatured(
   try {
     const data = await storefront.query<HomepageFeaturedQueryResult>(
       HOMEPAGE_FEATURED_QUERY,
-      {cache: storefront.CacheLong()},
+      // Homepage config is tiny; avoid CacheLong serving a stale featuredCount cap.
+      {cache: storefront.CacheNone()},
     );
     const parsed = parseJsonField<{
       featuredCollectionHandle?: string;
@@ -72,7 +86,7 @@ export async function loadHomepageFeatured(
       heroAlt?: string;
       bestSellingCount?: number;
       newestCount?: number;
-      featuredCount?: number;
+      featuredCount?: number | string | null;
       collectionCount?: number;
       collectionPreviewCount?: number;
     }>(data.shop?.homepageFeatured?.value ?? undefined);
@@ -85,7 +99,7 @@ export async function loadHomepageFeatured(
       heroAlt: parsed?.heroAlt,
       bestSellingCount: parsed?.bestSellingCount ?? 8,
       newestCount: parsed?.newestCount ?? 8,
-      featuredCount: parsed?.featuredCount ?? 8,
+      featuredCount: resolveFeaturedCount(parsed?.featuredCount),
       collectionCount: parsed?.collectionCount,
       collectionPreviewCount: parsed?.collectionPreviewCount ?? 3,
     };
@@ -95,7 +109,7 @@ export async function loadHomepageFeatured(
       collectionHandles: [],
       bestSellingCount: 8,
       newestCount: 8,
-      featuredCount: 8,
+      featuredCount: null,
       collectionPreviewCount: 3,
     };
   }
