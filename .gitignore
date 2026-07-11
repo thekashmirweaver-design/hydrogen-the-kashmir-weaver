@@ -10,3 +10,4 @@ node_modules
 .react-router
 pnpm-lock.yaml
 tsconfig.tsbuildinfo
+/secrets/
