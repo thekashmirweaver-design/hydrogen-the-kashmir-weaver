@@ -372,6 +372,7 @@ async function setShopMetafields(shopId: string) {
       value: JSON.stringify({
         instagram: 'https://instagram.com/thekashmirweaver',
         facebook: 'https://facebook.com/thekashmirweaver',
+        pinterest: 'https://pin.it/7BLwQ2NhS',
       }),
     },
   ];
