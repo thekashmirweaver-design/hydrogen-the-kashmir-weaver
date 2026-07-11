@@ -1,0 +1,16 @@
+{
+  "name": "tkw-merchant-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "tkw-merchant-mcp": "./index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "googleapis": "^173.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
