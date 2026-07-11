@@ -115,7 +115,6 @@ export function ProductView({
   }, [product.images, selectedVariant?.image]);
 
   const [imgIdx, setImgIdx] = useState(0);
-  const [hoverImgIdx, setHoverImgIdx] = useState<number | null>(null);
   const productShades = useMemo(() => getProductShades(product), [product]);
   const defaultShadeCode = useMemo(
     () => getDefaultSolidShadeCode(productShades),
@@ -154,13 +153,11 @@ export function ProductView({
 
   useEffect(() => {
     setImgIdx(0);
-    setHoverImgIdx(null);
     setQuantity(1);
   }, [selectedVariant?.id]);
 
   useEffect(() => {
     setImgIdx(0);
-    setHoverImgIdx(null);
     setSelectedShadeCode(defaultShadeCode);
   }, [product.handle, defaultShadeCode]);
 
@@ -206,16 +203,14 @@ export function ProductView({
     : undefined;
 
   const imgCount = displayImages.length;
-  const displayIdx = hoverImgIdx ?? imgIdx;
-  const activeImage = displayImages[displayIdx] ?? displayImages[0];
-  const previewImage = (i: number) => setHoverImgIdx(i);
-  const clearImagePreview = () => setHoverImgIdx(null);
+  const activeImage = displayImages[imgIdx] ?? displayImages[0];
+  const selectImage = useCallback((i: number) => {
+    setImgIdx(i);
+  }, []);
   const prevImg = useCallback(() => {
-    setHoverImgIdx(null);
     setImgIdx((i) => (i - 1 + imgCount) % imgCount);
   }, [imgCount]);
   const nextImg = useCallback(() => {
-    setHoverImgIdx(null);
     setImgIdx((i) => (i + 1) % imgCount);
   }, [imgCount]);
 
@@ -426,7 +421,7 @@ export function ProductView({
 
               {imgCount > 1 && (
                 <>
-                  <div onMouseLeave={clearImagePreview} className="md:hidden">
+                  <div className="md:hidden">
                     <HorizontalScrollCue
                       cueLabel="Swipe"
                       className="flex gap-2 overflow-x-auto pb-1 no-scrollbar"
@@ -434,10 +429,9 @@ export function ProductView({
                     {displayImages.map((img, i) => (
                       <button
                         key={img.src}
-                        onClick={() => setImgIdx(i)}
-                        onMouseEnter={() => previewImage(i)}
-                        onFocus={() => previewImage(i)}
-                        onBlur={clearImagePreview}
+                        onClick={() => selectImage(i)}
+                        onMouseEnter={() => selectImage(i)}
+                        onFocus={() => selectImage(i)}
                         aria-label={`View image ${i + 1}`}
                         aria-current={i === imgIdx}
                         className="relative aspect-square w-[4.5rem] shrink-0 overflow-hidden"
@@ -458,18 +452,14 @@ export function ProductView({
                     </HorizontalScrollCue>
                   </div>
 
-                  <div
-                    className="hidden w-16 shrink-0 md:col-start-1 md:row-start-1 md:block lg:w-[4.5rem]"
-                    onMouseLeave={clearImagePreview}
-                  >
+                  <div className="hidden w-16 shrink-0 md:col-start-1 md:row-start-1 md:block lg:w-[4.5rem]">
                     <div className="flex max-h-[min(75dvh,720px)] flex-col gap-1.5 overflow-y-auto overscroll-contain">
                       {displayImages.map((img, i) => (
                         <button
                           key={img.src}
-                          onClick={() => setImgIdx(i)}
-                          onMouseEnter={() => previewImage(i)}
-                          onFocus={() => previewImage(i)}
-                          onBlur={clearImagePreview}
+                          onClick={() => selectImage(i)}
+                          onMouseEnter={() => selectImage(i)}
+                          onFocus={() => selectImage(i)}
                           aria-label={`View image ${i + 1}`}
                           aria-current={i === imgIdx}
                           className="relative aspect-square w-full shrink-0 overflow-hidden"
@@ -806,7 +796,6 @@ export function ProductView({
               {imgCount > 1 && (
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  onMouseLeave={clearImagePreview}
                   className="no-scrollbar order-last flex shrink-0 gap-3 overflow-x-auto border-t p-4 md:order-first md:max-h-full md:w-28 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:border-r md:border-t-0 md:p-5"
                   style={{
                     borderColor: 'var(--border)',
@@ -816,10 +805,9 @@ export function ProductView({
                   {displayImages.map((img, i) => (
                     <button
                       key={img.src}
-                      onClick={() => setImgIdx(i)}
-                      onMouseEnter={() => previewImage(i)}
-                      onFocus={() => previewImage(i)}
-                      onBlur={clearImagePreview}
+                      onClick={() => selectImage(i)}
+                      onMouseEnter={() => selectImage(i)}
+                      onFocus={() => selectImage(i)}
                       aria-label={`View image ${i + 1}`}
                       aria-current={i === imgIdx}
                       className="relative aspect-square w-16 shrink-0 overflow-hidden transition md:w-full"

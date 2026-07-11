@@ -716,7 +716,7 @@
   }
 
   .gallery-image-fade {
-    animation: gallery-image-fade 300ms ease-out;
+    animation: gallery-image-fade 400ms ease-in-out;
   }
 
   @media (prefers-reduced-motion: reduce) {
