@@ -8,6 +8,74 @@ import {
 import {resolveCatalogSnapshot} from '~/lib/shared-catalog';
 import {truncateMetaDescription} from '~/lib/meta-description';
 
+/** Matches store shipping policy: free worldwide over $200; otherwise $25 international. */
+const FREE_SHIPPING_THRESHOLD = 200;
+const INTERNATIONAL_SHIPPING_RATE = 25;
+
+function offerShippingDetails(
+  priceAmount: number,
+  currencyCode: string,
+): Array<Record<string, unknown>> {
+  const internationalRate =
+    priceAmount >= FREE_SHIPPING_THRESHOLD ? 0 : INTERNATIONAL_SHIPPING_RATE;
+
+  const rate = (value: number) => ({
+    '@type': 'MonetaryAmount',
+    value: String(value),
+    currency: currencyCode,
+  });
+
+  const deliveryTime = (transitMin: number, transitMax: number) => ({
+    '@type': 'ShippingDeliveryTime',
+    handlingTime: {
+      '@type': 'QuantitativeValue',
+      minValue: 2,
+      maxValue: 4,
+      unitCode: 'DAY',
+    },
+    transitTime: {
+      '@type': 'QuantitativeValue',
+      minValue: transitMin,
+      maxValue: transitMax,
+      unitCode: 'DAY',
+    },
+  });
+
+  return [
+    {
+      '@type': 'OfferShippingDetails',
+      shippingRate: rate(0),
+      shippingDestination: {
+        '@type': 'DefinedRegion',
+        addressCountry: 'IN',
+      },
+      deliveryTime: deliveryTime(5, 7),
+    },
+    {
+      '@type': 'OfferShippingDetails',
+      shippingRate: rate(internationalRate),
+      shippingDestination: {
+        '@type': 'DefinedRegion',
+        addressCountry: 'US',
+      },
+      deliveryTime: deliveryTime(7, 12),
+    },
+  ];
+}
+
+function merchantReturnPolicy(): Record<string, unknown> {
+  return {
+    '@type': 'MerchantReturnPolicy',
+    applicableCountry: ['IN', 'US'],
+    returnPolicyCategory:
+      'https://schema.org/MerchantReturnFiniteReturnWindow',
+    merchantReturnDays: 14,
+    returnMethod: 'https://schema.org/ReturnByMail',
+    returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility',
+    url: '/returns',
+  };
+}
+
 export type PageMetadata = {
   title: string;
   description?: string;
@@ -92,10 +160,16 @@ export async function getProductPage(
         '@type': 'Offer',
         price: product.price.amount,
         priceCurrency: product.price.currencyCode,
+        itemCondition: 'https://schema.org/NewCondition',
         availability: inStock
           ? 'https://schema.org/InStock'
           : 'https://schema.org/OutOfStock',
         url,
+        shippingDetails: offerShippingDetails(
+          product.price.amount,
+          product.price.currencyCode,
+        ),
+        hasMerchantReturnPolicy: merchantReturnPolicy(),
       },
     };
 
