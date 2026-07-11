@@ -18,17 +18,15 @@ export function ShopView({
     <div>
       <section className="mx-auto max-w-[1600px] px-6 pt-8 pb-12 md:px-10">
         <Reveal>
-          <Eyebrow>The Atelier</Eyebrow>
+          <Eyebrow>Shop</Eyebrow>
           <h1
             className="font-display mt-6 text-4xl leading-[1.05] sm:text-5xl md:text-7xl"
             style={{fontWeight: 300}}
           >
-            The complete
-            <br />
-            <span style={{fontStyle: 'italic'}}>atelier.</span>
+            All pieces
           </h1>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-            Every piece in the The Kashmir Weaver workshop. Each is one of one — when it is gone, it
+            Every hand-woven pashmina in our atelier. Each piece is one of one — when it is gone, it
             is gone.
           </p>
         </Reveal>

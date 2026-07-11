@@ -132,8 +132,7 @@ export function ProductView({
   const wasAddingRef = useRef(false);
   useFocusTrap(fullOpen, lightboxRef);
 
-  // When a shopper adds to bag from inside the colour studio, close it and
-  // reveal the cart drawer so the purchase feels completed in one flow.
+  // After Add to Bag succeeds, open the cart drawer (and close Colour Studio if open).
   useEffect(() => {
     const busy =
       addToBagFetcher.state === 'submitting' ||
@@ -144,10 +143,8 @@ export function ProductView({
     }
     if (wasAddingRef.current && addToBagFetcher.state === 'idle') {
       wasAddingRef.current = false;
-      if (tryColoursOpen) {
-        setTryColoursOpen(false);
-        openCartDrawer();
-      }
+      if (tryColoursOpen) setTryColoursOpen(false);
+      openCartDrawer();
     }
   }, [addToBagFetcher.state, tryColoursOpen, openCartDrawer]);
 
@@ -343,7 +340,7 @@ export function ProductView({
   );
 
   return (
-    <div>
+    <div className={!soldOut && isShopifyVariant ? 'pb-24 lg:pb-0' : undefined}>
       <div className="mx-auto max-w-[1600px] px-6 pt-8 md:px-10">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs tracking-[0.25em] text-muted-foreground uppercase">
           <Link to="/" className="inline-flex min-h-11 items-center hover:text-accent">
@@ -505,7 +502,10 @@ export function ProductView({
                   {formatPrice(displayCompareAtPrice!)}
                 </span>
               )}
-              <span className="text-base text-muted-foreground">
+              <span
+                className="font-display text-xl md:text-2xl"
+                style={{fontWeight: 400}}
+              >
                 {formatPrice(displayPrice)}
               </span>
             </div>
@@ -562,6 +562,16 @@ export function ProductView({
               ) : null}
 
               <div className="space-y-2.5">{purchaseActions}</div>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Certificate of authenticity ·{' '}
+                <Link to="/shipping" className="underline-offset-2 hover:text-accent hover:underline">
+                  Free shipping over $200
+                </Link>
+                {' · '}
+                <Link to="/returns" className="underline-offset-2 hover:text-accent hover:underline">
+                  Easy returns
+                </Link>
+              </p>
             </div>
 
             <div className="mt-8">
@@ -738,12 +748,12 @@ export function ProductView({
 
       <section className="mx-auto max-w-[1600px] px-6 py-24 md:px-10">
         <Reveal>
-          <Eyebrow>The Collection Continues</Eyebrow>
+          <Eyebrow>More from this collection</Eyebrow>
           <h2
             className="font-display mt-6 text-3xl md:text-5xl"
             style={{fontWeight: 400}}
           >
-            <span style={{fontStyle: 'italic'}}>Continue the story.</span>
+            More from {product.collectionName}
           </h2>
         </Reveal>
         <div className="mt-16 grid grid-cols-1 gap-x-8 gap-y-20 sm:grid-cols-2 lg:grid-cols-3">
@@ -757,7 +767,7 @@ export function ProductView({
               to={`/collections/${product.collectionSlug}`}
               className="group inline-flex w-full items-center justify-center gap-3 border border-accent px-10 py-4 text-center tracked text-accent transition hover:bg-accent hover:text-background sm:w-auto"
             >
-              View All {product.collectionName}
+              View collection
               <ArrowRight
                 className="h-4 w-4 transition group-hover:translate-x-1"
                 strokeWidth={1}
@@ -766,6 +776,73 @@ export function ProductView({
           </div>
         </Reveal>
       </section>
+
+      {!soldOut && isShopifyVariant ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 border-t px-4 py-3 lg:hidden"
+          style={{
+            background: 'var(--background)',
+            borderColor: 'var(--border)',
+            paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{product.name}</p>
+              <p className="font-display text-lg leading-tight">
+                {formatPrice(displayPrice)}
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <CartForm
+                fetcherKey="add-to-bag"
+                route="/cart"
+                inputs={{
+                  lines: [
+                    {
+                      merchandiseId: merchandiseGid!,
+                      quantity: canChooseQuantity ? quantity : 1,
+                      ...(selectedVariant
+                        ? {
+                            selectedVariant: toCartSelectedVariant(
+                              selectedVariant,
+                              product,
+                            ),
+                          }
+                        : {}),
+                      ...(shadeLineAttributes.length
+                        ? {attributes: shadeLineAttributes}
+                        : {}),
+                    },
+                  ],
+                }}
+                action={CartForm.ACTIONS.LinesAdd}
+              >
+                {(fetcher: FetcherWithComponents<unknown>) => (
+                  <button
+                    type="submit"
+                    disabled={fetcher.state !== 'idle'}
+                    className="tracked px-4 py-3.5 text-[0.7rem] uppercase tracking-[0.1em] transition disabled:opacity-70 touch-manipulation"
+                    style={{
+                      background: 'var(--accent)',
+                      color: 'var(--background)',
+                    }}
+                  >
+                    Add to Bag
+                  </button>
+                )}
+              </CartForm>
+              <Link
+                to={buyNowHref}
+                reloadDocument
+                className="btn-secondary tracked px-4 py-3.5 text-center text-[0.7rem] uppercase tracking-[0.1em] touch-manipulation"
+              >
+                Buy Now
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {fullOpen && typeof document !== 'undefined'
         ? createPortal(
@@ -868,7 +945,7 @@ export function ProductView({
                       className="absolute left-1/2 -translate-x-1/2 text-xs tracking-[0.25em] text-muted-foreground"
                       style={{bottom: 'max(1.25rem, env(safe-area-inset-bottom))'}}
                     >
-                      {displayIdx + 1}/{imgCount}
+                      {imgIdx + 1}/{imgCount}
                     </div>
                   </>
                 )}

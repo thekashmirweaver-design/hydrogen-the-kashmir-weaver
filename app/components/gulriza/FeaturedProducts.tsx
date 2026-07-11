@@ -16,9 +16,9 @@ export function FeaturedProducts({products}: {products: Product[]}) {
       <div className="mx-auto max-w-[1600px] px-6 md:px-10">
         <Reveal className="mb-12 flex items-end justify-between">
           <div>
-            <Eyebrow>The Atelier</Eyebrow>
+            <Eyebrow>Shop</Eyebrow>
             <h2 className="font-display mt-4 text-3xl md:text-5xl" style={{fontWeight: 400}}>
-              Featured Pieces
+              Featured pieces
             </h2>
           </div>
           <Link
@@ -26,7 +26,7 @@ export function FeaturedProducts({products}: {products: Product[]}) {
             className="tracked hidden items-center gap-3 px-6 py-3 font-medium transition hover:opacity-90 md:inline-flex"
             style={{background: 'var(--accent)', color: 'var(--background)'}}
           >
-            View All Pieces <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+            View all pieces <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
           </Link>
         </Reveal>
         <ProductCarousel products={products} />
@@ -36,7 +36,7 @@ export function FeaturedProducts({products}: {products: Product[]}) {
             className="tracked inline-flex w-full items-center justify-center gap-3 px-10 py-4 font-medium transition hover:opacity-90 sm:w-auto"
             style={{background: 'var(--accent)', color: 'var(--background)'}}
           >
-            View All Pieces <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+            View all pieces <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
           </Link>
         </Reveal>
       </div>

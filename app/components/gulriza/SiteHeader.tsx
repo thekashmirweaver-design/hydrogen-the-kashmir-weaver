@@ -28,10 +28,17 @@ const NAV = [
   { to: "/collections/all", label: "Shop" },
   { to: "/collections", label: "Collections" },
   { to: "/heritage", label: "Heritage" },
-  { to: "/craft", label: "Craft" },
-  { to: "/journal", label: "Journal" },
   { to: "/concierge", label: "Concierge" },
 ] as const;
+
+/** Keep primary chrome commerce-first even if Admin menu still lists editorial pages. */
+const HEADER_EXCLUDED_PATHS = ["/craft", "/journal"] as const;
+
+function isHeaderExcluded(to: string) {
+  return HEADER_EXCLUDED_PATHS.some(
+    (path) => to === path || to.startsWith(`${path}/`),
+  );
+}
 
 const MENU_CLOSE_MS = 300;
 const CURRENCY_SHEET_CLOSE_MS = 220;
@@ -208,8 +215,9 @@ export function SiteHeader({
     "text-foreground/80 transition hover:text-accent";
   const navInkClass =
     "tracked text-foreground/90 transition hover:text-accent relative";
-  const navItems: NavItem[] =
-    shopSettings?.headerMenu?.length ? shopSettings.headerMenu : [...NAV];
+  const navItems: NavItem[] = (
+    shopSettings?.headerMenu?.length ? shopSettings.headerMenu : [...NAV]
+  ).filter((item) => !isHeaderExcluded(item.to));
 
   return (
     <>

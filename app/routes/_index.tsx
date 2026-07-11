@@ -1,7 +1,7 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/_index';
-import {getHomePage, getJournalPage} from '~/controllers';
-import {getCatalogOptions, getJournalOptions} from '~/lib/catalog-options';
+import {getHomePage} from '~/controllers';
+import {getCatalogOptions} from '~/lib/catalog-options';
 import {loadHomepageFeatured} from '~/lib/homepage-featured';
 import {loadSharedCatalog} from '~/lib/shared-catalog';
 import {HomeView} from '~/views/home/HomeView';
@@ -29,21 +29,16 @@ export const meta: Route.MetaFunction = ({location, matches}) => {
 
 export async function loader({context, request}: Route.LoaderArgs) {
   const catalogOptions = getCatalogOptions(context);
-  const journalOptions = getJournalOptions(context);
-  const [featured, journal, catalog] = await Promise.all([
+  const [featured, catalog] = await Promise.all([
     loadHomepageFeatured(context.storefront),
-    getJournalPage(journalOptions, {page: 1, perPage: 3, maxArticles: 12}),
     loadSharedCatalog(request, catalogOptions),
   ]);
   const home = await getHomePage(catalogOptions, featured, catalog);
   return {
     featuredProducts: home.featuredProducts,
     featuredCollections: home.featuredCollections,
-    journalPosts: journal.posts,
     heroImageUrl: featured.heroImageUrl,
     heroAlt: featured.heroAlt,
-    bestSellingCount: featured.bestSellingCount,
-    newestCount: featured.newestCount,
     collectionPreviewCount: featured.collectionPreviewCount,
   };
 }
@@ -55,13 +50,9 @@ export default function HomeRoute() {
   return (
     <HomeView
       products={catalog.products}
-      collections={catalog.collections}
-      bestSellingCount={data.bestSellingCount}
-      newestCount={data.newestCount}
       collectionPreviewCount={data.collectionPreviewCount}
       featuredProducts={data.featuredProducts}
       featuredCollections={data.featuredCollections}
-      journalPosts={data.journalPosts}
       heroImageUrl={data.heroImageUrl}
       heroAlt={data.heroAlt}
     />

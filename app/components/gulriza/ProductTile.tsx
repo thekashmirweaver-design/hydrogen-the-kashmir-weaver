@@ -173,6 +173,18 @@ export function ProductTile({product, disableSwipe}: {product: Product; disableS
             </div>
           ))}
 
+          {soldOut ? (
+            <span
+              className="tracked absolute left-3 top-3 z-[2] px-2.5 py-1 text-[0.65rem] uppercase tracking-[0.14em]"
+              style={{
+                background: "var(--background)",
+                color: "var(--foreground)",
+              }}
+            >
+              Sold out
+            </span>
+          ) : null}
+
           {showIndicator ? (
             <TileImageIndicator active={active} total={imageCount} />
           ) : null}

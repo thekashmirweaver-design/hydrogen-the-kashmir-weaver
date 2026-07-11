@@ -1,5 +1,7 @@
 import {Link} from 'react-router';
-import {ArrowRight} from 'lucide-react';
+import {
+  ArrowRight,
+} from 'lucide-react';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {CollectionStoryMobile} from '~/components/gulriza/CollectionStoryMobile';
 import {CollectionHeroBanner} from '~/components/gulriza/CollectionHeroBanner';
@@ -9,75 +11,43 @@ import {Reveal} from '~/components/gulriza/Reveal';
 import {OriginMap} from '~/components/gulriza/OriginMap';
 import {ProductTile} from '~/components/gulriza/ProductTile';
 import {ScrollIndicator} from '~/components/gulriza/ScrollIndicator';
-import {ProductCarousel} from '~/components/gulriza/ProductCarousel';
+import {TrustStrip} from '~/components/gulriza/TrustStrip';
 import {EditorialImage, HeroPicture} from '~/components/gulriza/CatalogImage';
 import {heroDark, heroLight} from '~/lib/hero-image-urls';
 import type {Collection, Product} from '~/models/types';
-import type {JournalPost} from '~/models/static/journal';
 
 const artisan = '/assets/craft-artisan.png';
 
-function bestSellingScore(p: Product): number {
-  return (p.tags?.some((t) => /best-?sell/i.test(t)) ? 2 : 0) + (p.limited ? 1 : 0);
-}
-
-function sortBestSelling(products: Product[]): Product[] {
-  return [...products].sort((a, b) => bestSellingScore(b) - bestSellingScore(a));
-}
-
-function sortNewest(products: Product[]): Product[] {
-  return [...products].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-}
-
 export function HomeView({
   products,
-  collections,
   featuredProducts,
   featuredCollections,
-  journalPosts = [],
   heroImageUrl,
   heroAlt,
-  bestSellingCount = 8,
-  newestCount = 8,
   collectionPreviewCount = 3,
 }: {
   products: Product[];
-  collections: Collection[];
+  collections?: Collection[];
   featuredProducts: Product[];
   featuredCollections: Collection[];
-  journalPosts?: JournalPost[];
+  journalPosts?: unknown[];
   heroImageUrl?: string;
   heroAlt?: string;
   bestSellingCount?: number;
   newestCount?: number;
   collectionPreviewCount?: number;
 }) {
-  const bestSellingProducts = sortBestSelling(products).slice(0, bestSellingCount);
-  const newestProducts = sortNewest(products).slice(0, newestCount);
-
   return (
     <div>
       <Hero heroImageUrl={heroImageUrl} heroAlt={heroAlt} />
+      <TrustStrip />
       <FeaturedProducts products={featuredProducts} />
-      <ProductCarouselSection
-        products={bestSellingProducts}
-        title="Best Selling"
-        ctaLabel="View All Best Selling"
-        ctaHref="/collections/all?sort=best-selling"
-      />
-      <ProductCarouselSection
-        products={newestProducts}
-        title="Newest Pieces"
-        ctaLabel="View All Newest"
-        ctaHref="/collections/all?sort=newest"
-      />
       <SignatureCollections
         collections={featuredCollections}
         products={products}
         previewCount={collectionPreviewCount}
       />
       <CraftAndOrigin />
-      {journalPosts.length > 0 ? <JournalSection posts={journalPosts} /> : null}
       <BespokeSection />
     </div>
   );
@@ -157,14 +127,12 @@ function Hero({
 
       <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1600px] items-center px-6 pb-44 pt-10 md:px-20 md:py-0 lg:px-28 xl:px-36">
         <Reveal className="home-hero-copy mt-auto max-w-2xl md:-mt-32 lg:-mt-10">
-          <Eyebrow>Pure Origin · Rare Luxury</Eyebrow>
+          <Eyebrow>Hand-woven Kashmiri pashmina</Eyebrow>
           <h1
             className="font-display mt-8 text-[2.5rem] leading-[1.05] tracking-tight sm:text-[3.5rem] md:text-[4.75rem]"
             style={{fontWeight: 300}}
           >
             Not just a shawl.
-            <br />
-            A second skin.
             <br />
             <span style={{fontStyle: 'italic'}}>A story of Kashmir.</span>
           </h1>
@@ -172,7 +140,7 @@ function Hero({
           <HeroDeliveryLine />
 
           <Link
-            to="/collections"
+            to="/collections/all"
             className="home-hero-cta mt-8 md:mt-10 inline-flex items-center gap-6 rounded-full border px-8 py-4 backdrop-blur-md transition-all duration-300 group animate-glass-glaze"
             style={{
               backgroundColor: 'rgb(var(--photo-scrim-rgb) / 0.4)',
@@ -181,7 +149,7 @@ function Hero({
             }}
           >
             <span className="relative z-20 tracked text-xs md:text-sm font-medium uppercase tracking-[0.15em] md:tracking-[0.2em]">
-              Explore Collection
+              Shop the atelier
             </span>
             <span
               className="home-hero-cta-arrow relative z-20 flex items-center justify-center transition-transform duration-300 group-hover:translate-x-1.5"
@@ -197,51 +165,6 @@ function Hero({
         onPhoto
         className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-10 -translate-x-1/2 md:bottom-10"
       />
-    </section>
-  );
-}
-
-function ProductCarouselSection({
-  products,
-  title,
-  ctaLabel,
-  ctaHref,
-}: {
-  products: Product[];
-  title: string;
-  ctaLabel: string;
-  ctaHref: string;
-}) {
-  if (!products.length) return null;
-  return (
-    <section className="relative py-20 md:py-32" style={{background: 'var(--surface)'}}>
-      <div className="mx-auto max-w-[1600px] px-6 md:px-10">
-        <Reveal className="mb-12 flex items-end justify-between">
-          <div>
-            <Eyebrow>The Atelier</Eyebrow>
-            <h2 className="font-display mt-4 text-3xl md:text-5xl" style={{fontWeight: 400}}>
-              {title}
-            </h2>
-          </div>
-          <Link
-            to={ctaHref}
-            className="tracked hidden items-center gap-3 px-6 py-3 font-medium transition hover:opacity-90 md:inline-flex"
-            style={{background: 'var(--accent)', color: 'var(--background)'}}
-          >
-            {ctaLabel} <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
-          </Link>
-        </Reveal>
-        <ProductCarousel products={products} />
-        <Reveal className="mt-12 text-center md:hidden">
-          <Link
-            to={ctaHref}
-            className="tracked inline-flex w-full items-center justify-center gap-3 px-10 py-4 font-medium transition hover:opacity-90 sm:w-auto"
-            style={{background: 'var(--accent)', color: 'var(--background)'}}
-          >
-            {ctaLabel} <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
-          </Link>
-        </Reveal>
-      </div>
     </section>
   );
 }
@@ -274,7 +197,7 @@ function ExploreCollectionCta({
           : undefined
       }
     >
-      Explore {name} <ArrowRight className="h-3.5 w-3.5" />
+      Shop {name} <ArrowRight className="h-3.5 w-3.5" />
     </Link>
   );
 }
@@ -292,15 +215,16 @@ function SignatureCollections({
     <section className="relative py-32 md:py-40">
       <div className="mx-auto max-w-[1600px] px-6 md:px-10">
         <Reveal className="max-w-2xl">
-          <Eyebrow>Signature Collections</Eyebrow>
+          <Eyebrow>Signature collections</Eyebrow>
           <h2
             className="font-display mt-6 text-4xl leading-[1.1] sm:text-5xl md:text-[3.75rem]"
             style={{fontWeight: 400}}
           >
-            Every weave,
-            <br />
-            <span style={{fontStyle: 'italic'}}>a world of its own.</span>
+            Choose a weave
           </h2>
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
+            Each collection is a different language of the same fibre — pick the one that speaks to you.
+          </p>
         </Reveal>
       </div>
 
@@ -356,16 +280,6 @@ function SignatureCollections({
                     </Reveal>
                   ))}
                 </div>
-
-                <Reveal className="mt-16 text-center">
-                  <Link
-                    to={`/collections/${c.handle}`}
-                    className="tracked inline-flex w-full items-center justify-center gap-3 px-10 py-4 font-medium transition hover:opacity-90 sm:w-auto"
-                    style={{background: 'var(--accent)', color: 'var(--background)'}}
-                  >
-                    View All {c.name} <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
-                  </Link>
-                </Reveal>
               </div>
             </div>
           );
@@ -417,7 +331,7 @@ function CraftAndOrigin() {
               to="/heritage"
               className="inline-flex items-center gap-5 text-foreground transition hover:text-accent"
             >
-              <span className="tracked">Discover Our Story</span>
+              <span className="tracked">Read our heritage</span>
               <span
                 className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border"
                 style={{borderColor: 'var(--border)'}}
@@ -427,97 +341,6 @@ function CraftAndOrigin() {
             </Link>
           </div>
         </Reveal>
-      </div>
-    </section>
-  );
-}
-
-function JournalSection({posts}: {posts: JournalPost[]}) {
-  const [featured, ...rest] = posts;
-  if (!featured) return null;
-
-  return (
-    <section className="relative py-32 md:py-40">
-      <div className="mx-auto max-w-[1600px] px-6 md:px-10">
-        <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-end">
-          <Reveal>
-            <Eyebrow>Journal</Eyebrow>
-            <h2
-              className="font-display mt-6 text-4xl leading-[1.1] sm:text-5xl md:text-[3.5rem]"
-              style={{fontWeight: 400}}
-            >
-              Stories of the
-              <br />
-              <span style={{fontStyle: 'italic'}}>Valley.</span>
-            </h2>
-          </Reveal>
-          <Link
-            to="/journal"
-            className="tracked flex items-center gap-3 text-muted-foreground transition hover:text-accent"
-          >
-            View All Articles <ArrowRight className="h-3 w-3" strokeWidth={1} />
-          </Link>
-        </div>
-
-        <div className="mt-20 grid grid-cols-1 gap-16 md:grid-cols-12">
-          {featured && (
-            <Reveal className="md:col-span-7">
-              <Link to={`/journal/${featured.slug}`}>
-                <div className="relative aspect-[5/4] w-full overflow-hidden">
-                  <EditorialImage
-                    src={featured.img}
-                    alt={featured.title}
-                    className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
-                    sizes="(min-width: 768px) 58vw, 100vw"
-                  />
-                </div>
-                <div className="mt-8">
-                  <Eyebrow>
-                    {featured.cat} · {featured.minutes} min read
-                  </Eyebrow>
-                  <h3
-                    className="font-display mt-4 text-3xl leading-tight md:text-4xl"
-                    style={{fontWeight: 400}}
-                  >
-                    {featured.title}
-                  </h3>
-                  <p className="mt-5 max-w-xl text-base text-muted-foreground">
-                    {featured.excerpt}
-                  </p>
-                </div>
-              </Link>
-            </Reveal>
-          )}
-
-          <div className="flex flex-col gap-16 md:col-span-5">
-            {rest.slice(0, 2).map((p, i) => (
-              <Reveal key={p.slug} delay={i * 150}>
-                <Link to={`/journal/${p.slug}`} className="grid grid-cols-5 gap-6">
-                  <div className="relative col-span-2 aspect-[4/5] overflow-hidden">
-                    <EditorialImage
-                      src={p.img}
-                      alt={p.title}
-                      className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
-                      sizes="120px"
-                    />
-                  </div>
-                  <div className="col-span-3">
-                    <Eyebrow>
-                      {p.cat} · {p.minutes} min read
-                    </Eyebrow>
-                    <h4
-                      className="font-display mt-3 text-xl leading-snug"
-                      style={{fontWeight: 400}}
-                    >
-                      {p.title}
-                    </h4>
-                    <p className="mt-3 text-sm text-muted-foreground">{p.excerpt}</p>
-                  </div>
-                </Link>
-              </Reveal>
-            ))}
-          </div>
-        </div>
       </div>
     </section>
   );
@@ -535,14 +358,14 @@ function BespokeSection() {
     <section className="relative py-32 md:py-40" style={{background: 'var(--surface)'}}>
       <div className="mx-auto max-w-[1100px] px-6 md:px-10">
         <Reveal className="text-center">
-          <Eyebrow>The Kashmir Weaver Experience</Eyebrow>
+          <Eyebrow>Concierge</Eyebrow>
           <h2
             className="font-display mx-auto mt-6 max-w-3xl text-4xl leading-[1.1] sm:text-5xl md:text-[3.5rem]"
             style={{fontWeight: 400}}
           >
-            More than a purchase.
+            Need help choosing?
             <br />
-            <span style={{fontStyle: 'italic'}}>A private acquaintance.</span>
+            <span style={{fontStyle: 'italic'}}>We are here for bespoke and gifting.</span>
           </h2>
         </Reveal>
 
@@ -569,7 +392,7 @@ function BespokeSection() {
             to="/concierge"
             className="inline-flex items-center gap-5 text-foreground transition hover:text-accent"
           >
-            <span className="tracked">Speak With Our Concierge</span>
+            <span className="tracked">Speak with concierge</span>
             <span
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border"
               style={{borderColor: 'var(--accent)'}}

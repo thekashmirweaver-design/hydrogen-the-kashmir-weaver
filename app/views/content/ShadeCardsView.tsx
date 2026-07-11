@@ -1,5 +1,6 @@
 import {useState, useMemo} from 'react';
-import {ExternalLink} from 'lucide-react';
+import {Link} from 'react-router';
+import {ArrowRight, ExternalLink} from 'lucide-react';
 import {SHADES} from '~/models/static/shades';
 
 /** Official printable shade card (Google Drive). */
@@ -57,16 +58,26 @@ export function ShadeCardsView() {
             {SHADES.length} colours organised by family. Click any card to copy its hex value,
             or open the official shade card PDF.
           </p>
-          <a
-            href={SHADE_CARD_PDF_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="tracked mt-8 inline-flex items-center gap-3 border px-8 py-4 text-sm transition hover:border-accent hover:text-accent"
-            style={{borderColor: 'var(--border)'}}
-          >
-            View official shade card (PDF)
-            <ExternalLink className="h-4 w-4" strokeWidth={1.25} aria-hidden />
-          </a>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              to="/collections/all"
+              className="tracked inline-flex items-center gap-3 px-8 py-4 text-sm transition hover:opacity-90"
+              style={{background: 'var(--accent)', color: 'var(--background)'}}
+            >
+              Shop solids
+              <ArrowRight className="h-4 w-4" strokeWidth={1.25} aria-hidden />
+            </Link>
+            <a
+              href={SHADE_CARD_PDF_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="tracked inline-flex items-center gap-3 border px-8 py-4 text-sm transition hover:border-accent hover:text-accent"
+              style={{borderColor: 'var(--border)'}}
+            >
+              View official shade card (PDF)
+              <ExternalLink className="h-4 w-4" strokeWidth={1.25} aria-hidden />
+            </a>
+          </div>
         </div>
 
         <div className="mb-12 flex flex-wrap justify-center gap-2">

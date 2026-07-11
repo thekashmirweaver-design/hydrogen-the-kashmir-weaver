@@ -1,7 +1,6 @@
 import {Link} from "react-router";
 import { Hairline } from "./Eyebrow";
 import { BrandLockup } from "~/components/gulriza/BrandLockup";
-import {useCatalog} from "~/contexts/catalog-context";
 import type {ShopSettings} from "~/lib/shop-settings";
 
 const OUR_WORLD_LINKS = [
@@ -26,16 +25,11 @@ const LEGAL_LINKS = [
 ] as const;
 
 export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
-  const {collections} = useCatalog();
   const social = shopSettings?.social ?? {};
 
   const shopLinks = [
     { to: "/collections/all", label: "All Products" },
     { to: "/collections", label: "All Collections" },
-    ...collections.map((collection) => ({
-      to: `/collections/${collection.handle}`,
-      label: collection.name,
-    })),
   ];
 
   const ourWorldLinks =

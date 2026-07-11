@@ -9,6 +9,7 @@ import {
 } from '~/components/gulriza/CollectionProductsScrollCue';
 import {ProductCatalog} from '~/components/gulriza/ProductCatalog';
 import {CollectionHeroBanner} from '~/components/gulriza/CollectionHeroBanner';
+import {TrustStrip} from '~/components/gulriza/TrustStrip';
 import type {CatalogPageInfo, ProductListScope} from '~/lib/catalog-pagination';
 import type {Collection, Product} from '~/models/types';
 
@@ -49,13 +50,9 @@ export function CollectionView({
             </Reveal>
           </div>
         </CollectionHeroBanner>
-
-        <div className="mx-auto max-w-[1600px] px-6 pt-8 md:hidden">
-          <Reveal>
-            <CollectionStoryMobile text={collection.story} />
-          </Reveal>
-        </div>
       </section>
+
+      <TrustStrip compact />
 
       <CollectionProductsScrollCue />
 
@@ -64,29 +61,38 @@ export function CollectionView({
         products={products}
         pageInfo={pageInfo}
         listSource={listSource}
-        filters={[]}
+        filters={['price']}
         emptyMessage="No pieces in this collection yet."
       />
 
-      <section className="mx-auto max-w-[1600px] px-6 py-32 md:px-10">
+      {/* Mobile story after products — shop first, read second */}
+      <section className="mx-auto max-w-[1600px] px-6 py-12 md:hidden">
+        <Reveal>
+          <Eyebrow>About this collection</Eyebrow>
+          <div className="mt-4">
+            <CollectionStoryMobile text={collection.story} />
+          </div>
+        </Reveal>
+      </section>
+
+      <section className="mx-auto max-w-[1600px] px-6 py-24 md:px-10 md:py-32">
         <Reveal className="text-center">
-          <Eyebrow>The Collections</Eyebrow>
+          <Eyebrow>Shop</Eyebrow>
           <h2
             className="font-display mt-6 text-3xl leading-[1.1] md:text-5xl"
             style={{fontWeight: 400}}
           >
-            Discover every collection
+            Looking for something else?
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-base text-muted-foreground">
-            From Sozni embroidery to Kani weave — explore every collection our atelier has to
-            offer.
+            Browse every hand-woven piece currently in our atelier.
           </p>
           <Link
-            to="/collections"
+            to="/collections/all"
             className="tracked mt-10 inline-flex w-full items-center justify-center gap-3 px-10 py-4 font-medium transition hover:opacity-90 sm:w-auto"
             style={{background: 'var(--accent)', color: 'var(--background)'}}
           >
-            All Collections <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+            Shop all pieces <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
           </Link>
         </Reveal>
       </section>

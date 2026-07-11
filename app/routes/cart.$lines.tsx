@@ -8,21 +8,12 @@ import {resolveStoreUrl} from '~/lib/seo';
 import {shadeCartAttributesFromSearch} from '~/lib/shade-cart';
 
 /**
- * Automatically creates a new cart based on the URL and redirects straight to checkout.
+ * Adds line(s) from the URL and redirects straight to checkout.
+ * Preserves an existing bag when a cart cookie is present.
+ *
  * Expected URL structure:
  * ```js
  * /cart/<variant_id>:<quantity>
- *
- * ```
- *
- * More than one `<variant_id>:<quantity>` separated by a comma, can be supplied in the URL, for
- * carts with more than one product variant.
- *
- * @example
- * Example path creating a cart with two product variants, different quantities, and a discount code in the querystring:
- * ```js
- * /cart/41007289663544:1,41007289696312:2?discount=HYDROBOARD
- *
  * ```
  */
 export async function loader({request, context, params}: Route.LoaderArgs) {
@@ -51,11 +42,26 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
     shadeAttributes.length ? {...line, attributes: shadeAttributes} : line,
   );
 
-  // create a cart
-  const result = await cart.create({
-    lines: linesWithAttributes,
-    discountCodes: discountArray,
-  });
+  const existingCartId = cart.getCartId();
+  let result = existingCartId
+    ? await cart.addLines(linesWithAttributes)
+    : await cart.create({
+        lines: linesWithAttributes,
+        discountCodes: discountArray,
+      });
+
+  // If the cookie pointed at a stale cart, create a fresh one.
+  if (existingCartId && (result.errors?.length || !result.cart)) {
+    result = await cart.create({
+      lines: linesWithAttributes,
+      discountCodes: discountArray,
+    });
+  } else if (existingCartId && discountArray.length && result.cart) {
+    const discountResult = await cart.updateDiscountCodes(discountArray);
+    if (discountResult.cart) {
+      result = discountResult;
+    }
+  }
 
   const cartResult = result.cart;
 
@@ -65,7 +71,6 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
     });
   }
 
-  // Update cart id in cookie
   const headers = cart.setCartId(cartResult.id);
 
   const {language, country} = context.storefront.i18n;
@@ -80,7 +85,6 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
     storefrontUrl,
   );
 
-  // redirect to checkout
   if (checkoutRedirect) {
     return redirect(checkoutRedirect, {headers});
   } else {

@@ -9,20 +9,29 @@ export function CartFab() {
   const count = cartQuantity;
 
   if (count === 0) return null;
-  // Homepage already exposes the bag in the sticky header — skip the duplicate FAB.
-  if (pathname === "/" || pathname === "/cart" || pathname === "/checkout") return null;
+  // Homepage / cart already expose the bag clearly — skip the duplicate FAB.
+  if (pathname === "/" || pathname === "/cart" || pathname === "/checkout") {
+    return null;
+  }
+
+  // On PDP, mobile sticky buy bar occupies the bottom — lift FAB above it (< lg only).
+  const abovePdpBuyBar = pathname.startsWith("/products/");
 
   return (
     <button
       type="button"
       onClick={open}
       aria-label={`View bag (${count} item${count === 1 ? "" : "s"})`}
-      className="fixed z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 hover:shadow-xl"
+      className={[
+        "fixed z-[45] flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition hover:opacity-90 hover:shadow-xl",
+        "right-[calc(1.5rem+env(safe-area-inset-right))]",
+        abovePdpBuyBar
+          ? "bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]"
+          : "bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
+      ].join(" ")}
       style={{
         background: "var(--accent)",
         color: "var(--background)",
-        bottom: "calc(1.5rem + env(safe-area-inset-bottom))",
-        right: "calc(1.5rem + env(safe-area-inset-right))",
       }}
     >
       <ShoppingBag className="h-5 w-5" strokeWidth={1.25} />

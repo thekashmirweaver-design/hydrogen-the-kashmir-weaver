@@ -102,7 +102,7 @@ export async function getHomePage(
   const featuredCollections = pickCollectionsByHandles(
     collections,
     featured?.collectionHandles ?? [],
-    {limit: featured?.collectionCount},
+    {limit: featured?.collectionCount ?? 2},
   );
   return {products, collections, featuredProducts, featuredCollections};
 }

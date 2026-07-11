@@ -28,7 +28,6 @@ export type CollectionsPageViewModel = {
   productCountByHandle: Record<string, number>;
   previewProductsByHandle: Record<string, Product[]>;
   totalProductCount: number;
-  featuredProducts: Product[];
 };
 
 export function buildCollectionsPageViewModel(
@@ -55,7 +54,6 @@ export function buildCollectionsPageViewModel(
     productCountByHandle,
     previewProductsByHandle,
     totalProductCount: products.length,
-    featuredProducts: products.slice(0, 6),
   };
 }
 

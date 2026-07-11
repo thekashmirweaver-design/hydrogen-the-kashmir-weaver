@@ -1,13 +1,15 @@
-import {Link} from "react-router";
+import {Link, useRouteLoaderData} from "react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ShoppingBag, ArrowRight, X } from "lucide-react";
 import type { CartApiQueryFragment } from "storefrontapi.generated";
+import type { RootLoader } from "~/root";
 import { useFormatPrice } from "~/lib/currency-store";
 import { CartLineItem } from "~/components/gulriza/CartLineItem";
 import { CartPromoForms } from "~/components/gulriza/CartPromoForms";
 import { CartTotals } from "~/components/gulriza/CartTotals";
 import { getCartPromotionSummary } from "~/lib/cart-promotions";
+import { checkoutLocale, toStorefrontCheckoutUrl } from "~/lib/resolve-checkout-url";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
 import { useBottomSheetDrag } from "~/hooks/use-bottom-sheet-drag";
 import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
@@ -23,6 +25,7 @@ export function CartDrawer({
   onClose: () => void;
   cart: CartApiQueryFragment | null;
 }) {
+  const root = useRouteLoaderData<RootLoader>("root");
   const lines = cart?.lines?.nodes ?? [];
   const count = cart?.totalQuantity ?? 0;
   const formatPrice = useFormatPrice();
@@ -37,6 +40,15 @@ export function CartDrawer({
         currencyCode: displayMoney.currencyCode,
       })
     : "—";
+  const rawCheckoutUrl = cart?.checkoutUrl;
+  const checkoutUrl = rawCheckoutUrl
+    ? toStorefrontCheckoutUrl(
+        rawCheckoutUrl,
+        root?.consent?.checkoutDomain,
+        checkoutLocale(root?.consent?.language, root?.consent?.country),
+        root?.publicStoreUrl,
+      )
+    : undefined;
   const [visible, setVisible] = useState(false);
   const closingRef = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -156,7 +168,7 @@ export function CartDrawer({
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-8 text-center sm:px-6">
             <ShoppingBag className="mb-6 h-12 w-12 text-muted-foreground/30" strokeWidth={1} />
             <p className="text-sm font-medium text-muted-foreground">
-              Your bag is beautifully empty.
+              Your bag is empty.
             </p>
             <Link
               to="/collections/all"
@@ -165,7 +177,7 @@ export function CartDrawer({
               style={{ background: "var(--accent)", color: "var(--background)", borderColor: "var(--accent)" }}
             >
               <span className="tracked text-[0.75rem] font-medium uppercase tracking-[0.15em] sm:text-[0.8rem]">
-                Discover Collections
+                Shop all pieces
               </span>
               <ArrowRight
                 className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
@@ -217,22 +229,39 @@ export function CartDrawer({
                     {displayTotalLabel}
                   </p>
                 </div>
-                <Link
-                  to="/cart"
-                  onClick={requestClose}
-                  className="tracked shrink-0 px-5 py-3.5 text-[0.7rem] uppercase tracking-[0.1em] transition hover:opacity-90 touch-manipulation"
-                  style={{
-                    background: "var(--accent)",
-                    color: "var(--background)",
-                  }}
-                >
-                  Checkout
-                </Link>
+                {checkoutUrl ? (
+                  <a
+                    href={checkoutUrl}
+                    onClick={requestClose}
+                    className="tracked shrink-0 px-5 py-3.5 text-[0.7rem] uppercase tracking-[0.1em] transition hover:opacity-90 touch-manipulation"
+                    style={{
+                      background: "var(--accent)",
+                      color: "var(--background)",
+                    }}
+                  >
+                    Checkout
+                  </a>
+                ) : (
+                  <Link
+                    to="/cart"
+                    onClick={requestClose}
+                    className="tracked shrink-0 px-5 py-3.5 text-[0.7rem] uppercase tracking-[0.1em] transition hover:opacity-90 touch-manipulation"
+                    style={{
+                      background: "var(--accent)",
+                      color: "var(--background)",
+                    }}
+                  >
+                    View bag
+                  </Link>
+                )}
               </div>
+              <p className="mt-2 text-center text-[0.6rem] leading-relaxed text-muted-foreground">
+                Secure payment · Easy returns · Worldwide delivery
+              </p>
               <button
                 type="button"
                 onClick={requestClose}
-                className="tracked mt-2 w-full py-1 text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground transition hover:text-foreground touch-manipulation"
+                className="tracked mt-1 w-full py-1 text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground transition hover:text-foreground touch-manipulation"
               >
                 Continue shopping
               </button>
@@ -248,24 +277,45 @@ export function CartDrawer({
               <p className="text-[0.65rem] leading-relaxed text-muted-foreground">
                 Shipping and taxes calculated at checkout.
               </p>
-              <Link
-                to="/cart"
-                onClick={requestClose}
-                className="group flex w-full items-center justify-center gap-2 border py-3.5 transition-all duration-300 hover:opacity-90 touch-manipulation"
-                style={{
-                  background: "var(--accent)",
-                  color: "var(--background)",
-                  borderColor: "var(--accent)",
-                }}
-              >
-                <span className="tracked text-center text-[0.8rem] font-medium uppercase leading-snug tracking-[0.15em]">
-                  View Bag & Checkout
-                </span>
-                <ArrowRight
-                  className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1"
-                  strokeWidth={1.5}
-                />
-              </Link>
+              {checkoutUrl ? (
+                <a
+                  href={checkoutUrl}
+                  onClick={requestClose}
+                  className="group flex w-full items-center justify-center gap-2 border py-3.5 transition-all duration-300 hover:opacity-90 touch-manipulation"
+                  style={{
+                    background: "var(--accent)",
+                    color: "var(--background)",
+                    borderColor: "var(--accent)",
+                  }}
+                >
+                  <span className="tracked text-center text-[0.8rem] font-medium uppercase leading-snug tracking-[0.15em]">
+                    Checkout
+                  </span>
+                  <ArrowRight
+                    className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1"
+                    strokeWidth={1.5}
+                  />
+                </a>
+              ) : (
+                <Link
+                  to="/cart"
+                  onClick={requestClose}
+                  className="group flex w-full items-center justify-center gap-2 border py-3.5 transition-all duration-300 hover:opacity-90 touch-manipulation"
+                  style={{
+                    background: "var(--accent)",
+                    color: "var(--background)",
+                    borderColor: "var(--accent)",
+                  }}
+                >
+                  <span className="tracked text-center text-[0.8rem] font-medium uppercase leading-snug tracking-[0.15em]">
+                    View bag
+                  </span>
+                  <ArrowRight
+                    className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1"
+                    strokeWidth={1.5}
+                  />
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={requestClose}

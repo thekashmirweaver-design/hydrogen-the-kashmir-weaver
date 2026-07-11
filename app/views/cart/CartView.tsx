@@ -55,9 +55,9 @@ export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}
 
         {lines.length === 0 ? (
           <div className="mt-16 text-center sm:mt-24">
-            <p className="text-muted-foreground">Your bag is quiet.</p>
-            <Link to="/collections" className="tracked mt-8 inline-block text-accent">
-              Discover the Collections →
+            <p className="text-muted-foreground">Your bag is empty.</p>
+            <Link to="/collections/all" className="tracked mt-8 inline-block text-accent">
+              Shop all pieces →
             </Link>
           </div>
         ) : (
@@ -156,23 +156,22 @@ export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}
 
       <section className="mx-auto max-w-[1100px] px-4 py-20 sm:px-6 sm:py-32 md:px-10">
         <Reveal className="text-center">
-          <Eyebrow>The Collections</Eyebrow>
+          <Eyebrow>Shop</Eyebrow>
           <h2
             className="font-display mt-6 text-2xl leading-[1.1] sm:text-3xl md:text-5xl"
             style={{fontWeight: 400}}
           >
-            Discover every piece
+            Continue shopping
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-sm text-muted-foreground sm:text-base">
-            Explore our complete range of hand-woven Kashmiri pashmina, each crafted by a single
-            master artisan.
+            Browse our complete range of hand-woven Kashmiri pashmina.
           </p>
           <Link
-            to="/collections"
+            to="/collections/all"
             className="tracked mt-10 inline-flex w-full items-center justify-center gap-3 px-8 py-4 font-medium transition hover:opacity-90 sm:w-auto sm:px-10"
             style={{background: 'var(--accent)', color: 'var(--background)'}}
           >
-            Explore Collections <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+            Shop all pieces <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
           </Link>
         </Reveal>
       </section>
