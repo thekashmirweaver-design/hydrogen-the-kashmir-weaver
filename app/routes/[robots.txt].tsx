@@ -42,18 +42,10 @@ User-agent: Nutch
 Disallow: /
 
 User-agent: AhrefsBot
-Crawl-delay: 10
 ${generalDisallowRules({sitemapUrl, shopId})}
 
 User-agent: AhrefsSiteAudit
-Crawl-delay: 10
 ${generalDisallowRules({sitemapUrl, shopId})}
-
-User-agent: MJ12bot
-Crawl-delay: 10
-
-User-agent: Pinterest
-Crawl-delay: 1
 `.trim();
 }
 
