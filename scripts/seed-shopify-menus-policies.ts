@@ -65,14 +65,19 @@ const HEADER_ITEMS: MenuItemInput[] = [
   {title: 'Shop', type: 'HTTP', url: '/collections/all'},
   {title: 'Collections', type: 'HTTP', url: '/collections'},
   {title: 'Heritage', type: 'HTTP', url: '/heritage'},
-  {title: 'Craft', type: 'HTTP', url: '/craft'},
-  {title: 'Journal', type: 'HTTP', url: '/journal'},
   {title: 'Concierge', type: 'HTTP', url: '/concierge'},
 ];
 
+const FOOTER_OUR_WORLD: MenuItemInput[] = [
+  {title: 'Heritage', type: 'HTTP', url: '/heritage'},
+  {title: 'Craft', type: 'HTTP', url: '/craft'},
+  {title: 'Journal', type: 'HTTP', url: '/journal'},
+];
+
 const FOOTER_ITEMS: MenuItemInput[] = [
-  ...HEADER_ITEMS.slice(0, 2),
-  ...HEADER_ITEMS.slice(2),
+  {title: 'Shop', type: 'HTTP', url: '/collections/all'},
+  {title: 'Collections', type: 'HTTP', url: '/collections'},
+  ...FOOTER_OUR_WORLD,
   {title: 'FAQ', type: 'HTTP', url: '/faq'},
   {title: 'Care Guide', type: 'HTTP', url: '/care-guide'},
   {title: 'Terms', type: 'HTTP', url: '/terms'},
@@ -129,22 +134,75 @@ async function adminGraphql<T>(
   return json.data as T;
 }
 
-async function menuExists(handle: string): Promise<boolean> {
+async function getMenuId(handle: string): Promise<string | null> {
   const data = await adminGraphql<{
-    menus: {nodes: Array<{handle: string}>};
-  }>(`query { menus(first: 50) { nodes { handle } } }`);
-
-  return data.menus.nodes.some((menu) => menu.handle === handle);
+    menus: {nodes: Array<{id: string; handle: string}>};
+  }>(`query { menus(first: 50) { nodes { id handle } } }`);
+  return data.menus.nodes.find((menu) => menu.handle === handle)?.id ?? null;
 }
 
 async function ensureMenu(
   handle: string,
   title: string,
   items: MenuItemInput[],
-): Promise<'created' | 'skipped'> {
-  if (await menuExists(handle)) {
+  options: {replace?: boolean} = {},
+): Promise<'created' | 'updated' | 'skipped'> {
+  const existingId = await getMenuId(handle);
+
+  if (!existingId) {
+    const data = await adminGraphql<{
+      menuCreate: {
+        menu?: {handle: string};
+        userErrors: Array<{field?: string[]; message: string}>;
+      };
+    }>(
+      `mutation ($handle: String!, $title: String!, $items: [MenuItemCreateInput!]!) {
+        menuCreate(handle: $handle, title: $title, items: $items) {
+          menu { handle }
+          userErrors { field message }
+        }
+      }`,
+      {handle, title, items},
+    );
+
+    const errors = data.menuCreate.userErrors;
+    if (errors.length) {
+      throw new Error(
+        `menuCreate ${handle}: ${errors.map((e) => e.message).join('; ')}`,
+      );
+    }
+
+    console.log(`  ${handle}: created`);
+    return 'created';
+  }
+
+  if (!options.replace) {
     console.log(`  ${handle}: already exists — skipped`);
     return 'skipped';
+  }
+
+  // Replace by delete + create so item list matches exactly.
+  const deleted = await adminGraphql<{
+    menuDelete: {
+      deletedMenuId?: string;
+      userErrors: Array<{field?: string[]; message: string}>;
+    };
+  }>(
+    `mutation ($id: ID!) {
+      menuDelete(id: $id) {
+        deletedMenuId
+        userErrors { field message }
+      }
+    }`,
+    {id: existingId},
+  );
+
+  if (deleted.menuDelete.userErrors.length) {
+    throw new Error(
+      `menuDelete ${handle}: ${deleted.menuDelete.userErrors
+        .map((e) => e.message)
+        .join('; ')}`,
+    );
   }
 
   const data = await adminGraphql<{
@@ -169,8 +227,8 @@ async function ensureMenu(
     );
   }
 
-  console.log(`  ${handle}: created`);
-  return 'created';
+  console.log(`  ${handle}: replaced`);
+  return 'updated';
 }
 
 async function updatePolicy(type: string, body: string): Promise<void> {
@@ -200,9 +258,21 @@ async function updatePolicy(type: string, body: string): Promise<void> {
 }
 
 async function main() {
+  const replaceMenus = process.argv.includes('--replace-menus');
+
   console.log('1. Navigation menus');
-  await ensureMenu('header-menu', 'Header menu', HEADER_ITEMS);
-  await ensureMenu('footer-menu', 'Footer menu', FOOTER_ITEMS);
+  await ensureMenu('header-menu', 'Header menu', HEADER_ITEMS, {
+    replace: replaceMenus,
+  });
+  await ensureMenu('footer-menu', 'Footer menu', FOOTER_ITEMS, {
+    replace: replaceMenus,
+  });
+
+  if (!replaceMenus) {
+    console.log(
+      '  Tip: pass --replace-menus to recreate header/footer from script defaults.',
+    );
+  }
 
   console.log('\n2. Shop policies');
   for (const policy of POLICIES) {
