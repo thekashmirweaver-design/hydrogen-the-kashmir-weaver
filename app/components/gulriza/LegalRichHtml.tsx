@@ -13,7 +13,7 @@ export const LEGAL_RICH_HTML_CLASS = [
   // Inline emphasis and links
   '[&_strong]:font-medium [&_strong]:text-foreground',
   '[&_em]:italic',
-  '[&_a]:text-accent [&_a]:underline-offset-2 hover:[&_a]:underline',
+  '[&_a]:text-accent [&_a]:underline-offset-2 [&_a:hover]:underline',
   // Media and tables
   '[&_img]:max-w-full',
   '[&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto',

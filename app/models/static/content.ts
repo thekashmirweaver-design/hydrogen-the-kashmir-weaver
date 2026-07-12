@@ -125,7 +125,7 @@ export const FAQS: FaqItem[] = [
   },
   {
     q: 'What is your returns and exchanges policy?',
-    a: 'Ready-to-wear pieces may be returned or exchanged within 14 days of delivery, provided they are unworn and in their original packaging. Bespoke and made-to-order commissions are crafted uniquely for you and are therefore final sale.',
+    a: 'Ready-to-wear pieces may be returned or exchanged within 14 days of delivery, provided they are unworn and in their original packaging. Bespoke, made-to-order, and Solids (dyed to your selected colour after order) are final sale.',
   },
   {
     q: 'How should I care for and wash my pashmina?',
@@ -217,6 +217,10 @@ export const REFUND_SECTIONS: LegalSection[] = [
     body: 'Custom, bespoke, and made-to-order commissions are final sale unless defective or materially different from the agreed specification.',
   },
   {
+    title: 'Solid Pashmina (Solids category)',
+    body: 'Solids are dyed to your selected colour after the order is placed and are final sale — excluded from returns and exchanges unless the material is defective.',
+  },
+  {
     title: 'Refunds',
     body: 'Approved returns are refunded to the original payment method within 10–15 business days of receipt at our atelier.',
   },
@@ -263,7 +267,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
   },
   {
     title: '5. Returns & Exchanges',
-    body: 'Ready-to-wear pieces may be returned within 14 days of delivery in unworn condition with original packaging. Bespoke, made-to-order, and personalised pieces are final sale. Return shipping is the responsibility of the customer unless the item arrived damaged or incorrect. Refunds are processed to the original payment method within 10 business days of receipt.',
+    body: 'Ready-to-wear pieces may be returned within 14 days of delivery in unworn condition with original packaging. Bespoke, made-to-order, personalised pieces, and Solids (dyed to order) are final sale. Return shipping is the responsibility of the customer unless the item arrived damaged or incorrect. Refunds are processed to the original payment method within 10 business days of receipt.',
   },
   {
     title: '6. Authenticity',

@@ -16,7 +16,7 @@ type ConciergeEmailEnv = {
   CONCIERGE_EMAIL_FROM?: string;
 };
 
-const DEFAULT_FROM = 'The Kashmir Weaver Concierge <concierge@thekashmirweaver.in>';
+const DEFAULT_FROM = 'The Kashmir Weaver Concierge <concierge@thekashmirweaver.shop>';
 
 export function formatConciergeInquiryEmail(inquiry: ConciergeInquiry) {
   const lines = [

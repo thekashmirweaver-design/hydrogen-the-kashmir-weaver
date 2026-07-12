@@ -2,7 +2,7 @@ import type {Collection, Product} from '~/models/types';
 import type {JournalPost} from '~/models/static/journal';
 
 const SITE = 'The Kashmir Weaver';
-const DEFAULT_ORIGIN = 'https://thekashmirweaver.in';
+const DEFAULT_ORIGIN = 'https://thekashmirweaver.shop';
 
 function originFromRequest(request: Request): string {
   try {

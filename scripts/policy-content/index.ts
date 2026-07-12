@@ -2,7 +2,11 @@
 
 const EMAIL = 'thekashmirweaver@gmail.com';
 const PHONE = '+91-9796105623';
-const SITE = 'thekashmirweaver.in';
+/** Primary storefront host — keep in sync with PUBLIC_STORE_URL / docs/seo-and-domains.md */
+const SITE =
+  (typeof process !== 'undefined' &&
+    process.env.PUBLIC_STORE_URL?.replace(/^https?:\/\//, '').replace(/\/$/, '')) ||
+  'thekashmirweaver.shop';
 const RETURNS_ADDRESS =
   'H 10-A, Firdousa Abad, Batamaloo, Srinagar, J&amp;K, India 190009';
 
@@ -57,6 +61,9 @@ export const REFUND_POLICY_HTML = `
 
 <h2>Bespoke and made-to-order pieces</h2>
 <p>Custom, bespoke, and made-to-order commissions are crafted uniquely for you and are <strong>final sale</strong>. They cannot be returned or exchanged unless defective or materially different from the agreed specification.</p>
+
+<h2>Solid Pashmina (Solids category)</h2>
+<p>Pieces from the <strong>Solids</strong> category are dyed to your selected colour after the order is placed. Because each solid is processed to order, Solids are <strong>final sale</strong> and are excluded from returns and exchanges, unless the material is defective.</p>
 
 <h2>Sale and promotional items</h2>
 <p>Items purchased during a sale or promotional event may be returned for exchange or store credit only if returned in original condition with proof of purchase, during the same sale period or within 14 days of purchase (whichever is earlier). Items reduced to 50% or below the original retail price cannot be returned. This does not affect your statutory rights.</p>
@@ -171,7 +178,7 @@ export const FAQ_PAGE_HTML = `
 <p>In-stock pieces dispatch within 2–4 business days. Delivery typically takes 5–7 working days within India and 7–12 working days internationally. Every order ships insured and tracked. See our <a href="/shipping">Shipping Policy</a> for full details.</p>
 
 <h2>What is your returns policy?</h2>
-<p>Ready-to-wear pieces may be returned within 14 days in unworn, original condition. Bespoke and made-to-order pieces are final sale. See our <a href="/returns">Returns Policy</a>.</p>
+<p>Ready-to-wear pieces may be returned within 14 days in unworn, original condition. Bespoke, made-to-order, and <strong>Solids</strong> (dyed to your selected colour after order) are final sale. See our <a href="/returns">Returns Policy</a>.</p>
 
 <h2>What if an item is out of stock?</h2>
 <p>Contact Concierge — we may be able to source the piece or suggest an alternative from our atelier.</p>
