@@ -226,7 +226,7 @@ export function CartDrawer({
                   <p className="text-[0.6rem] uppercase tracking-[0.2em] text-muted-foreground">
                     Total
                   </p>
-                  <p className="font-display truncate text-lg leading-tight">
+                  <p className="truncate text-lg font-normal leading-tight tracking-normal">
                     {displayTotalLabel}
                   </p>
                 </div>

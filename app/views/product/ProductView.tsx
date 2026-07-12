@@ -543,10 +543,7 @@ export function ProductView({
                   {formatPrice(displayCompareAtPrice!)}
                 </span>
               )}
-              <span
-                className="font-display text-xl md:text-2xl"
-                style={{fontWeight: 400}}
-              >
+              <span className="text-xl md:text-2xl font-normal tracking-normal">
                 {formatPrice(displayPrice)}
               </span>
             </div>
@@ -830,7 +827,7 @@ export function ProductView({
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{product.name}</p>
-              <p className="font-display text-lg leading-tight">
+              <p className="text-lg font-normal leading-tight tracking-normal">
                 {formatPrice(displayPrice)}
               </p>
             </div>

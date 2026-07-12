@@ -415,6 +415,47 @@
 }
 
 /*
+ * Search modal sits on a dark veil (always). Remap ink so light-theme walnut
+ * never paints on that surface — including the search field.
+ *
+ * Light theme uses a deeper, blurrier veil than the shared --backdrop token:
+ * ivory page chrome at 0.72 opacity bleeds through and steals visual focus
+ * from cream UI. Keep cart/other drawers on the shared token.
+ */
+.search-modal {
+  color: var(--on-photo-fg);
+  background: var(--backdrop);
+  --foreground: var(--on-photo-fg);
+  --muted-foreground: var(--on-photo-muted);
+  --accent: var(--on-photo-accent);
+  --border: rgba(255, 255, 255, 0.14);
+  --surface: rgba(247, 243, 236, 0.08);
+  --background: #08100f;
+  caret-color: var(--on-photo-fg);
+}
+.search-modal input {
+  color: var(--on-photo-fg);
+}
+.search-modal input::placeholder {
+  color: var(--on-photo-muted);
+  opacity: 1;
+}
+.search-modal__field {
+  border-bottom: 1px solid var(--border);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+.search-modal__field:focus-within {
+  border-bottom-color: var(--on-photo-accent);
+  box-shadow: 0 1px 0 0 var(--on-photo-accent);
+}
+
+:root[data-theme='light'] .search-modal {
+  background: rgba(20, 16, 10, 0.92);
+  backdrop-filter: blur(18px) saturate(0.85);
+  -webkit-backdrop-filter: blur(18px) saturate(0.85);
+}
+
+/*
  * Homepage hero copy over photography.
  * Dark: cream/gold over the dusk hero.
  * Light: walnut ink at ALL breakpoints — the light hero is bright, so

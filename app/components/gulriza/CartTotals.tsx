@@ -34,8 +34,8 @@ export function CartTotals({
     ? 'text-[0.7rem] uppercase tracking-[0.25em] text-muted-foreground'
     : 'text-muted-foreground';
   const valueClass = compact
-    ? 'font-display text-base sm:text-lg'
-    : 'font-display text-lg sm:text-xl';
+    ? 'text-base font-normal tracking-normal sm:text-lg'
+    : 'text-lg font-normal tracking-normal sm:text-xl';
 
   return (
     <div className={compact ? 'space-y-2' : 'space-y-3 text-sm sm:space-y-4'}>
@@ -43,7 +43,7 @@ export function CartTotals({
         label="Subtotal"
         value={subtotalLabel}
         labelClass={labelClass}
-        valueClass={compact ? 'font-display text-base sm:text-lg' : undefined}
+        valueClass={compact ? 'text-base font-normal tracking-normal sm:text-lg' : undefined}
       />
       {discountTotal > 0 && (
         <Row

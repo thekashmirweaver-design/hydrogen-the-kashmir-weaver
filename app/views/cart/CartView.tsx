@@ -89,7 +89,7 @@ export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}
               <Row
                 k={<span className="tracked text-foreground">Total</span>}
                 v={
-                  <span className="font-display text-lg sm:text-xl">
+                  <span className="text-lg font-normal tracking-normal sm:text-xl">
                     {displayTotalLabel}
                   </span>
                 }
@@ -142,7 +142,7 @@ export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}
               <p className="text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
                 Total
               </p>
-              <p className="font-display text-lg">{displayTotalLabel}</p>
+              <p className="text-lg font-normal tracking-normal">{displayTotalLabel}</p>
             </div>
             <a
               href={checkoutUrl}

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowRight, Search, X } from "lucide-react";
 import type { Collection, Money, Product } from "~/models/types";
+import { CatalogImage } from "~/components/gulriza/CatalogImage";
 import { useCatalog } from "~/contexts/catalog-context";
 import { useFormatPrice } from "~/lib/currency-store";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
@@ -10,12 +11,18 @@ import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 
 const MAX_RESULTS = 10;
 const CLOSE_MS = 220;
+/** Fallback only when featured collection is empty — never dump the full catalog. */
+const FALLBACK_SUGGESTED = 5;
 
 export function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { products, collections, featuredProducts = [] } = useCatalog();
-  // Idle Featured list = homepage-featured collection (manual Admin order), not newest-first catalog.
+  // Idle Featured list = full homepage-featured collection (manual Admin order).
+  // Already loaded in catalog context — no extra fetch. Scroll viewport caps paint cost.
   const suggested = useMemo(
-    () => (featuredProducts.length ? featuredProducts : products).slice(0, 5),
+    () =>
+      featuredProducts.length
+        ? featuredProducts
+        : products.slice(0, FALLBACK_SUGGESTED),
     [featuredProducts, products],
   );
   const [query, setQuery] = useState("");
@@ -148,8 +155,8 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
       aria-modal="true"
       aria-label="Search the collection"
       onClick={requestClose}
-      className="fixed inset-0 z-[100] flex justify-center overflow-y-auto backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none"
-      style={{ background: "var(--backdrop)", opacity: visible ? 1 : 0 }}
+      className="search-modal fixed inset-0 z-[100] flex justify-center overflow-y-auto backdrop-blur-sm transition-opacity duration-300 ease-out motion-reduce:transition-none"
+      style={{ opacity: visible ? 1 : 0 }}
     >
       <button
         onClick={requestClose}
@@ -169,10 +176,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
         }}
       >
         {/* Hero search field */}
-        <label
-          className="group flex items-center gap-4 border-b pb-5 transition-colors focus-within:border-[var(--accent)]"
-          style={{ borderColor: "var(--border)" }}
-        >
+        <label className="search-modal__field group flex items-center gap-4 pb-5">
           <Search
             className="h-6 w-6 shrink-0 text-muted-foreground transition-colors group-focus-within:text-accent"
             strokeWidth={1}
@@ -189,7 +193,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
             inputMode="search"
             enterKeyHint="search"
             spellCheck={false}
-            className="font-display w-full bg-transparent text-2xl outline-none placeholder:text-muted-foreground md:text-3xl"
+            className="font-display w-full bg-transparent text-2xl text-foreground outline-none placeholder:text-muted-foreground md:text-3xl"
           />
           {query && (
             <button
@@ -231,11 +235,19 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                 <p className="tracked text-muted-foreground">Featured</p>
                 <div className="relative mt-3">
                   <ul
-                    className="no-scrollbar flex max-h-[40dvh] flex-col overflow-y-auto pb-8"
-                    style={{
-                      maskImage: "linear-gradient(to bottom, black 80%, transparent 100%)",
-                      WebkitMaskImage: "linear-gradient(to bottom, black 80%, transparent 100%)",
-                    }}
+                    className={`no-scrollbar flex max-h-[40dvh] flex-col overflow-y-auto ${
+                      suggested.length > 4 ? "pb-8" : ""
+                    }`}
+                    style={
+                      suggested.length > 4
+                        ? {
+                            maskImage:
+                              "linear-gradient(to bottom, black 80%, transparent 100%)",
+                            WebkitMaskImage:
+                              "linear-gradient(to bottom, black 80%, transparent 100%)",
+                          }
+                        : undefined
+                    }
                   >
                     {suggested.map((p, i) => (
                       <ResultRow
@@ -245,14 +257,17 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                         onActivate={() => setActive(i)}
                         onClose={requestClose}
                         formatPrice={formatPrice}
+                        eagerThumb={i < 3}
                       />
                     ))}
                   </ul>
-                  <div className="pointer-events-none absolute bottom-0 left-0 flex w-full justify-center pb-1">
-                    <span className="animate-pulse text-[0.6rem] uppercase tracking-widest text-muted-foreground/60">
-                      Scroll for more
-                    </span>
-                  </div>
+                  {suggested.length > 4 && (
+                    <div className="pointer-events-none absolute bottom-0 left-0 flex w-full justify-center pb-1">
+                      <span className="animate-pulse text-[0.6rem] uppercase tracking-widest text-muted-foreground/60">
+                        Scroll for more
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -286,6 +301,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                         onActivate={() => setActive(i)}
                         onClose={requestClose}
                         formatPrice={formatPrice}
+                        eagerThumb={i < 3}
                       />
                     ))}
                   </ul>
@@ -369,15 +385,22 @@ function ResultRow({
   onActivate,
   onClose,
   formatPrice,
+  eagerThumb = false,
 }: {
   product: Product;
   active: boolean;
   onActivate: () => void;
   onClose: () => void;
   formatPrice: (money: Money) => string;
+  eagerThumb?: boolean;
 }) {
   return (
-    <li>
+    <li
+      style={{
+        contentVisibility: "auto",
+        containIntrinsicSize: "0 112px",
+      }}
+    >
       <Link
         to={`/products/${product.handle}`}
         onClick={onClose}
@@ -393,9 +416,13 @@ function ResultRow({
           className="relative aspect-[4/5] h-20 shrink-0 overflow-hidden"
           style={{ background: "var(--surface)" }}
         >
-          <img
-            src={product.images[0].src}
-            alt={product.images[0].alt}
+          <CatalogImage
+            image={product.images[0]}
+            priority={eagerThumb}
+            loading={eagerThumb ? "eager" : "lazy"}
+            fetchPriority={eagerThumb ? "auto" : "low"}
+            sizes="80px"
+            showSkeleton={false}
             className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />
         </span>
