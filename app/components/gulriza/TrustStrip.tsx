@@ -18,8 +18,8 @@ const TRUST_CLAIMS: ReadonlyArray<{
     Icon: BadgeCheck,
   },
   {
-    label: 'Certificate of authenticity',
-    microLabel: 'Certificate',
+    label: 'GI certificate available on demand',
+    microLabel: 'GI on demand',
     Icon: Award,
   },
   {

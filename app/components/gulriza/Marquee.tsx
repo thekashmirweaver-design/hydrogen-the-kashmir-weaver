@@ -2,7 +2,7 @@ const DEFAULT_MESSAGES = [
   "Authentic Kashmiri Pashmina",
   "Handcrafted by Artisans",
   "Free Worldwide Shipping Over $200",
-  "Certificate of Authenticity Included",
+  "GI Certificate Available on Demand",
 ];
 
 export function Marquee({ messages = DEFAULT_MESSAGES }: { messages?: string[] }) {

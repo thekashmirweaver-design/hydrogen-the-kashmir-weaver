@@ -8,8 +8,9 @@ import {
   ZoomIn,
   X,
 } from 'lucide-react';
-import {CartForm} from '@shopify/hydrogen';
+import {CartForm, Analytics} from '@shopify/hydrogen';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
+import {trackBeginCheckoutItems} from '~/components/GoogleAnalytics';
 import {Accordion} from '~/components/gulriza/Accordion';
 import {ProductTile} from '~/components/gulriza/ProductTile';
 import {CatalogImage} from '~/components/gulriza/CatalogImage';
@@ -321,6 +322,27 @@ export function ProductView({
       <Link
         to={buyNowHref}
         reloadDocument
+        onClick={() => {
+          if (!activeVariantId) return;
+          trackBeginCheckoutItems(
+            [
+              {
+                item_id: activeVariantId.replace(
+                  /^gid:\/\/shopify\/ProductVariant\//,
+                  '',
+                ),
+                item_name: product.name,
+                item_variant: selectedVariant?.title,
+                item_brand: product.vendor,
+                item_category: product.productType,
+                price: displayPrice.amount,
+                quantity: buyNowQuantity,
+              },
+            ],
+            displayPrice.currencyCode,
+            displayPrice.amount * buyNowQuantity,
+          );
+        }}
         className="btn-secondary block w-full py-3.5 text-center tracked touch-manipulation"
       >
         Buy Now
@@ -341,6 +363,25 @@ export function ProductView({
 
   return (
     <div className={!soldOut && isShopifyVariant ? 'pb-24 lg:pb-0' : undefined}>
+      {activeVariantId ? (
+        <Analytics.ProductView
+          data={{
+            products: [
+              {
+                id: product.id,
+                title: product.name,
+                price: String(displayPrice.amount),
+                vendor: product.vendor ?? '',
+                variantId: toMerchandiseGid(activeVariantId),
+                variantTitle: selectedVariant?.title ?? '',
+                quantity: 1,
+                sku: selectedSku,
+                productType: product.productType,
+              },
+            ],
+          }}
+        />
+      ) : null}
       <div className="mx-auto max-w-[1600px] px-6 pt-8 md:px-10">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs tracking-[0.25em] text-muted-foreground uppercase">
           <Link to="/" className="inline-flex min-h-11 items-center hover:text-accent">
@@ -835,6 +876,27 @@ export function ProductView({
               <Link
                 to={buyNowHref}
                 reloadDocument
+                onClick={() => {
+                  if (!activeVariantId) return;
+                  trackBeginCheckoutItems(
+                    [
+                      {
+                        item_id: activeVariantId.replace(
+                          /^gid:\/\/shopify\/ProductVariant\//,
+                          '',
+                        ),
+                        item_name: product.name,
+                        item_variant: selectedVariant?.title,
+                        item_brand: product.vendor,
+                        item_category: product.productType,
+                        price: displayPrice.amount,
+                        quantity: buyNowQuantity,
+                      },
+                    ],
+                    displayPrice.currencyCode,
+                    displayPrice.amount * buyNowQuantity,
+                  );
+                }}
                 className="btn-secondary tracked px-4 py-3.5 text-center text-[0.7rem] uppercase tracking-[0.1em] touch-manipulation"
               >
                 Buy Now

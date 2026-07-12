@@ -10,6 +10,7 @@ import { CartPromoForms } from "~/components/gulriza/CartPromoForms";
 import { CartTotals } from "~/components/gulriza/CartTotals";
 import { getCartPromotionSummary } from "~/lib/cart-promotions";
 import { checkoutLocale, toStorefrontCheckoutUrl } from "~/lib/resolve-checkout-url";
+import { trackBeginCheckout } from "~/components/GoogleAnalytics";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
 import { useBottomSheetDrag } from "~/hooks/use-bottom-sheet-drag";
 import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
@@ -232,7 +233,10 @@ export function CartDrawer({
                 {checkoutUrl ? (
                   <a
                     href={checkoutUrl}
-                    onClick={requestClose}
+                    onClick={() => {
+                      trackBeginCheckout(cart);
+                      requestClose();
+                    }}
                     className="tracked shrink-0 px-5 py-3.5 text-[0.7rem] uppercase tracking-[0.1em] transition hover:opacity-90 touch-manipulation"
                     style={{
                       background: "var(--accent)",
@@ -280,7 +284,10 @@ export function CartDrawer({
               {checkoutUrl ? (
                 <a
                   href={checkoutUrl}
-                  onClick={requestClose}
+                  onClick={() => {
+                    trackBeginCheckout(cart);
+                    requestClose();
+                  }}
                   className="group flex w-full items-center justify-center gap-2 border py-3.5 transition-all duration-300 hover:opacity-90 touch-manipulation"
                   style={{
                     background: "var(--accent)",

@@ -12,6 +12,8 @@ import {getCartPromotionSummary} from '~/lib/cart-promotions';
 import {useLocalization} from '~/contexts/localization-context';
 import {useLiveCart} from '~/lib/use-live-cart';
 import {checkoutLocale, toStorefrontCheckoutUrl} from '~/lib/resolve-checkout-url';
+import {Analytics} from '@shopify/hydrogen';
+import {trackBeginCheckout} from '~/components/GoogleAnalytics';
 
 export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}) {
   const root = useRouteLoaderData<RootLoader>('root');
@@ -43,6 +45,7 @@ export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}
 
   return (
     <div>
+      <Analytics.CartView />
       <section className="mx-auto max-w-[1400px] px-4 pb-28 pt-6 sm:px-6 sm:pb-24 sm:pt-8 md:px-10 lg:pb-24">
         <Eyebrow>Your Selection</Eyebrow>
         <h1
@@ -97,6 +100,7 @@ export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}
               {checkoutUrl ? (
                 <a
                   href={checkoutUrl}
+                  onClick={() => trackBeginCheckout(cart)}
                   className="tracked mt-8 hidden w-full items-center justify-center py-4 transition hover:opacity-90 lg:flex"
                   style={{
                     background: 'var(--accent)',
@@ -142,6 +146,7 @@ export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}
             </div>
             <a
               href={checkoutUrl}
+              onClick={() => trackBeginCheckout(cart)}
               className="tracked shrink-0 px-6 py-3.5 text-[0.72rem] uppercase tracking-[0.12em] transition hover:opacity-90 touch-manipulation"
               style={{
                 background: 'var(--accent)',

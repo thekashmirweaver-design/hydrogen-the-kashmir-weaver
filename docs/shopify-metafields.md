@@ -104,7 +104,7 @@ Store as JSON array:
   "Authentic Kashmiri Pashmina",
   "Handcrafted by Artisans",
   "Free Worldwide Shipping Over $200",
-  "Certificate of Authenticity Included"
+  "GI Certificate Available on Demand"
 ]
 ```
 

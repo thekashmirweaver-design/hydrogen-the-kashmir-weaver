@@ -1,4 +1,5 @@
 import {useLoaderData} from 'react-router';
+import {Analytics} from '@shopify/hydrogen';
 import type {Route} from './+types/collections.$handle';
 import {getCollectionPage} from '~/controllers';
 import {getCatalogOptions} from '~/lib/catalog-options';
@@ -34,11 +35,21 @@ export async function loader({params, context, request}: Route.LoaderArgs) {
 export default function CollectionRoute() {
   const {collection, products, pageInfo} = useLoaderData<typeof loader>();
   return (
-    <CollectionView
-      collection={collection}
-      products={products}
-      pageInfo={pageInfo}
-      listSource={{scope: 'collection', handle: collection.handle}}
-    />
+    <>
+      <Analytics.CollectionView
+        data={{
+          collection: {
+            id: collection.id,
+            handle: collection.handle,
+          },
+        }}
+      />
+      <CollectionView
+        collection={collection}
+        products={products}
+        pageInfo={pageInfo}
+        listSource={{scope: 'collection', handle: collection.handle}}
+      />
+    </>
   );
 }
