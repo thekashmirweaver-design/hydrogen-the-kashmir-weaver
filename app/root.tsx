@@ -1,5 +1,5 @@
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
-import {Analytics, getShopAnalytics, Script, useNonce} from '@shopify/hydrogen';
+import {Analytics, getShopAnalytics, useNonce} from '@shopify/hydrogen';
 import {
   Outlet,
   useRouteError,
@@ -23,7 +23,8 @@ import ebGaramond400Woff2 from '@fontsource/eb-garamond/files/eb-garamond-latin-
 import appStylesUrl from '~/styles/globals.css?url';
 import '~/styles/globals.css';
 import {PageLayout, NotFoundView} from './components/PageLayout';
-import {ThemeBootScript} from '~/components/gulriza/ThemeBootScript';
+import {HeroPreloadLink} from '~/components/gulriza/ThemeBootScript';
+import {AccountWebComponents} from '~/components/gulriza/AccountWebComponents';
 import {
   GoogleAnalytics,
 } from '~/components/GoogleAnalytics';
@@ -120,7 +121,7 @@ export function links() {
       href: 'https://cdn.shopify.com',
     },
     {
-      // ThemeBootScript injects the LCP hero preload for the resolved theme.
+      // Theme boot script (entry.server) injects the LCP hero preload for the resolved theme.
       rel: 'preconnect',
       href: 'https://www.googletagmanager.com',
     },
@@ -273,17 +274,11 @@ export function Layout({children}: {children?: React.ReactNode}) {
         />
         <Meta />
         <Links />
-        <ThemeBootScript nonce={nonce} />
-        {/* gtag loads deferred via <GoogleAnalytics /> after idle — keeps LCP clear */}
-        <Script
-          src="https://cdn.shopify.com/storefront/web-components/account.js"
-          type="module"
-          crossOrigin="anonymous"
-          nonce={nonce}
-        />
+        <HeroPreloadLink />
       </head>
       <body>
         <ThemeProvider>{children}</ThemeProvider>
+        <AccountWebComponents />
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
       </body>

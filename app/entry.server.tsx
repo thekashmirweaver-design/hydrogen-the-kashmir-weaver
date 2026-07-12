@@ -6,6 +6,7 @@ import {
   type HydrogenRouterContextProvider,
 } from '@shopify/hydrogen';
 import type {EntryContext} from 'react-router';
+import {getThemeBootScriptTag} from '~/components/gulriza/ThemeBootScript';
 
 function storefrontOrigins(storeUrl?: string): string[] {
   if (!storeUrl?.trim()) return [];
@@ -33,6 +34,56 @@ function localDevCspOrigins(): string[] {
   return hosts.flatMap((host) =>
     schemes.map((scheme) => `${scheme}://${host}:*`),
   );
+}
+
+/** Insert theme boot script before </head> without putting it in the React tree. */
+function injectBeforeClosingHead(
+  stream: ReadableStream<Uint8Array>,
+  snippet: string,
+): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let injected = false;
+
+  return new ReadableStream({
+    async start(controller) {
+      const reader = stream.getReader();
+      try {
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) {
+            if (buffer) controller.enqueue(encoder.encode(buffer));
+            controller.close();
+            return;
+          }
+
+          buffer += decoder.decode(value, {stream: true});
+
+          if (!injected) {
+            const idx = buffer.indexOf('</head>');
+            if (idx !== -1) {
+              buffer =
+                buffer.slice(0, idx) + snippet + buffer.slice(idx);
+              injected = true;
+            }
+          }
+
+          if (injected) {
+            controller.enqueue(encoder.encode(buffer));
+            buffer = '';
+          } else if (buffer.length > 32) {
+            // Retain a short tail in case "</head>" spans chunks.
+            const keep = 16;
+            controller.enqueue(encoder.encode(buffer.slice(0, -keep)));
+            buffer = buffer.slice(-keep);
+          }
+        }
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+  });
 }
 
 export default async function handleRequest(
@@ -109,10 +160,15 @@ export default async function handleRequest(
     await body.allReady;
   }
 
+  const withThemeBoot = injectBeforeClosingHead(
+    body,
+    getThemeBootScriptTag(nonce),
+  );
+
   responseHeaders.set('Content-Type', 'text/html');
   responseHeaders.set('Content-Security-Policy', header);
 
-  return new Response(body, {
+  return new Response(withThemeBoot, {
     headers: responseHeaders,
     status: responseStatusCode,
   });

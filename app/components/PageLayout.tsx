@@ -1,5 +1,12 @@
 import {Link, useLocation, useNavigation} from 'react-router';
-import {lazy, Suspense, useEffect, useState, type ReactNode} from 'react';
+import {
+  lazy,
+  startTransition,
+  Suspense,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
 import type {CatalogSnapshot} from '~/models/types';
 import type {ShopSettings} from '~/lib/shop-settings';
@@ -83,7 +90,8 @@ function ChromeHeader({
   useEffect(() => {
     let active = true;
     void customerAccessToken.then((token) => {
-      if (active) setResolvedCustomerAccessToken(token);
+      if (!active) return;
+      startTransition(() => setResolvedCustomerAccessToken(token));
     });
     return () => {
       active = false;
@@ -113,11 +121,18 @@ export function PageLayout({
 }: PageLayoutProps) {
   const [resolvedCatalog, setResolvedCatalog] =
     useState<CatalogSnapshot>(EMPTY_CATALOG);
+  // Defer lazy Suspense islands until after hydration (see cart-drawer-context).
+  const [chromeReady, setChromeReady] = useState(false);
+
+  useEffect(() => {
+    setChromeReady(true);
+  }, []);
 
   useEffect(() => {
     let active = true;
     void catalog.then((snapshot) => {
-      if (active) setResolvedCatalog(snapshot);
+      if (!active) return;
+      startTransition(() => setResolvedCatalog(snapshot));
     });
     return () => {
       active = false;
@@ -129,9 +144,11 @@ export function PageLayout({
       <CartDrawerProvider cart={cart}>
         <ScrollToTop />
         <CatalogProvider catalog={resolvedCatalog}>
-          <Suspense fallback={null}>
-            <WebMcpTools />
-          </Suspense>
+          {chromeReady ? (
+            <Suspense fallback={null}>
+              <WebMcpTools />
+            </Suspense>
+          ) : null}
           <ChromeHeader
             shopSettings={shopSettings}
             publicStoreDomain={publicStoreDomain}
@@ -139,9 +156,11 @@ export function PageLayout({
             customerAccessToken={customerAccessToken}
           />
           <RouteTransitionOutlet routeKey={routeKey}>{children}</RouteTransitionOutlet>
-          <Suspense fallback={null}>
-            <CartFab />
-          </Suspense>
+          {chromeReady ? (
+            <Suspense fallback={null}>
+              <CartFab />
+            </Suspense>
+          ) : null}
           <SiteFooter shopSettings={shopSettings} />
         </CatalogProvider>
       </CartDrawerProvider>

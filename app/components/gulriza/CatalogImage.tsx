@@ -1,4 +1,4 @@
-import type {CSSProperties, MouseEvent} from 'react';
+import type {CSSProperties, MouseEvent, ImgHTMLAttributes} from 'react';
 import {useEffect, useRef, useState} from 'react';
 import {Image} from '@shopify/hydrogen';
 import type {ProductImage} from '~/models/types';
@@ -101,7 +101,11 @@ export function CatalogImage({
       style={imageStyle}
       onClick={onClick}
       onLoad={() => setLoaded(true)}
-      {...(fetchPriority ? {fetchPriority} : {})}
+      // React 18: Hydrogen Image forwards unknown props onto <img>; camelCase
+      // fetchPriority warns — use the HTML attribute name.
+      {...(fetchPriority
+        ? ({fetchpriority: fetchPriority} as ImgHTMLAttributes<HTMLImageElement>)
+        : {})}
     />
   ) : (
     <img
@@ -112,7 +116,7 @@ export function CatalogImage({
       loading={loading}
       decoding={decoding}
       onLoad={() => setLoaded(true)}
-      {...(fetchPriority ? {fetchPriority} : {})}
+      {...(fetchPriority ? {fetchpriority: fetchPriority} : {})}
       style={imageStyle}
       onClick={onClick}
       width={image.width}
@@ -252,7 +256,8 @@ export function HeroPicture({
         height={height}
         loading={loading}
         decoding={loading === 'eager' ? 'sync' : 'async'}
-        fetchPriority={fetchPriority}
+        // React 18 DOM: camelCase fetchPriority is not recognized.
+        fetchpriority={fetchPriority}
         className={className}
         style={style}
       />

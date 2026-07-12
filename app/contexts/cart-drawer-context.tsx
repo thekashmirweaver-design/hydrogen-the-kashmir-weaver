@@ -2,6 +2,7 @@ import {
   createContext,
   lazy,
   Suspense,
+  startTransition,
   useCallback,
   useContext,
   useEffect,
@@ -43,6 +44,13 @@ export function CartDrawerProvider({
   const [resolvedCart, setResolvedCart] =
     useState<CartApiQueryFragment | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  // Lazy Suspense islands must not mount during hydration — deferred cart
+  // resolution updates the tree mid-hydrate and forces client render.
+  const [chromeReady, setChromeReady] = useState(false);
+
+  useEffect(() => {
+    setChromeReady(true);
+  }, []);
 
   useEffect(() => {
     clearLiveCartCache();
@@ -51,7 +59,8 @@ export function CartDrawerProvider({
   useEffect(() => {
     let active = true;
     void cart.then((nextCart) => {
-      if (active) setResolvedCart(nextCart);
+      if (!active) return;
+      startTransition(() => setResolvedCart(nextCart));
     });
     return () => {
       active = false;
@@ -84,9 +93,11 @@ export function CartDrawerProvider({
   return (
     <CartDrawerContext.Provider value={value}>
       {children}
-      <Suspense fallback={null}>
-        <CartDrawer open={isOpen} onClose={close} cart={liveCart} />
-      </Suspense>
+      {chromeReady ? (
+        <Suspense fallback={null}>
+          <CartDrawer open={isOpen} onClose={close} cart={liveCart} />
+        </Suspense>
+      ) : null}
     </CartDrawerContext.Provider>
   );
 }

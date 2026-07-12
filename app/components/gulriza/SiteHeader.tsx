@@ -137,11 +137,16 @@ export function SiteHeader({
   const [open, setOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [chromeReady, setChromeReady] = useState(false);
   const count = cartQuantity;
   const menuRef = useRef<HTMLDivElement>(null);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const menuClosingRef = useRef(false);
   useFocusTrap(open, menuRef);
+
+  useEffect(() => {
+    setChromeReady(true);
+  }, []);
 
   // Animated close: play the exit transition, then unmount (mirrors SearchModal).
   const requestMenuClose = useCallback(() => {
@@ -446,9 +451,11 @@ export function SiteHeader({
             </div>
           )}
 
-          <Suspense fallback={null}>
-            <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
-          </Suspense>
+          {chromeReady ? (
+            <Suspense fallback={null}>
+              <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+            </Suspense>
+          ) : null}
         </header>
     </>
   );
