@@ -22,11 +22,10 @@ export const COLLECTION_METAFIELDS = {
 
 export const SHOP_METAFIELDS = {
   marqueeMessages: 'marquee_messages',
-  contactEmail: 'contact_email',
-  contactPhone: 'contact_phone',
-  contactWhatsapp: 'contact_whatsapp',
-  instagramUrl: 'instagram_url',
-  facebookUrl: 'facebook_url',
+  /** JSON: `{ email, phone, whatsapp }` — storefront contact channels. */
+  contact: 'contact',
+  /** JSON: `{ instagram, facebook, pinterest, youtube }` — social URLs. */
+  social: 'social',
   homepageFeatured: 'homepage_featured',
 } as const;
 

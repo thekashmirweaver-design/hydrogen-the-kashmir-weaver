@@ -2,6 +2,11 @@ import {Link} from "react-router";
 import { Hairline } from "./Eyebrow";
 import { BrandLockup } from "~/components/gulriza/BrandLockup";
 import type {ShopSettings} from "~/lib/shop-settings";
+import {
+  contactMailtoHref,
+  contactTelHref,
+  contactWhatsappHref,
+} from "~/lib/contact";
 
 const OUR_WORLD_LINKS = [
   { to: "/heritage", label: "Heritage" },
@@ -26,6 +31,12 @@ const LEGAL_LINKS = [
 
 export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
   const social = shopSettings?.social ?? {};
+  const contact = shopSettings?.contact;
+  const mailto = contact?.email ? contactMailtoHref(contact.email) : undefined;
+  const tel = contact?.phone ? contactTelHref(contact.phone) : undefined;
+  const whatsapp = contact?.whatsapp
+    ? contactWhatsappHref(contact.whatsapp)
+    : undefined;
 
   const shopLinks = [
     { to: "/collections/all", label: "All Products" },
@@ -64,6 +75,29 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
               >
                 Contact Us
               </Link>
+              {contact?.email && mailto ? (
+                <a
+                  href={mailto}
+                  className="block transition hover:text-accent"
+                >
+                  {contact.email}
+                </a>
+              ) : null}
+              {contact?.whatsapp && whatsapp ? (
+                <a
+                  href={whatsapp}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block transition hover:text-accent"
+                >
+                  WhatsApp {contact.whatsapp}
+                </a>
+              ) : null}
+              {contact?.phone && tel ? (
+                <a href={tel} className="block transition hover:text-accent">
+                  {contact.phone}
+                </a>
+              ) : null}
             </div>
           </div>
 

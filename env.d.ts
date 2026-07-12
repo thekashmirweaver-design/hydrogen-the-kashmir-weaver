@@ -12,7 +12,7 @@ declare global {
     USE_STATIC_CATALOG?: string;
     /** Resend API key — concierge inquiries are emailed to Gmail. */
     RESEND_API_KEY?: string;
-    /** Inbox for concierge form submissions (default: thekashmirweaver@gmail.com). */
+    /** Inbox override; else Shopify `custom.contact.email`, else hardcoded fallback. */
     CONCIERGE_EMAIL_TO?: string;
     /** Verified sender in Resend (default: concierge@thekashmirweaver.shop). */
     CONCIERGE_EMAIL_FROM?: string;

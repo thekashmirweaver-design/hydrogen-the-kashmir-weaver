@@ -134,6 +134,8 @@ export type ShopSettings = {
   contactWhatsapp?: string;
   instagramUrl?: string;
   facebookUrl?: string;
+  pinterestUrl?: string;
+  youtubeUrl?: string;
 };
 
 const DEFAULT_PRODUCT_IMAGE = '/assets/test-shawl.jpeg';
@@ -201,6 +203,21 @@ const parseStringList = (value: string | undefined): string[] | undefined => {
 
   return lines.length ? lines : undefined;
 };
+
+function parseJsonObject<T extends Record<string, unknown>>(
+  value: string | undefined,
+): T | null {
+  if (!value?.trim()) return null;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as T;
+    }
+  } catch {
+    // ignore invalid JSON
+  }
+  return null;
+}
 
 const parseAccordionItems = (
   value: string | undefined,
@@ -488,6 +505,17 @@ export function mapShopSettings(
   },
 ): ShopSettings {
   const fields = metafieldMap(shop.metafields);
+  const contact = parseJsonObject<{
+    email?: string;
+    phone?: string;
+    whatsapp?: string;
+  }>(getMetafield(fields, SHOP_METAFIELDS.contact));
+  const social = parseJsonObject<{
+    instagram?: string;
+    facebook?: string;
+    pinterest?: string;
+    youtube?: string;
+  }>(getMetafield(fields, SHOP_METAFIELDS.social));
 
   return {
     name: shop.name,
@@ -496,11 +524,13 @@ export function mapShopSettings(
     marqueeMessages:
       parseStringList(getMetafield(fields, SHOP_METAFIELDS.marqueeMessages)) ??
       [],
-    contactEmail: getMetafield(fields, SHOP_METAFIELDS.contactEmail),
-    contactPhone: getMetafield(fields, SHOP_METAFIELDS.contactPhone),
-    contactWhatsapp: getMetafield(fields, SHOP_METAFIELDS.contactWhatsapp),
-    instagramUrl: getMetafield(fields, SHOP_METAFIELDS.instagramUrl),
-    facebookUrl: getMetafield(fields, SHOP_METAFIELDS.facebookUrl),
+    contactEmail: contact?.email?.trim() || undefined,
+    contactPhone: contact?.phone?.trim() || undefined,
+    contactWhatsapp: contact?.whatsapp?.trim() || undefined,
+    instagramUrl: social?.instagram?.trim() || undefined,
+    facebookUrl: social?.facebook?.trim() || undefined,
+    pinterestUrl: social?.pinterest?.trim() || undefined,
+    youtubeUrl: social?.youtube?.trim() || undefined,
   };
 }
 

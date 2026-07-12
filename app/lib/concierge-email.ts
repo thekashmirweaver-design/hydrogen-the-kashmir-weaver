@@ -47,6 +47,7 @@ export function formatConciergeInquiryEmail(inquiry: ConciergeInquiry) {
 export async function sendConciergeInquiryEmail(
   inquiry: ConciergeInquiry,
   env: ConciergeEmailEnv,
+  options?: {shopContactEmail?: string},
 ): Promise<{ok: true} | {ok: false; error: string}> {
   const apiKey = env.RESEND_API_KEY?.trim();
   if (!apiKey) {
@@ -54,7 +55,11 @@ export async function sendConciergeInquiryEmail(
     return {ok: false, error: 'Concierge email is not configured.'};
   }
 
-  const to = env.CONCIERGE_EMAIL_TO?.trim() || CONTACT.email;
+  // Prefer env override, then Shopify `custom.contact.email`, then hardcoded fallback.
+  const to =
+    env.CONCIERGE_EMAIL_TO?.trim() ||
+    options?.shopContactEmail?.trim() ||
+    CONTACT.email;
   const from = env.CONCIERGE_EMAIL_FROM?.trim() || DEFAULT_FROM;
   const {subject, text, html} = formatConciergeInquiryEmail(inquiry);
 

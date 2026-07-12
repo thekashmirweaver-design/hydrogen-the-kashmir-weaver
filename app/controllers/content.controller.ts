@@ -14,12 +14,12 @@ import {
   PRIVACY_INTRO,
   PRIVACY_SECTIONS,
   REFUND_INTRO,
-  REFUND_SECTIONS,
+  refundSections,
   SHIPPING_INTRO,
   SHIPPING_SECTIONS,
   STAGES,
   TERMS_INTRO,
-  TERMS_SECTIONS,
+  termsSections,
   type CareGuideSection,
   type CraftStage,
   type FaqItem,
@@ -33,6 +33,8 @@ import {
 } from '~/models/shopify/content.queries';
 import {parsePageJson} from '~/lib/parse-page-content';
 import type {PageMetadata} from '~/controllers/catalog.controller';
+import {resolveContact, type ContactInfo} from '~/lib/contact';
+import {loadShopSettings} from '~/lib/shop-settings';
 
 export type HeritagePageViewModel = {
   hero: string;
@@ -124,6 +126,18 @@ async function loadShopPolicyBody(
     return data.shop?.[policyName] ?? null;
   } catch {
     return null;
+  }
+}
+
+async function shopContact(
+  storefront?: Storefront,
+): Promise<ContactInfo> {
+  if (!storefront) return resolveContact();
+  try {
+    const settings = await loadShopSettings(storefront);
+    return resolveContact(settings.contact);
+  } catch {
+    return resolveContact();
   }
 }
 
@@ -341,9 +355,10 @@ export async function getCareGuidePage(
 export async function getTermsPage(
   storefront?: Storefront,
 ): Promise<TermsPageViewModel> {
+  const contact = await shopContact(storefront);
   return getShopPolicyPage(storefront, 'termsOfService', {
     intro: TERMS_INTRO,
-    sections: TERMS_SECTIONS,
+    sections: termsSections(contact),
     metadata: {
       title: 'Terms of Service — The Kashmir Weaver',
       description:
@@ -383,9 +398,10 @@ export async function getShippingPage(
 export async function getRefundPage(
   storefront?: Storefront,
 ): Promise<RefundPageViewModel> {
+  const contact = await shopContact(storefront);
   return getShopPolicyPage(storefront, 'refundPolicy', {
     intro: REFUND_INTRO,
-    sections: REFUND_SECTIONS,
+    sections: refundSections(contact),
     metadata: {
       title: 'Returns Policy — The Kashmir Weaver',
       description:

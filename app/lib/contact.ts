@@ -1,3 +1,8 @@
+/**
+ * Hardcoded fallbacks when Shopify shop metafield `custom.contact` is unset.
+ * Prefer editing that metafield in Admin; Concierge and policies resolve via
+ * `loadShopSettings` → `resolveContact`.
+ */
 export const CONTACT = {
   email: 'thekashmirweaver@gmail.com',
   phone: '+91-9796105623',

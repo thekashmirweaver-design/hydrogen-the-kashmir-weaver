@@ -1,5 +1,5 @@
 import type {Storefront} from '@shopify/hydrogen';
-import {resolveContact} from '~/lib/contact';
+import {resolveContact, type ContactInfo} from '~/lib/contact';
 import {HEADER_QUERY, FOOTER_QUERY} from '~/lib/fragments';
 
 export type NavItem = {
@@ -22,7 +22,8 @@ export type ShopSocial = {
 
 export type ShopSettings = {
   marquee: string[];
-  contact: ShopContact;
+  /** Always fully resolved (Shopify `custom.contact` + hardcoded fallbacks). */
+  contact: ContactInfo;
   social: ShopSocial;
   headerMenu: NavItem[];
   footerMenu: NavItem[];

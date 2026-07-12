@@ -1,7 +1,10 @@
 /** Kashmir Weaver policy HTML — source of truth for Shopify seed scripts. */
 
-const EMAIL = 'thekashmirweaver@gmail.com';
-const PHONE = '+91-9796105623';
+import {CONTACT, phoneDigits} from '../../app/lib/contact.ts';
+
+const EMAIL = CONTACT.email;
+const PHONE = CONTACT.phone;
+const TEL_HREF = `tel:+${phoneDigits(CONTACT.phone)}`;
 /** Primary storefront host — keep in sync with PUBLIC_STORE_URL / docs/seo-and-domains.md */
 const SITE =
   (typeof process !== 'undefined' &&
@@ -38,7 +41,7 @@ export const SHIPPING_POLICY_HTML = `
 <p>We are unable to deliver to PO Box addresses in certain regions. Please contact Concierge before ordering if your address may be affected.</p>
 
 <h2>Contact</h2>
-<p>For delivery enquiries: <a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="tel:+919796105623">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
+<p>For delivery enquiries: <a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="${TEL_HREF}">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
 `.trim();
 
 export const REFUND_POLICY_HTML = `
@@ -76,7 +79,7 @@ export const REFUND_POLICY_HTML = `
 <p>If your order has already shipped, please follow the return instructions above once received.</p>
 
 <h2>Contact</h2>
-<p><a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="tel:+919796105623">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
+<p><a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="${TEL_HREF}">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
 `.trim();
 
 export const TERMS_OF_SERVICE_HTML = `
@@ -122,7 +125,7 @@ export const TERMS_OF_SERVICE_HTML = `
 <p>We may modify these terms at any time. The current version is always available on this page. Continued use of the site after changes constitutes acceptance.</p>
 
 <h2>14. Contact</h2>
-<p><a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="tel:+919796105623">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
+<p><a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="${TEL_HREF}">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
 `.trim();
 
 export const DISCLAIMER_PAGE_HTML = `
@@ -166,7 +169,7 @@ export const FAQ_PAGE_HTML = `
 <p>Use the password reset link on the account sign-in page. Enter your email and follow the instructions sent to you. If you need further help, contact Concierge at <a href="mailto:${EMAIL}">${EMAIL}</a>.</p>
 
 <h2>How do I contact Customer Services?</h2>
-<p>Email <a href="mailto:${EMAIL}">${EMAIL}</a> or call <a href="tel:+919796105623">${PHONE}</a>. We aim to respond within 24 hours. You may also reach us via WhatsApp or through our <a href="/concierge#contact">Concierge contact form</a>.</p>
+<p>Email <a href="mailto:${EMAIL}">${EMAIL}</a> or call <a href="${TEL_HREF}">${PHONE}</a>. We aim to respond within 24 hours. You may also reach us via WhatsApp or through our <a href="/concierge#contact">Concierge contact form</a>.</p>
 
 <h2>Can I place an order by telephone?</h2>
 <p>Yes. Our Concierge team can assist with phone orders. Contact us at ${PHONE} or email ${EMAIL}.</p>

@@ -34,14 +34,40 @@ Each definition must have **Storefront API access** enabled so the Storefront AP
 | Key | Name | Type | Purpose |
 | --- | --- | --- | --- |
 | `marquee_messages` | Marquee messages | JSON | Array of announcement strings for the site marquee |
-| `contact_email` | Contact email | Single line text | Footer / contact email |
-| `contact_phone` | Contact phone | Single line text | Footer / contact phone |
-| `contact_whatsapp` | Contact WhatsApp | Single line text | WhatsApp number or link |
-| `instagram_url` | Instagram URL | URL | Social link |
-| `facebook_url` | Facebook URL | URL | Social link |
+| `contact` | Contact | JSON | Storefront contact channels (see below) |
+| `social` | Social | JSON | Social profile URLs (see below) |
 | `homepage_featured` | Homepage featured | JSON | Homepage carousels, hero, and collection curation (see below) |
 
 **Owner:** Shop
+
+### `contact` JSON
+
+Single source of truth for customer-facing email, phone, and WhatsApp. Concierge, static policy fallbacks, and (optionally) form delivery use this. Hardcoded values in `app/lib/contact.ts` are used only when the metafield is empty.
+
+```json
+{
+  "email": "thekashmirweaver@gmail.com",
+  "phone": "+91-9796105623",
+  "whatsapp": "+91-9796105623"
+}
+```
+
+| Field | Purpose |
+| --- | --- |
+| `email` | Mailto / Concierge display; also Resend inbox fallback when `CONCIERGE_EMAIL_TO` is unset |
+| `phone` | Tel link / Concierge display |
+| `whatsapp` | Digits for `https://wa.me/...` (Concierge “Message on WhatsApp”) |
+
+### `social` JSON
+
+```json
+{
+  "instagram": "https://instagram.com/…",
+  "facebook": "https://facebook.com/…",
+  "pinterest": "https://pinterest.com/…",
+  "youtube": "https://youtube.com/…"
+}
+```
 
 ### `homepage_featured` JSON example
 

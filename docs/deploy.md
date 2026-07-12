@@ -45,7 +45,7 @@ Or set vars manually in **Shopify Admin → Sales channels → Hydrogen → The 
 | `SHOP_ID` | Yes (account login) | Numeric shop ID (same as in `PUBLIC_CUSTOMER_ACCOUNT_API_URL`) |
 | `USE_STATIC_CATALOG` | No | `true` until Admin seeded; remove when live |
 | `RESEND_API_KEY` | Yes (concierge) | Sends concierge form submissions to Gmail via [Resend](https://resend.com) |
-| `CONCIERGE_EMAIL_TO` | No | Inbox (default `thekashmirweaver@gmail.com`) |
+| `CONCIERGE_EMAIL_TO` | No | Inbox override (else Shopify `custom.contact.email`, else hardcoded fallback) |
 | `CONCIERGE_EMAIL_FROM` | No | Verified Resend sender (default `concierge@thekashmirweaver.shop`) |
 | `PUBLIC_STORE_URL` | Recommended | Canonical storefront origin (`https://thekashmirweaver.shop`); seed scripts + CSP + host redirects |
 
@@ -53,7 +53,7 @@ Customer Account API vars are created when you link the Hydrogen storefront. Con
 
 ### Concierge form → Gmail
 
-Submissions from `/concierge` are emailed to **thekashmirweaver@gmail.com** (override with `CONCIERGE_EMAIL_TO`) via [Resend](https://resend.com):
+Submissions from `/concierge` are emailed via [Resend](https://resend.com). Delivery address resolves in order: **`CONCIERGE_EMAIL_TO`** → Shopify shop metafield **`custom.contact.email`** → hardcoded fallback in `app/lib/contact.ts`.
 
 1. Create a Resend account and add **thekashmirweaver.shop** as a verified domain (DNS records in Resend dashboard).
 2. Create an API key and set `RESEND_API_KEY` locally and on Oxygen (`npx shopify hydrogen env push --env=production`).

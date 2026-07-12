@@ -1,5 +1,6 @@
 import {data} from 'react-router';
 import {sendConciergeInquiryEmail} from '~/lib/concierge-email';
+import {loadShopSettings} from '~/lib/shop-settings';
 import type {Route} from './+types/api.concierge';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -39,7 +40,14 @@ export async function action({request, context}: Route.ActionArgs) {
     submittedAt: new Date().toISOString(),
   };
 
-  const emailResult = await sendConciergeInquiryEmail(payload, context.env);
+  const shopSettings = await loadShopSettings(context.storefront, {
+    publicStoreDomain: context.env.PUBLIC_STORE_DOMAIN,
+    canonicalStoreUrl: context.env.PUBLIC_STORE_URL,
+  });
+
+  const emailResult = await sendConciergeInquiryEmail(payload, context.env, {
+    shopContactEmail: shopSettings.contact.email,
+  });
   if (!emailResult.ok) {
     return data(
       {success: false, errors: {form: emailResult.error}},

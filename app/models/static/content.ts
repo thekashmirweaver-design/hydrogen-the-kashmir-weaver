@@ -1,4 +1,4 @@
-import {CONTACT} from '~/lib/contact';
+import {CONTACT, type ContactInfo} from '~/lib/contact';
 
 const heritageHero = '/assets/heritage-hero.jpg';
 const himalayas = '/assets/heritage-1.jpg';
@@ -207,28 +207,36 @@ export const SHIPPING_SECTIONS: LegalSection[] = [
 export const REFUND_INTRO =
   'We want you to be delighted with every piece. This policy explains returns, exchanges, and refunds for orders placed through our site.';
 
-export const REFUND_SECTIONS: LegalSection[] = [
-  {
-    title: 'Returns window',
-    body: 'Ready-to-wear pieces may be returned within 14 days of delivery in unworn, original condition with proof of purchase.',
-  },
-  {
-    title: 'Bespoke pieces',
-    body: 'Custom, bespoke, and made-to-order commissions are final sale unless defective or materially different from the agreed specification.',
-  },
-  {
-    title: 'Solid Pashmina (Solids category)',
-    body: 'Solids are dyed to your selected colour after the order is placed and are final sale — excluded from returns and exchanges unless the material is defective.',
-  },
-  {
-    title: 'Refunds',
-    body: 'Approved returns are refunded to the original payment method within 10–15 business days of receipt at our atelier.',
-  },
-  {
-    title: 'Contact',
-    body: `Contact Concierge before returning any item: ${CONTACT.email} · ${CONTACT.phone}.`,
-  },
-];
+/** Static refund sections; pass Shopify `custom.contact` via `resolveContact`. */
+export function refundSections(
+  contact: ContactInfo = CONTACT,
+): LegalSection[] {
+  return [
+    {
+      title: 'Returns window',
+      body: 'Ready-to-wear pieces may be returned within 14 days of delivery in unworn, original condition with proof of purchase.',
+    },
+    {
+      title: 'Bespoke pieces',
+      body: 'Custom, bespoke, and made-to-order commissions are final sale unless defective or materially different from the agreed specification.',
+    },
+    {
+      title: 'Solid Pashmina (Solids category)',
+      body: 'Solids are dyed to your selected colour after the order is placed and are final sale — excluded from returns and exchanges unless the material is defective.',
+    },
+    {
+      title: 'Refunds',
+      body: 'Approved returns are refunded to the original payment method within 10–15 business days of receipt at our atelier.',
+    },
+    {
+      title: 'Contact',
+      body: `Contact Concierge before returning any item: ${contact.email} · ${contact.phone}.`,
+    },
+  ];
+}
+
+/** @deprecated Prefer `refundSections(shopContact)` so email/phone come from Shopify. */
+export const REFUND_SECTIONS = refundSections();
 
 export const DISCLAIMER_INTRO =
   'By using The Kashmir Weaver website, you accept the disclaimers set out below.';
@@ -248,48 +256,56 @@ export const DISCLAIMER_SECTIONS: LegalSection[] = [
   },
 ];
 
-export const TERMS_SECTIONS: LegalSection[] = [
-  {
-    title: '1. General',
-    body: 'The Kashmir Weaver ("we", "us", "our") operates this website to offer rare, hand-woven Kashmiri pashmina. All pieces are crafted by master artisans using age-old techniques. By placing an order, you confirm that you are at least 18 years of age and that the information you provide is accurate and complete.',
-  },
-  {
-    title: '2. Orders & Acceptance',
-    body: 'Your submission of an order constitutes an offer to purchase. We reserve the right to accept or decline any order for any reason, including stock unavailability, inaccuracies in pricing, or payment issues. Upon acceptance, you will receive a confirmation email. Each piece is unique; slight variations in colour, weave, and finish are inherent to hand craftsmanship and do not constitute defects.',
-  },
-  {
-    title: '3. Pricing & Payment',
-    body: 'All prices are listed in US Dollars and are exclusive of applicable taxes and duties. We accept major credit cards and other payment methods as indicated at checkout. Payment is due at the time of purchase. In the event of a pricing error, we will contact you before processing the order.',
-  },
-  {
-    title: '4. Shipping & Delivery',
-    body: 'In-stock pieces are dispatched within 2–3 business days. Delivery times are estimates and not guaranteed. Risk of loss passes to you upon delivery. Any customs duties, taxes, or import fees are your responsibility. We are not liable for delays caused by carriers, customs, or events beyond our control.',
-  },
-  {
-    title: '5. Returns & Exchanges',
-    body: 'Ready-to-wear pieces may be returned within 14 days of delivery in unworn condition with original packaging. Bespoke, made-to-order, personalised pieces, and Solids (dyed to order) are final sale. Return shipping is the responsibility of the customer unless the item arrived damaged or incorrect. Refunds are processed to the original payment method within 10 business days of receipt.',
-  },
-  {
-    title: '6. Authenticity',
-    body: 'Every piece is authentic hand-woven Kashmiri pashmina. A Geographical Indication (GI) tag (GI No. 46) is available on demand. If you have concerns about authenticity, please contact our Concierge team before dispatch.',
-  },
-  {
-    title: '7. Intellectual Property',
-    body: 'All content on this site — including text, imagery, design, logos, and product descriptions — is the property of The Kashmir Weaver and is protected by applicable copyright and trademark laws. You may not reproduce, distribute, or use any content without our express written permission.',
-  },
-  {
-    title: '8. Limitation of Liability',
-    body: 'To the maximum extent permitted by law, The Kashmir Weaver shall not be liable for any indirect, incidental, or consequential damages arising from the use of this site or the purchase of our products. Our total liability is limited to the amount paid for the product in question.',
-  },
-  {
-    title: '9. Governing Law',
-    body: 'These terms are governed by the laws of India. Any disputes arising from these terms or your purchase shall be subject to the exclusive jurisdiction of the courts of Srinagar, Jammu & Kashmir.',
-  },
-  {
-    title: '10. Contact',
-    body: `For questions about these terms, please reach out to our Concierge team via email at ${CONTACT.email} or by phone at ${CONTACT.phone}.`,
-  },
-];
+/** Static terms sections; pass Shopify `custom.contact` via `resolveContact`. */
+export function termsSections(
+  contact: ContactInfo = CONTACT,
+): LegalSection[] {
+  return [
+    {
+      title: '1. General',
+      body: 'The Kashmir Weaver ("we", "us", "our") operates this website to offer rare, hand-woven Kashmiri pashmina. All pieces are crafted by master artisans using age-old techniques. By placing an order, you confirm that you are at least 18 years of age and that the information you provide is accurate and complete.',
+    },
+    {
+      title: '2. Orders & Acceptance',
+      body: 'Your submission of an order constitutes an offer to purchase. We reserve the right to accept or decline any order for any reason, including stock unavailability, inaccuracies in pricing, or payment issues. Upon acceptance, you will receive a confirmation email. Each piece is unique; slight variations in colour, weave, and finish are inherent to hand craftsmanship and do not constitute defects.',
+    },
+    {
+      title: '3. Pricing & Payment',
+      body: 'All prices are listed in US Dollars and are exclusive of applicable taxes and duties. We accept major credit cards and other payment methods as indicated at checkout. Payment is due at the time of purchase. In the event of a pricing error, we will contact you before processing the order.',
+    },
+    {
+      title: '4. Shipping & Delivery',
+      body: 'In-stock pieces are dispatched within 2–3 business days. Delivery times are estimates and not guaranteed. Risk of loss passes to you upon delivery. Any customs duties, taxes, or import fees are your responsibility. We are not liable for delays caused by carriers, customs, or events beyond our control.',
+    },
+    {
+      title: '5. Returns & Exchanges',
+      body: 'Ready-to-wear pieces may be returned within 14 days of delivery in unworn condition with original packaging. Bespoke, made-to-order, personalised pieces, and Solids (dyed to order) are final sale. Return shipping is the responsibility of the customer unless the item arrived damaged or incorrect. Refunds are processed to the original payment method within 10 business days of receipt.',
+    },
+    {
+      title: '6. Authenticity',
+      body: 'Every piece is authentic hand-woven Kashmiri pashmina. A Geographical Indication (GI) tag (GI No. 46) is available on demand. If you have concerns about authenticity, please contact our Concierge team before dispatch.',
+    },
+    {
+      title: '7. Intellectual Property',
+      body: 'All content on this site — including text, imagery, design, logos, and product descriptions — is the property of The Kashmir Weaver and is protected by applicable copyright and trademark laws. You may not reproduce, distribute, or use any content without our express written permission.',
+    },
+    {
+      title: '8. Limitation of Liability',
+      body: 'To the maximum extent permitted by law, The Kashmir Weaver shall not be liable for any indirect, incidental, or consequential damages arising from the use of this site or the purchase of our products. Our total liability is limited to the amount paid for the product in question.',
+    },
+    {
+      title: '9. Governing Law',
+      body: 'These terms are governed by the laws of India. Any disputes arising from these terms or your purchase shall be subject to the exclusive jurisdiction of the courts of Srinagar, Jammu & Kashmir.',
+    },
+    {
+      title: '10. Contact',
+      body: `For questions about these terms, please reach out to our Concierge team via email at ${contact.email} or by phone at ${contact.phone}.`,
+    },
+  ];
+}
+
+/** @deprecated Prefer `termsSections(shopContact)` so email/phone come from Shopify. */
+export const TERMS_SECTIONS = termsSections();
 
 export const PRIVACY_INTRO =
   'Your privacy matters to us. This policy explains how The Kashmir Weaver collects, processes, and protects your personal information when you visit our site or make a purchase.';
