@@ -1,5 +1,11 @@
+import {
+  startTransition,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import type {CartApiQueryFragment} from 'storefrontapi.generated';
-import {Analytics, getShopAnalytics, useNonce} from '@shopify/hydrogen';
+import {Analytics, getShopAnalytics, useNonce, type CartReturn} from '@shopify/hydrogen';
 import {
   Outlet,
   useRouteError,
@@ -34,7 +40,7 @@ import {loadShopSettings} from '~/lib/shop-settings';
 import {loadLocalization} from '~/lib/localization';
 import {persistBuyerMarket} from '~/lib/i18n';
 import {isCartFormAction} from '~/lib/cart-form-action';
-import {isCompleteCart} from '~/lib/use-live-cart';
+import {isCompleteCart, useLiveCart} from '~/lib/use-live-cart';
 import {
   cartWithStorefrontCheckoutUrl,
   checkoutLocale,
@@ -286,6 +292,52 @@ export function Layout({children}: {children?: React.ReactNode}) {
   );
 }
 
+/**
+ * Feed CartAnalytics a settled live cart (fetcher response), not the stale
+ * deferred root Promise. Root `shouldRevalidate` skips cart form posts, so
+ * without this bridge Hydrogen never sees a new `updatedAt` and GA4
+ * `add_to_cart` / `remove_from_cart` never fire.
+ */
+function AnalyticsCartProvider({
+  cart,
+  shop,
+  consent,
+  marketCountry,
+  children,
+}: {
+  cart: Promise<CartApiQueryFragment | null>;
+  shop: Awaited<ReturnType<RootLoader>>['shop'];
+  consent: Awaited<ReturnType<RootLoader>>['consent'];
+  marketCountry?: string;
+  children: ReactNode;
+}) {
+  const [resolvedCart, setResolvedCart] =
+    useState<CartApiQueryFragment | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void cart.then((next) => {
+      if (!active) return;
+      startTransition(() => setResolvedCart(next));
+    });
+    return () => {
+      active = false;
+    };
+  }, [cart]);
+
+  const liveCart = useLiveCart(resolvedCart, {marketCountry});
+
+  return (
+    <Analytics.Provider
+      cart={liveCart as CartReturn | null}
+      shop={shop}
+      consent={consent}
+    >
+      {children}
+    </Analytics.Provider>
+  );
+}
+
 export default function App() {
   const data = useRouteLoaderData<RootLoader>('root');
   const location = useLocation();
@@ -296,10 +348,11 @@ export default function App() {
   }
 
   return (
-    <Analytics.Provider
+    <AnalyticsCartProvider
       cart={data.cart}
       shop={data.shop}
       consent={data.consent}
+      marketCountry={data.localization.selectedCurrency.countryCode}
     >
       <PageLayout
         routeKey={routeKey}
@@ -314,7 +367,7 @@ export default function App() {
         <Outlet />
       </PageLayout>
       <GoogleAnalytics />
-    </Analytics.Provider>
+    </AnalyticsCartProvider>
   );
 }
 
