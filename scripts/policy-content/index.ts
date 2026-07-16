@@ -75,7 +75,7 @@ export const REFUND_POLICY_HTML = `
 <p>If your piece arrives damaged or materially different from its description, contact Concierge within 48 hours of delivery with your order number and photographs. Do not accept a visibly damaged package — contact us immediately. We will arrange collection and a replacement or full refund at our cost.</p>
 
 <h2>Order cancellation</h2>
-<p>You may cancel an order within 24 hours of payment confirmation for a full refund, provided it has not yet been dispatched. After 24 hours, or once a bespoke piece has entered production, cancellation may incur processing charges. Email <a href="mailto:${EMAIL}">${EMAIL}</a> or call ${PHONE} with your order number. Full details: <a href="/cancellation">Cancellation Policy</a>.</p>
+<p>You may cancel an order within 24 hours of payment confirmation, provided it has not yet been dispatched. Approved cancellations are refunded to the original payment method <strong>minus payment gateway fees</strong> (non-refundable). After 24 hours, or once a bespoke piece has entered production, cancellation may no longer be possible. Email <a href="mailto:${EMAIL}">${EMAIL}</a> or call ${PHONE} with your order number. Full details: <a href="/cancellation">Cancellation Policy</a>.</p>
 <p>If your order has already shipped, please follow the return instructions above once received.</p>
 
 <h2>Contact</h2>
@@ -86,10 +86,10 @@ export const CANCELLATION_POLICY_HTML = `
 <p class="policy-lead">This policy explains how to cancel an order placed through ${SITE} before or after dispatch.</p>
 
 <h2>Cancel within 24 hours</h2>
-<p>You may cancel an order within <strong>24 hours of payment confirmation</strong> for a full refund, provided the order has not yet been dispatched.</p>
+<p>You may cancel an order within <strong>24 hours of payment confirmation</strong>, provided the order has not yet been dispatched. Approved cancellations are refunded to the original payment method, <strong>minus payment gateway fees</strong> charged on the original transaction (these fees are non-refundable).</p>
 
 <h2>After 24 hours or once in production</h2>
-<p>After 24 hours, or once a bespoke or made-to-order piece has entered production, cancellation may incur processing charges. Solids dyed to order follow the same rule once colour processing has begun.</p>
+<p>After 24 hours, or once a bespoke or made-to-order piece has entered production, cancellation may no longer be possible. Solids dyed to order follow the same rule once colour processing has begun. Where we can still cancel, the refund is the order amount <strong>minus payment gateway fees</strong>.</p>
 
 <h2>If your order has already shipped</h2>
 <p>Once dispatched, please follow our <a href="/returns">Returns Policy</a> after delivery. Contact Concierge before refusing delivery so we can guide you.</p>
@@ -215,7 +215,7 @@ export const FAQ_PAGE_HTML = `
 <p>Yes. We use industry-standard SSL encryption. All orders are processed through Shopify secure checkout. We never store full card numbers on our servers.</p>
 
 <h2>Can I cancel my order?</h2>
-<p>Yes. You may cancel within 24 hours of payment confirmation for a full refund if the order has not yet been dispatched. After that window, or once a bespoke piece has entered production, cancellation may incur processing charges. See our <a href="/cancellation">Cancellation Policy</a> or contact Concierge with your order number.</p>
+<p>Yes. You may cancel within 24 hours of payment confirmation if the order has not yet been dispatched. The refund is the order amount <strong>minus payment gateway fees</strong>. See our <a href="/cancellation">Cancellation Policy</a> or contact Concierge with your order number.</p>
 
 <h2>What are your customer service hours?</h2>
 <p>Concierge is available Monday–Saturday, 10:00–18:00 IST by email, phone, and WhatsApp. We aim to respond within 24 hours on business days.</p>
