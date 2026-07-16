@@ -12,6 +12,7 @@ import {
 export function AboutView({contact}: AboutPageViewModel) {
   const mailto = contactMailtoHref(contact.email);
   const tel = contactTelHref(contact.phone);
+  const gstin = BUSINESS.gstin?.trim();
 
   return (
     <div>
@@ -38,8 +39,10 @@ export function AboutView({contact}: AboutPageViewModel) {
               Who we are
             </h2>
             <p className="mt-4 leading-relaxed text-muted-foreground">
-              The Kashmir Weaver is the legal and trading name of our house. From
-              our studio in Srinagar, we work directly with Kashmiri weavers and
+              {BUSINESS.legalName} is the legal and trading name of our house.
+              We sell our own hand-woven Kashmiri pashmina directly to customers
+              through this online store — not a marketplace reseller. From our
+              studio in Srinagar, we work directly with Kashmiri weavers and
               embroiderers to offer shawls, stoles, and wraps rooted in
               centuries of Himalayan craft — not mass production, but pieces made
               slowly, by hand.
@@ -55,11 +58,16 @@ export function AboutView({contact}: AboutPageViewModel) {
               <br />
               {BUSINESS.fullAddress}
             </p>
+            {gstin ? (
+              <p className="mt-4 leading-relaxed text-muted-foreground">
+                GSTIN: {gstin}
+              </p>
+            ) : null}
           </Reveal>
 
           <Reveal>
             <h2 className="font-display text-2xl" style={{fontWeight: 400}}>
-              Contact
+              Contact &amp; support hours
             </h2>
             <div className="mt-4 space-y-2 leading-relaxed text-muted-foreground">
               <p>
@@ -74,13 +82,40 @@ export function AboutView({contact}: AboutPageViewModel) {
                   {contact.phone}
                 </a>
               </p>
+              <p>Hours: {BUSINESS.hours}</p>
               <p>
                 <Link to="/concierge" className="text-accent transition hover:opacity-80">
                   Concierge
                 </Link>{' '}
-                for bespoke commissions, care, and order support.
+                for bespoke commissions, care, and order support. We aim to
+                respond within 24 hours on business days.
               </p>
             </div>
+          </Reveal>
+
+          <Reveal>
+            <h2 className="font-display text-2xl" style={{fontWeight: 400}}>
+              Policies &amp; payments
+            </h2>
+            <p className="mt-4 leading-relaxed text-muted-foreground">
+              Shipping, returns, cancellations, privacy, and terms are published
+              on this site and linked in the footer. Payment is taken securely at
+              Shopify checkout — methods shown there may include major credit and
+              debit cards, UPI, net banking, and other options enabled for your
+              region. See{' '}
+              <Link to="/shipping" className="text-accent transition hover:opacity-80">
+                Shipping
+              </Link>
+              ,{' '}
+              <Link to="/returns" className="text-accent transition hover:opacity-80">
+                Returns
+              </Link>
+              , and{' '}
+              <Link to="/cancellation" className="text-accent transition hover:opacity-80">
+                Cancellation
+              </Link>
+              .
+            </p>
           </Reveal>
 
           <Reveal>

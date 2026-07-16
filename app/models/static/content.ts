@@ -141,7 +141,15 @@ export const FAQS: FaqItem[] = [
   },
   {
     q: 'Why are your pieces priced as they are, and how can I pay?',
-    a: 'Each shawl reflects hundreds of hours of single-artisan handwork, from spinning on the charkha to hand-knotted finishing. We accept all major cards, and interest-free instalments are available at checkout on eligible orders.',
+    a: 'Each shawl reflects hundreds of hours of single-artisan handwork, from spinning on the charkha to hand-knotted finishing. At Shopify secure checkout you may pay with major credit and debit cards, UPI, net banking, and other methods enabled for your region. Interest-free instalments may be available on eligible orders.',
+  },
+  {
+    q: 'Can I cancel my order?',
+    a: 'Yes. You may cancel within 24 hours of payment confirmation for a full refund if the order has not yet been dispatched. After that, or once a bespoke piece has entered production, cancellation may incur processing charges. See our Cancellation Policy or contact Concierge with your order number.',
+  },
+  {
+    q: 'What are your customer service hours?',
+    a: 'Our Concierge team is available Monday–Saturday, 10:00–18:00 IST by email, phone, and WhatsApp. We aim to respond within 24 hours on business days.',
   },
   {
     q: 'Can I track my order?',
@@ -229,6 +237,10 @@ export function refundSections(
       body: 'Approved returns are refunded to the original payment method within 10–15 business days of receipt at our atelier.',
     },
     {
+      title: 'Order cancellation',
+      body: `You may cancel an order within 24 hours of payment confirmation for a full refund, provided it has not yet been dispatched. After 24 hours, or once a bespoke piece has entered production, cancellation may incur processing charges. Email ${contact.email} or call ${contact.phone} with your order number. See our Cancellation Policy for full details.`,
+    },
+    {
       title: 'Contact',
       body: `Contact Concierge before returning any item: ${contact.email} · ${contact.phone}.`,
     },
@@ -256,6 +268,28 @@ export const DISCLAIMER_SECTIONS: LegalSection[] = [
   },
 ];
 
+export const CANCELLATION_INTRO =
+  'This policy explains how to cancel an order placed through The Kashmir Weaver before or after dispatch.';
+
+export const CANCELLATION_SECTIONS: LegalSection[] = [
+  {
+    title: 'Cancel within 24 hours',
+    body: 'You may cancel an order within 24 hours of payment confirmation for a full refund, provided the order has not yet been dispatched.',
+  },
+  {
+    title: 'After 24 hours or once in production',
+    body: 'After 24 hours, or once a bespoke or made-to-order piece has entered production, cancellation may incur processing charges. Solids dyed to order follow the same rule once colour processing has begun.',
+  },
+  {
+    title: 'If your order has already shipped',
+    body: 'Once dispatched, please follow our Returns Policy after delivery. Do not refuse delivery solely to cancel — contact Concierge so we can guide you.',
+  },
+  {
+    title: 'How to request cancellation',
+    body: `Email ${CONTACT.email} or call ${CONTACT.phone} with your order number. We aim to confirm within one business day during our support hours (Monday–Saturday, 10:00–18:00 IST).`,
+  },
+];
+
 /** Static terms sections; pass Shopify `custom.contact` via `resolveContact`. */
 export function termsSections(
   contact: ContactInfo = CONTACT,
@@ -271,7 +305,7 @@ export function termsSections(
     },
     {
       title: '3. Pricing & Payment',
-      body: 'All prices are listed in US Dollars and are exclusive of applicable taxes and duties. We accept major credit cards and other payment methods as indicated at checkout. Payment is due at the time of purchase. In the event of a pricing error, we will contact you before processing the order.',
+      body: 'Prices are shown in the currency displayed at checkout and may change without notice. They are exclusive of applicable taxes and duties unless stated otherwise. We accept major credit and debit cards, UPI, net banking, and other payment methods shown at Shopify secure checkout for your region. Payment is due at the time of purchase. In the event of a pricing error, we will contact you before processing the order.',
     },
     {
       title: '4. Shipping & Delivery',

@@ -75,8 +75,27 @@ export const REFUND_POLICY_HTML = `
 <p>If your piece arrives damaged or materially different from its description, contact Concierge within 48 hours of delivery with your order number and photographs. Do not accept a visibly damaged package — contact us immediately. We will arrange collection and a replacement or full refund at our cost.</p>
 
 <h2>Order cancellation</h2>
-<p>You may cancel an order within 24 hours of payment confirmation for a full refund, provided it has not yet been dispatched. After 24 hours, or once a bespoke piece has entered production, cancellation may incur processing charges. Email <a href="mailto:${EMAIL}">${EMAIL}</a> or call ${PHONE} with your order number.</p>
+<p>You may cancel an order within 24 hours of payment confirmation for a full refund, provided it has not yet been dispatched. After 24 hours, or once a bespoke piece has entered production, cancellation may incur processing charges. Email <a href="mailto:${EMAIL}">${EMAIL}</a> or call ${PHONE} with your order number. Full details: <a href="/cancellation">Cancellation Policy</a>.</p>
 <p>If your order has already shipped, please follow the return instructions above once received.</p>
+
+<h2>Contact</h2>
+<p><a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="${TEL_HREF}">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
+`.trim();
+
+export const CANCELLATION_POLICY_HTML = `
+<p class="policy-lead">This policy explains how to cancel an order placed through ${SITE} before or after dispatch.</p>
+
+<h2>Cancel within 24 hours</h2>
+<p>You may cancel an order within <strong>24 hours of payment confirmation</strong> for a full refund, provided the order has not yet been dispatched.</p>
+
+<h2>After 24 hours or once in production</h2>
+<p>After 24 hours, or once a bespoke or made-to-order piece has entered production, cancellation may incur processing charges. Solids dyed to order follow the same rule once colour processing has begun.</p>
+
+<h2>If your order has already shipped</h2>
+<p>Once dispatched, please follow our <a href="/returns">Returns Policy</a> after delivery. Contact Concierge before refusing delivery so we can guide you.</p>
+
+<h2>How to request cancellation</h2>
+<p>Email <a href="mailto:${EMAIL}">${EMAIL}</a> or call <a href="${TEL_HREF}">${PHONE}</a> with your order number. We aim to confirm within one business day during our support hours (Monday–Saturday, 10:00–18:00 IST).</p>
 
 <h2>Contact</h2>
 <p><a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="${TEL_HREF}">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
@@ -190,10 +209,16 @@ export const FAQ_PAGE_HTML = `
 <p>Unfortunately we cannot combine or amend orders once placed. Cancel within 24 hours if not yet dispatched, then place a new combined order, or contact Concierge for guidance.</p>
 
 <h2>Which payment methods do you accept?</h2>
-<p>We accept major credit and debit cards through Shopify secure checkout, including Visa, Mastercard, American Express, and other methods shown at payment. Instalment options may be available on eligible orders.</p>
+<p>We accept payment through Shopify secure checkout. Methods shown at payment depend on your region and may include major credit and debit cards (Visa, Mastercard, American Express and others), UPI, net banking, wallets, and instalment options on eligible orders. Available methods are always listed before you confirm payment.</p>
 
 <h2>Is it safe to use my card on your website?</h2>
 <p>Yes. We use industry-standard SSL encryption. All orders are processed through Shopify secure checkout. We never store full card numbers on our servers.</p>
+
+<h2>Can I cancel my order?</h2>
+<p>Yes. You may cancel within 24 hours of payment confirmation for a full refund if the order has not yet been dispatched. After that window, or once a bespoke piece has entered production, cancellation may incur processing charges. See our <a href="/cancellation">Cancellation Policy</a> or contact Concierge with your order number.</p>
+
+<h2>What are your customer service hours?</h2>
+<p>Concierge is available Monday–Saturday, 10:00–18:00 IST by email, phone, and WhatsApp. We aim to respond within 24 hours on business days.</p>
 
 <h2>How should I care for my pashmina?</h2>
 <p>See our <a href="/care-guide">Care Guide</a> for full instructions. We recommend specialist dry cleaning or gentle hand-washing in cold water — never wring or tumble dry.</p>
@@ -227,5 +252,13 @@ export const PAGE_UPDATES: Array<{
     seoTitle: 'FAQ — The Kashmir Weaver',
     seoDescription:
       'Answers on ordering, shipping, returns, authenticity, and care for The Kashmir Weaver pashmina.',
+  },
+  {
+    handle: 'cancellation',
+    title: 'Cancellation Policy',
+    body: CANCELLATION_POLICY_HTML,
+    seoTitle: 'Cancellation Policy — The Kashmir Weaver',
+    seoDescription:
+      'How to cancel a The Kashmir Weaver order within 24 hours or after dispatch.',
   },
 ];

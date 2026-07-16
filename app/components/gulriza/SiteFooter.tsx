@@ -30,6 +30,7 @@ const LEGAL_LINKS = [
   { to: '/privacy', label: 'Privacy' },
   { to: '/shipping', label: 'Shipping' },
   { to: '/returns', label: 'Returns' },
+  { to: '/cancellation', label: 'Cancellation' },
   { to: '/disclaimer', label: 'Disclaimer' },
 ] as const;
 
@@ -103,6 +104,9 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
                 </a>
               ) : null}
               <p className="pt-2 leading-relaxed">{BUSINESS.fullAddress}</p>
+              {BUSINESS.gstin ? (
+                <p className="leading-relaxed">GSTIN: {BUSINESS.gstin}</p>
+              ) : null}
             </div>
           </div>
 

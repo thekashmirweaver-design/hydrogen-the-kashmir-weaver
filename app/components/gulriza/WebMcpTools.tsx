@@ -94,7 +94,7 @@ export function WebMcpTools() {
             return `Validation failed: ${Object.values(data.errors).join(' ')}`;
           }
 
-          return 'Unable to submit inquiry. Please try again or email concierge@thekashmirweaver.com.';
+          return 'Unable to submit inquiry. Please try again or email thekashmirweaver@gmail.com.';
         },
       },
     ];

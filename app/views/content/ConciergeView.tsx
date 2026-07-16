@@ -94,7 +94,9 @@ export function ConciergeView() {
             <span style={{fontStyle: 'italic'}}>assist you?</span>
           </h1>
           <p className="mx-auto mt-10 max-w-xl text-base leading-relaxed text-muted-foreground">
-            Our team responds personally within 24 hours. Every conversation begins with a name.
+            Our team responds personally within 24 hours on business days
+            (Monday–Saturday, 10:00–18:00 IST). Every conversation begins with a
+            name.
           </p>
         </Reveal>
       </section>

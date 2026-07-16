@@ -84,6 +84,7 @@ const FOOTER_ITEMS: MenuItemInput[] = [
   {title: 'Privacy', type: 'HTTP', url: '/privacy'},
   {title: 'Shipping', type: 'HTTP', url: '/shipping'},
   {title: 'Returns', type: 'HTTP', url: '/returns'},
+  {title: 'Cancellation', type: 'HTTP', url: '/cancellation'},
   {title: 'Disclaimer', type: 'HTTP', url: '/disclaimer'},
 ];
 
@@ -94,11 +95,11 @@ const POLICIES: Array<{type: string; body: string}> = [
   },
   {
     type: 'REFUND_POLICY',
-    body: '<p>Each piece is handcrafted and inspected before dispatch. If your item arrives damaged or materially different from its description, contact us within 14 days of delivery at concierge@thekashmirweaver.com with your order number and photos. Approved returns are refunded to the original payment method within 10 business days of receiving the returned item. Custom or made-to-order pieces may not be eligible for return unless defective.</p>',
+    body: '<p>Each piece is handcrafted and inspected before dispatch. If your item arrives damaged or materially different from its description, contact us within 14 days of delivery at thekashmirweaver@gmail.com with your order number and photos. Approved returns are refunded to the original payment method within 10 business days of receiving the returned item. Custom or made-to-order pieces may not be eligible for return unless defective.</p>',
   },
   {
     type: 'TERMS_OF_SERVICE',
-    body: '<p>By using The Kashmir Weaver website and purchasing our products, you agree to these terms. All content, imagery, and designs are the property of The Kashmir Weaver. Prices are listed in the currency shown at checkout and may change without notice. We reserve the right to limit quantities or refuse orders. These terms are governed by applicable law in India. For questions, contact concierge@thekashmirweaver.com.</p>',
+    body: '<p>By using The Kashmir Weaver website and purchasing our products, you agree to these terms. All content, imagery, and designs are the property of The Kashmir Weaver. Prices are listed in the currency shown at checkout and may change without notice. We reserve the right to limit quantities or refuse orders. These terms are governed by applicable law in India. For questions, contact thekashmirweaver@gmail.com.</p>',
   },
 ];
 

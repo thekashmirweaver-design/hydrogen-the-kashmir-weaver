@@ -82,7 +82,20 @@ export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}
               <Eyebrow>Order Summary</Eyebrow>
               <div className="mt-6 space-y-3 text-sm sm:mt-8 sm:space-y-4">
                 <CartTotals cart={cart} />
-                <Row k="Shipping" v="Complimentary" />
+                <Row
+                  k="Shipping"
+                  v={
+                    <span>
+                      Calculated at checkout.{' '}
+                      <Link
+                        to="/shipping"
+                        className="text-accent transition hover:opacity-80"
+                      >
+                        Policy
+                      </Link>
+                    </span>
+                  }
+                />
                 <Row k="Taxes" v="Calculated at checkout" />
               </div>
               <Hairline className="my-5 sm:my-6" />

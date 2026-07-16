@@ -286,7 +286,18 @@ function businessContactPoint() {
     email: CONTACT.email,
     telephone: CONTACT.phone,
     areaServed: 'Worldwide',
+    availableLanguage: ['English', 'Hindi', 'Urdu'],
   };
+}
+
+function businessTaxId() {
+  const gstin = BUSINESS.gstin?.trim();
+  return gstin
+    ? {
+        taxID: gstin,
+        vatID: gstin,
+      }
+    : {};
 }
 
 /** Collect non-empty social profile URLs for schema.org `sameAs`. */
@@ -307,10 +318,12 @@ export function organizationLd(
     '@type': 'Organization',
     '@id': `${storeUrl}/#organization`,
     name: BUSINESS.name,
+    legalName: BUSINESS.legalName,
     url: storeUrl,
     logo,
     address: businessPostalAddress(),
     contactPoint: businessContactPoint(),
+    ...businessTaxId(),
     ...(sameAs.length ? {sameAs} : {}),
   };
 }
@@ -322,11 +335,14 @@ export function localBusinessLd(storeUrl: string) {
     '@type': ['LocalBusiness', 'Organization'],
     '@id': `${storeUrl}/#localbusiness`,
     name: BUSINESS.name,
+    legalName: BUSINESS.legalName,
     url: storeUrl,
     image: logo,
     logo,
     address: businessPostalAddress(),
     contactPoint: businessContactPoint(),
+    openingHours: 'Mo-Sa 10:00-18:00',
+    ...businessTaxId(),
   };
 }
 
