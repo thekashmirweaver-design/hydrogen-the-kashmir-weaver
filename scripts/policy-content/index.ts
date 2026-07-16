@@ -41,7 +41,7 @@ export const SHIPPING_POLICY_HTML = `
 <p>We are unable to deliver to PO Box addresses in certain regions. Please contact Concierge before ordering if your address may be affected.</p>
 
 <h2>Order cancellation by the customer</h2>
-<p>To cancel before dispatch, see our <a href="/cancellation">Cancellation Policy</a>. Approved cancellations are refunded <strong>minus payment gateway fees</strong>.</p>
+<p>You may cancel within 24 hours of payment confirmation if not yet dispatched. Approved cancellations are refunded <strong>minus payment gateway fees</strong>. See our <a href="/returns">Returns Policy</a> for full details.</p>
 
 <h2>Contact</h2>
 <p>For delivery enquiries: <a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="${TEL_HREF}">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
@@ -78,27 +78,8 @@ export const REFUND_POLICY_HTML = `
 <p>If your piece arrives damaged or materially different from its description, contact Concierge within 48 hours of delivery with your order number and photographs. Do not accept a visibly damaged package — contact us immediately. We will arrange collection and a replacement or full refund at our cost.</p>
 
 <h2>Order cancellation</h2>
-<p>You may cancel an order within 24 hours of payment confirmation, provided it has not yet been dispatched. Approved cancellations are refunded to the original payment method <strong>minus payment gateway fees</strong> (non-refundable). After 24 hours, or once a bespoke piece has entered production, cancellation may no longer be possible. Email <a href="mailto:${EMAIL}">${EMAIL}</a> or call ${PHONE} with your order number. Full details: <a href="/cancellation">Cancellation Policy</a>.</p>
+<p>You may cancel an order within 24 hours of payment confirmation, provided it has not yet been dispatched. Approved cancellations are refunded to the original payment method <strong>minus payment gateway fees</strong> (non-refundable). After 24 hours, or once a bespoke piece has entered production, cancellation may no longer be possible. Email <a href="mailto:${EMAIL}">${EMAIL}</a> or call ${PHONE} with your order number.</p>
 <p>If your order has already shipped, please follow the return instructions above once received.</p>
-
-<h2>Contact</h2>
-<p><a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="${TEL_HREF}">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
-`.trim();
-
-export const CANCELLATION_POLICY_HTML = `
-<p class="policy-lead">This policy explains how to cancel an order placed through ${SITE} before or after dispatch.</p>
-
-<h2>Cancel within 24 hours</h2>
-<p>You may cancel an order within <strong>24 hours of payment confirmation</strong>, provided the order has not yet been dispatched. Approved cancellations are refunded to the original payment method, <strong>minus payment gateway fees</strong> charged on the original transaction (these fees are non-refundable).</p>
-
-<h2>After 24 hours or once in production</h2>
-<p>After 24 hours, or once a bespoke or made-to-order piece has entered production, cancellation may no longer be possible. Solids dyed to order follow the same rule once colour processing has begun. Where we can still cancel, the refund is the order amount <strong>minus payment gateway fees</strong>.</p>
-
-<h2>If your order has already shipped</h2>
-<p>Once dispatched, please follow our <a href="/returns">Returns Policy</a> after delivery. Contact Concierge before refusing delivery so we can guide you.</p>
-
-<h2>How to request cancellation</h2>
-<p>Email <a href="mailto:${EMAIL}">${EMAIL}</a> or call <a href="${TEL_HREF}">${PHONE}</a> with your order number. We aim to confirm within one business day during our support hours (Monday–Saturday, 10:00–18:00 IST).</p>
 
 <h2>Contact</h2>
 <p><a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="${TEL_HREF}">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
@@ -126,7 +107,7 @@ export const TERMS_OF_SERVICE_HTML = `
 <p>Returns are governed by our <a href="/returns">Returns Policy</a>. Statutory rights are unaffected.</p>
 
 <h2>7. Cancellation</h2>
-<p>You may cancel an order within 24 hours of payment confirmation if it has not yet been dispatched. Approved cancellation refunds are paid to the original payment method <strong>minus payment gateway fees</strong> (non-refundable). After that window, or once a bespoke piece has entered production, cancellation may no longer be possible. See our <a href="/cancellation">Cancellation Policy</a> for full details.</p>
+<p>You may cancel an order within 24 hours of payment confirmation if it has not yet been dispatched. Approved cancellation refunds are paid to the original payment method <strong>minus payment gateway fees</strong> (non-refundable). After that window, or once a bespoke piece has entered production, cancellation may no longer be possible. See our <a href="/returns">Returns Policy</a> for full details.</p>
 
 <h2>8. Intellectual property</h2>
 <p>All content on this site — text, imagery, design, logos, and product descriptions — is owned by or licensed to The Kashmir Weaver and protected by applicable copyright and trademark laws. You may not reproduce, distribute, or exploit any content without our written permission.</p>
@@ -221,7 +202,7 @@ export const FAQ_PAGE_HTML = `
 <p>Yes. We use industry-standard SSL encryption. All orders are processed through Shopify secure checkout. We never store full card numbers on our servers.</p>
 
 <h2>Can I cancel my order?</h2>
-<p>Yes. You may cancel within 24 hours of payment confirmation if the order has not yet been dispatched. The refund is the order amount <strong>minus payment gateway fees</strong>. See our <a href="/cancellation">Cancellation Policy</a> or contact Concierge with your order number.</p>
+<p>Yes. You may cancel within 24 hours of payment confirmation if the order has not yet been dispatched. The refund is the order amount <strong>minus payment gateway fees</strong>. See our <a href="/returns">Returns Policy</a> or contact Concierge with your order number.</p>
 
 <h2>What are your customer service hours?</h2>
 <p>Concierge is available Monday–Saturday, 10:00–18:00 IST by email, phone, and WhatsApp. We aim to respond within 24 hours on business days.</p>
@@ -258,13 +239,5 @@ export const PAGE_UPDATES: Array<{
     seoTitle: 'FAQ — The Kashmir Weaver',
     seoDescription:
       'Answers on ordering, shipping, returns, authenticity, and care for The Kashmir Weaver pashmina.',
-  },
-  {
-    handle: 'cancellation',
-    title: 'Cancellation Policy',
-    body: CANCELLATION_POLICY_HTML,
-    seoTitle: 'Cancellation Policy — The Kashmir Weaver',
-    seoDescription:
-      'How to cancel a The Kashmir Weaver order within 24 hours or after dispatch.',
   },
 ];

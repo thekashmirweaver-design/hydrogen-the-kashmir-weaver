@@ -9,8 +9,6 @@ import {
   CRAFT_PULL_QUOTE_ATTRIBUTION,
   DISCLAIMER_INTRO,
   DISCLAIMER_SECTIONS,
-  CANCELLATION_INTRO,
-  CANCELLATION_SECTIONS,
   FAQS,
   HERITAGE_HERO,
   PRIVACY_INTRO,
@@ -77,7 +75,6 @@ export type PrivacyPageViewModel = LegalPageViewModel;
 export type ShippingPageViewModel = LegalPageViewModel;
 export type RefundPageViewModel = LegalPageViewModel;
 export type DisclaimerPageViewModel = LegalPageViewModel;
-export type CancellationPageViewModel = LegalPageViewModel;
 
 export type AboutPageViewModel = {
   metadata: PageMetadata;
@@ -427,27 +424,6 @@ export async function getDisclaimerPage(
     metadata: {
       title: 'Disclaimer — The Kashmir Weaver',
       description: 'Terms of use and disclaimers for The Kashmir Weaver website.',
-    },
-  });
-}
-
-export async function getCancellationPage(
-  storefront?: Storefront,
-): Promise<CancellationPageViewModel> {
-  const contact = await shopContact(storefront);
-  return getShopifyHtmlPage(storefront, 'cancellation', {
-    intro: CANCELLATION_INTRO,
-    sections: [
-      ...CANCELLATION_SECTIONS.slice(0, -1),
-      {
-        title: 'How to request cancellation',
-        body: `Email ${contact.email} or call ${contact.phone} with your order number. We aim to confirm within one business day during our support hours (Monday–Saturday, 10:00–18:00 IST).`,
-      },
-    ],
-    metadata: {
-      title: 'Cancellation Policy — The Kashmir Weaver',
-      description:
-        'How to cancel a The Kashmir Weaver order within 24 hours or after dispatch.',
     },
   });
 }

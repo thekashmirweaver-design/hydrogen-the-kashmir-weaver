@@ -28,7 +28,6 @@ export {
 } from '~/controllers/journal.controller';
 export {
   getAboutPage,
-  getCancellationPage,
   getCareGuidePage,
   getCraftPage,
   getDisclaimerPage,
@@ -39,7 +38,6 @@ export {
   getShippingPage,
   getTermsPage,
   type AboutPageViewModel,
-  type CancellationPageViewModel,
   type CareGuidePageViewModel,
   type CraftPageViewModel,
   type DisclaimerPageViewModel,

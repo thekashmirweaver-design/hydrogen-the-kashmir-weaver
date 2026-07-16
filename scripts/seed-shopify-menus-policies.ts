@@ -84,7 +84,6 @@ const FOOTER_ITEMS: MenuItemInput[] = [
   {title: 'Privacy', type: 'HTTP', url: '/privacy'},
   {title: 'Shipping', type: 'HTTP', url: '/shipping'},
   {title: 'Returns', type: 'HTTP', url: '/returns'},
-  {title: 'Cancellation', type: 'HTTP', url: '/cancellation'},
   {title: 'Disclaimer', type: 'HTTP', url: '/disclaimer'},
 ];
 

@@ -98,7 +98,7 @@ export function AboutView({contact}: AboutPageViewModel) {
               Policies &amp; payments
             </h2>
             <p className="mt-4 leading-relaxed text-muted-foreground">
-              Shipping, returns, cancellations, privacy, and terms are published
+              Shipping, returns, privacy, and terms are published
               on this site and linked in the footer. Payment is taken securely at
               Shopify checkout — methods shown there may include major credit and
               debit cards, UPI, net banking, and other options enabled for your
@@ -111,8 +111,8 @@ export function AboutView({contact}: AboutPageViewModel) {
                 Returns
               </Link>
               , and{' '}
-              <Link to="/cancellation" className="text-accent transition hover:opacity-80">
-                Cancellation
+              <Link to="/terms" className="text-accent transition hover:opacity-80">
+                Terms
               </Link>
               .
             </p>

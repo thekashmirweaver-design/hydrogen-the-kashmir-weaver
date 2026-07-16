@@ -145,7 +145,7 @@ export const FAQS: FaqItem[] = [
   },
   {
     q: 'Can I cancel my order?',
-    a: 'Yes. You may cancel within 24 hours of payment confirmation if the order has not yet been dispatched. The refund is the order amount minus payment gateway fees. See our Cancellation Policy or contact Concierge with your order number.',
+    a: 'Yes. You may cancel within 24 hours of payment confirmation if the order has not yet been dispatched. The refund is the order amount minus payment gateway fees. See our Returns Policy or contact Concierge with your order number.',
   },
   {
     q: 'What are your customer service hours?',
@@ -212,7 +212,7 @@ export const SHIPPING_SECTIONS: LegalSection[] = [
   },
   {
     title: 'Order cancellation',
-    body: 'To cancel before dispatch, see our Cancellation Policy. Approved cancellations are refunded minus payment gateway fees.',
+    body: 'You may cancel within 24 hours of payment confirmation if not yet dispatched. Approved cancellations are refunded minus payment gateway fees. See our Returns Policy for full details.',
   },
 ];
 
@@ -242,7 +242,7 @@ export function refundSections(
     },
     {
       title: 'Order cancellation',
-      body: `You may cancel an order within 24 hours of payment confirmation, provided it has not yet been dispatched. Approved cancellations are refunded minus payment gateway fees (non-refundable). After 24 hours, or once a bespoke piece has entered production, cancellation may no longer be possible. Email ${contact.email} or call ${contact.phone} with your order number. See our Cancellation Policy for full details.`,
+      body: `You may cancel an order within 24 hours of payment confirmation, provided it has not yet been dispatched. Approved cancellations are refunded minus payment gateway fees (non-refundable). After 24 hours, or once a bespoke piece has entered production, cancellation may no longer be possible. Email ${contact.email} or call ${contact.phone} with your order number.`,
     },
     {
       title: 'Contact',
@@ -269,28 +269,6 @@ export const DISCLAIMER_SECTIONS: LegalSection[] = [
   {
     title: 'Governing law',
     body: 'All use of this site is governed by the laws of Srinagar, Jammu & Kashmir, India.',
-  },
-];
-
-export const CANCELLATION_INTRO =
-  'This policy explains how to cancel an order placed through The Kashmir Weaver before or after dispatch.';
-
-export const CANCELLATION_SECTIONS: LegalSection[] = [
-  {
-    title: 'Cancel within 24 hours',
-    body: 'You may cancel an order within 24 hours of payment confirmation, provided the order has not yet been dispatched. Approved cancellations are refunded to the original payment method minus payment gateway fees charged on the original transaction (these fees are non-refundable).',
-  },
-  {
-    title: 'After 24 hours or once in production',
-    body: 'After 24 hours, or once a bespoke or made-to-order piece has entered production, cancellation may no longer be possible. Solids dyed to order follow the same rule once colour processing has begun. Where we can still cancel, the refund is the order amount minus payment gateway fees.',
-  },
-  {
-    title: 'If your order has already shipped',
-    body: 'Once dispatched, please follow our Returns Policy after delivery. Do not refuse delivery solely to cancel — contact Concierge so we can guide you.',
-  },
-  {
-    title: 'How to request cancellation',
-    body: `Email ${CONTACT.email} or call ${CONTACT.phone} with your order number. We aim to confirm within one business day during our support hours (Monday–Saturday, 10:00–18:00 IST).`,
   },
 ];
 
@@ -321,7 +299,7 @@ export function termsSections(
     },
     {
       title: '6. Cancellation',
-      body: 'You may cancel an order within 24 hours of payment confirmation if it has not yet been dispatched. Approved cancellation refunds are paid to the original payment method minus payment gateway fees (non-refundable). After that window, or once a bespoke piece has entered production, cancellation may no longer be possible. See our Cancellation Policy for full details.',
+      body: 'You may cancel an order within 24 hours of payment confirmation if it has not yet been dispatched. Approved cancellation refunds are paid to the original payment method minus payment gateway fees (non-refundable). After that window, or once a bespoke piece has entered production, cancellation may no longer be possible. See our Returns Policy for full details.',
     },
     {
       title: '7. Authenticity',
