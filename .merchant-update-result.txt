@@ -1,0 +1,55 @@
+OK: accounts.get (before)
+FAIL: accounts.update (business address): {
+  "error": {
+    "code": 400,
+    "message": "Required parameter: [resource.name]",
+    "errors": [
+      {
+        "message": "Required parameter: [resource.name]",
+        "domain": "global",
+        "reason": "required"
+      }
+    ]
+  }
+}
+FAIL: returnpolicyonline.get: "Missing required parameters: returnPolicyId"
+FAIL: returnpolicyonline.update (return policy URI): "content.returnpolicyonline.update is not a function"
+OK: accounts.get (after)
+{
+  "merchantId": "5822844259",
+  "beforeBusinessAddress": {
+    "streetAddress": "17 Batamaloo - Tengpur Road MominabadH-10A",
+    "locality": "Srinagar",
+    "region": "Jammu and Kashmir",
+    "postalCode": "190009",
+    "country": "IN"
+  },
+  "addressUpdate": {
+    "ok": false,
+    "error": {
+      "error": {
+        "code": 400,
+        "message": "Required parameter: [resource.name]",
+        "errors": [
+          {
+            "message": "Required parameter: [resource.name]",
+            "domain": "global",
+            "reason": "required"
+          }
+        ]
+      }
+    }
+  },
+  "returnPolicyGet": "Missing required parameters: returnPolicyId",
+  "returnPolicyUpdate": {
+    "ok": false,
+    "error": "content.returnpolicyonline.update is not a function"
+  },
+  "afterBusinessAddress": {
+    "streetAddress": "17 Batamaloo - Tengpur Road MominabadH-10A",
+    "locality": "Srinagar",
+    "region": "Jammu and Kashmir",
+    "postalCode": "190009",
+    "country": "IN"
+  }
+}

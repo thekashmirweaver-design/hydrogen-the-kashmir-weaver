@@ -1,3 +1,18 @@
+> **LEGACY — DO NOT USE FOR SEEDING OR DEPLOYMENT**
+>
+> This file is retained for historical reference only. **Do not** seed Shopify policies, Merchant Center data, or storefront content from it.
+>
+> **Source of truth:** `scripts/policy-content/index.ts` (run `npm run seed:policies`).
+>
+> **Canonical business identity (The Kashmir Weaver):**
+> - Legal / trading name: The Kashmir Weaver
+> - Address: H 10-A, Firdousa Abad, Batamaloo, Srinagar, Jammu and Kashmir 190009, India
+> - Email: thekashmirweaver@gmail.com
+> - Phone: +91-9796105623
+> - Storefront: https://thekashmirweaver.shop
+>
+> The content below still references the former Pure Kashmir brand and must not be used as-is.
+
 Delivery and Returns
 Share    
 Free International Delivery
@@ -22,12 +37,10 @@ We are unable to redirect orders once they have been dispatched and if delivery 
 Online returns information
 If for any reason you are not completely satisfied with your online purchase and wish to return it for a full refund*, please ensure that the goods are returned in perfect saleable condition, in their original packaging, with invoice as proof of purchase within 14 days of receipt to:
 
-RETURNS AT PUREKASHMIR.COM
-53 Gousiya Mohalla
-Umar Colony , Lal Bazar
-Srinagar 190016
-Jammu and Kashmir
-INDIA
+The Kashmir Weaver — Returns
+H 10-A, Firdousa Abad, Batamaloo
+Srinagar, Jammu and Kashmir 190009
+India
 
 
 We will issue a full refund to the card used when placing the order, excluding any delivery charges, once the order has been processed. Please allow up to 10-15 days for a full refund from date of receipt of goods. Please note: the cost of returning the goods and the safe return of goods is your responsibility until the order is received at our returns depot, therefore we suggest you arranged as tracked or recorded delivery service and for high-value items, that you insure the costs of goods before you send them.
@@ -36,14 +49,14 @@ We will issue a full refund to the card used when placing the order, excluding a
 
 Sale items or special purchases bought during the sale or at promotional events may only be returned for exchange or shopping credit if returned in their original condition with proof of purchase subject to the conditions stated above, during the same sale period or promotional event or within 14 days of purchase (whichever is earlier). Any shopping credit issued must be redeemed online by the end of that sale period or promotional event. Items reduced to 50% or below original retail price cannot be returned. This does not affect your statutory rights.
 
-If you wish to return or exchange your online order, please contact Customer Services on: +91(0)92959 22 33 22  or email contact@purekashmir.com and they will be able to assist you.
+If you wish to return or exchange your online order, please contact Customer Services on: +91-9796105623 or email thekashmirweaver@gmail.com and they will be able to assist you.
 
-In the rare event that goods are delivered faulty or damaged please contact our customer services department on +91 (0)92959 22 33 22 or email contact@purekashmir.com so we can arrange a replacement or a refund. If the package you receive is damaged or open please do not accept the delivery and contact customer services immediately to arrange a replacement. We will bear the costs to collect the goods and issue a re-delivery. 
+In the rare event that goods are delivered faulty or damaged please contact our customer services department on +91-9796105623 or email thekashmirweaver@gmail.com so we can arrange a replacement or a refund. If the package you receive is damaged or open please do not accept the delivery and contact customer services immediately to arrange a replacement. We will bear the costs to collect the goods and issue a re-delivery. 
 
  
 
 Order Cancellations
-If you wish to cancel an order placed at purekashmir.com please return the confirmation email to us, stating your wish to cancel the order by email to: contact@purekashmir.com or phone our customer service team on +91 (0)92050 22 33 22.
+If you wish to cancel an order placed at thekashmirweaver.shop please return the confirmation email to us, stating your wish to cancel the order by email to: thekashmirweaver@gmail.com or phone our customer service team on +91-9796105623.
 
 If your order has already been dispatched, we will be unable to redirect it therefore request that you follow the return instructions included in the parcel.
 

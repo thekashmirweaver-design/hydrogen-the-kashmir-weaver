@@ -156,7 +156,7 @@ type CatalogEntry = {
   publishedAt?: string;
 };
 
-const mat = "100% pure pashmina cashmere";
+const mat = "Handwoven Kashmiri pashmina cashmere";
 
 const C = {
   solids: { handle: "solids", name: "Solid Pashmina" },

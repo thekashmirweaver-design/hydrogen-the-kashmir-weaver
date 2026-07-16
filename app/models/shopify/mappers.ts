@@ -392,7 +392,7 @@ export function mapProduct(node: ShopifyProductNode): Product {
     images,
     material:
       getMetafield(fields, PRODUCT_METAFIELDS.material) ??
-      '100% pure pashmina cashmere',
+      'Handwoven Kashmiri pashmina cashmere',
     origin: getMetafield(fields, PRODUCT_METAFIELDS.origin) ?? 'Kashmir',
     weave:
       getMetafield(fields, PRODUCT_METAFIELDS.weave) ??

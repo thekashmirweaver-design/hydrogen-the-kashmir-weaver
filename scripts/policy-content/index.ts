@@ -11,7 +11,7 @@ const SITE =
     process.env.PUBLIC_STORE_URL?.replace(/^https?:\/\//, '').replace(/\/$/, '')) ||
   'thekashmirweaver.shop';
 const RETURNS_ADDRESS =
-  'H 10-A, Firdousa Abad, Batamaloo, Srinagar, J&amp;K, India 190009';
+  'H 10-A, Firdousa Abad, Batamaloo, Srinagar, Jammu and Kashmir 190009, India';
 
 export const SHIPPING_POLICY_HTML = `
 <p class="policy-lead">Every piece leaves our Srinagar atelier fully insured and tracked. This policy describes how we deliver hand-woven pashmina worldwide.</p>

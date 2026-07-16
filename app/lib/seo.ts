@@ -1,11 +1,14 @@
 import type {PageMetadata} from '~/controllers/catalog.controller';
+import {BUSINESS} from '~/lib/business';
+import {CONTACT} from '~/lib/contact';
+import type {ShopSocial} from '~/lib/shop-settings';
 export {
   META_DESCRIPTION_MAX,
   truncateMetaDescription,
 } from '~/lib/meta-description';
 
 const DEFAULT_STORE_URL = 'https://thekashmirweaver.shop';
-const SITE_NAME = 'The Kashmir Weaver';
+const SITE_NAME = BUSINESS.name;
 
 /** Oxygen preview deployments — never canonical storefront URLs. */
 const OXYGEN_PREVIEW_HOST = /\.o2\.myshopify\.dev$/i;
@@ -265,14 +268,65 @@ export function faqPageLd(items: Array<{q: string; a: string}>) {
   };
 }
 
-export function organizationLd(storeUrl: string) {
+function businessPostalAddress() {
+  return {
+    '@type': 'PostalAddress',
+    streetAddress: BUSINESS.streetAddress,
+    addressLocality: BUSINESS.locality,
+    addressRegion: BUSINESS.region,
+    postalCode: BUSINESS.postalCode,
+    addressCountry: BUSINESS.countryCode,
+  };
+}
+
+function businessContactPoint() {
+  return {
+    '@type': 'ContactPoint',
+    contactType: 'customer service',
+    email: CONTACT.email,
+    telephone: CONTACT.phone,
+    areaServed: 'Worldwide',
+  };
+}
+
+/** Collect non-empty social profile URLs for schema.org `sameAs`. */
+export function socialSameAs(social?: ShopSocial): string[] {
+  if (!social) return [];
+  return [social.instagram, social.facebook, social.pinterest, social.youtube]
+    .filter((url): url is string => Boolean(url?.trim()));
+}
+
+export function organizationLd(
+  storeUrl: string,
+  options?: {sameAs?: string[]},
+) {
+  const sameAs = (options?.sameAs ?? []).filter(Boolean);
+  const logo = absoluteUrl('/assets/brand-mark.png', storeUrl);
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: SITE_NAME,
+    '@id': `${storeUrl}/#organization`,
+    name: BUSINESS.name,
     url: storeUrl,
-    logo: absoluteUrl('/assets/brand-mark.png', storeUrl),
-    sameAs: [],
+    logo,
+    address: businessPostalAddress(),
+    contactPoint: businessContactPoint(),
+    ...(sameAs.length ? {sameAs} : {}),
+  };
+}
+
+export function localBusinessLd(storeUrl: string) {
+  const logo = absoluteUrl('/assets/brand-mark.png', storeUrl);
+  return {
+    '@context': 'https://schema.org',
+    '@type': ['LocalBusiness', 'Organization'],
+    '@id': `${storeUrl}/#localbusiness`,
+    name: BUSINESS.name,
+    url: storeUrl,
+    image: logo,
+    logo,
+    address: businessPostalAddress(),
+    contactPoint: businessContactPoint(),
   };
 }
 

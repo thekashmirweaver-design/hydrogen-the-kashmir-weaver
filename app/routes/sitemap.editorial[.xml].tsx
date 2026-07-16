@@ -15,6 +15,7 @@ const EDITORIAL_PATHS = [
   '/collections/all',
   '/collections',
   '/journal',
+  '/about',
   '/heritage',
   '/craft',
   '/faq',

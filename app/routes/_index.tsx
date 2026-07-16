@@ -10,8 +10,10 @@ import {
   getStoreUrlFromMatches,
   organizationLd,
   seoBundle,
+  socialSameAs,
   websiteLd,
 } from '~/lib/seo';
+import type {ShopSettings} from '~/lib/shop-settings';
 
 const HOME_TITLE = 'The Kashmir Weaver — Timeless by nature. Woven by heritage.';
 const HOME_DESC =
@@ -19,11 +21,15 @@ const HOME_DESC =
 
 export const meta: Route.MetaFunction = ({location, matches}) => {
   const storeUrl = getStoreUrlFromMatches(matches);
+  const root = matches.find((match) => match?.id === 'root')?.data as
+    | {shopSettings?: ShopSettings}
+    | undefined;
+  const sameAs = socialSameAs(root?.shopSettings?.social);
   return seoBundle({
     metadata: {title: HOME_TITLE, description: HOME_DESC},
     pathname: location.pathname,
     storeUrl,
-    jsonLd: [organizationLd(storeUrl), websiteLd(storeUrl)],
+    jsonLd: [organizationLd(storeUrl, {sameAs}), websiteLd(storeUrl)],
   });
 };
 

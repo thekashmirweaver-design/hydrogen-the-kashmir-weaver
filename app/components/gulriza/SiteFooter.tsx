@@ -2,13 +2,17 @@ import {Link} from "react-router";
 import { Hairline } from "./Eyebrow";
 import { BrandLockup } from "~/components/gulriza/BrandLockup";
 import type {ShopSettings} from "~/lib/shop-settings";
+import {BUSINESS} from "~/lib/business";
 import {
   contactMailtoHref,
   contactTelHref,
   contactWhatsappHref,
 } from "~/lib/contact";
 
+const OUR_WORLD_PATHS = ["/about", "/heritage", "/craft", "/journal"] as const;
+
 const OUR_WORLD_LINKS = [
+  { to: "/about", label: "About" },
   { to: "/heritage", label: "Heritage" },
   { to: "/craft", label: "Craft" },
   { to: "/journal", label: "Journal" },
@@ -46,10 +50,10 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
   const ourWorldLinks =
     shopSettings?.footerMenu?.length &&
     shopSettings.footerMenu.some((item) =>
-      ["/heritage", "/craft", "/journal"].includes(item.to),
+      OUR_WORLD_PATHS.includes(item.to as (typeof OUR_WORLD_PATHS)[number]),
     )
       ? shopSettings.footerMenu.filter((item) =>
-          ["/heritage", "/craft", "/journal"].includes(item.to),
+          OUR_WORLD_PATHS.includes(item.to as (typeof OUR_WORLD_PATHS)[number]),
         )
       : [...OUR_WORLD_LINKS];
 
@@ -98,6 +102,7 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
                   {contact.phone}
                 </a>
               ) : null}
+              <p className="pt-2 leading-relaxed">{BUSINESS.fullAddress}</p>
             </div>
           </div>
 

@@ -76,6 +76,11 @@ export type ShippingPageViewModel = LegalPageViewModel;
 export type RefundPageViewModel = LegalPageViewModel;
 export type DisclaimerPageViewModel = LegalPageViewModel;
 
+export type AboutPageViewModel = {
+  metadata: PageMetadata;
+  contact: ContactInfo;
+};
+
 type ShopifyPage = {
   handle: string;
   title: string;
@@ -421,4 +426,18 @@ export async function getDisclaimerPage(
       description: 'Terms of use and disclaimers for The Kashmir Weaver website.',
     },
   });
+}
+
+export async function getAboutPage(
+  storefront?: Storefront,
+): Promise<AboutPageViewModel> {
+  const contact = await shopContact(storefront);
+  return {
+    contact,
+    metadata: {
+      title: 'About — The Kashmir Weaver',
+      description:
+        'The Kashmir Weaver is a Srinagar atelier for hand-woven Kashmiri pashmina. Legal name, studio address, and contact details.',
+    },
+  };
 }

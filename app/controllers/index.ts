@@ -27,6 +27,7 @@ export {
   type JournalPageViewModel,
 } from '~/controllers/journal.controller';
 export {
+  getAboutPage,
   getCareGuidePage,
   getCraftPage,
   getDisclaimerPage,
@@ -36,6 +37,7 @@ export {
   getRefundPage,
   getShippingPage,
   getTermsPage,
+  type AboutPageViewModel,
   type CareGuidePageViewModel,
   type CraftPageViewModel,
   type DisclaimerPageViewModel,

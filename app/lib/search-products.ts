@@ -118,7 +118,7 @@ export function mapSearchProductToProduct(node: SearchProductFragment): Product 
           },
         ]
       : [],
-    material: '100% pure pashmina cashmere',
+    material: 'Handwoven Kashmiri pashmina cashmere',
     origin: 'Kashmir',
     weave: 'Hand-woven',
     stock: 'in',
