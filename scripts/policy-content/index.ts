@@ -40,6 +40,9 @@ export const SHIPPING_POLICY_HTML = `
 <p>We cannot redirect orders once dispatched. If delivery proves impossible or impractical on two or more occasions, we may cancel the order and deduct original delivery charges from any refund. We will notify you so you may place a new order if required.</p>
 <p>We are unable to deliver to PO Box addresses in certain regions. Please contact Concierge before ordering if your address may be affected.</p>
 
+<h2>Order cancellation by the customer</h2>
+<p>To cancel before dispatch, see our <a href="/cancellation">Cancellation Policy</a>. Approved cancellations are refunded <strong>minus payment gateway fees</strong>.</p>
+
 <h2>Contact</h2>
 <p>For delivery enquiries: <a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="${TEL_HREF}">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
 `.trim();
@@ -122,28 +125,31 @@ export const TERMS_OF_SERVICE_HTML = `
 <h2>6. Returns</h2>
 <p>Returns are governed by our <a href="/returns">Returns Policy</a>. Statutory rights are unaffected.</p>
 
-<h2>7. Intellectual property</h2>
+<h2>7. Cancellation</h2>
+<p>You may cancel an order within 24 hours of payment confirmation if it has not yet been dispatched. Approved cancellation refunds are paid to the original payment method <strong>minus payment gateway fees</strong> (non-refundable). After that window, or once a bespoke piece has entered production, cancellation may no longer be possible. See our <a href="/cancellation">Cancellation Policy</a> for full details.</p>
+
+<h2>8. Intellectual property</h2>
 <p>All content on this site — text, imagery, design, logos, and product descriptions — is owned by or licensed to The Kashmir Weaver and protected by applicable copyright and trademark laws. You may not reproduce, distribute, or exploit any content without our written permission.</p>
 
-<h2>8. User conduct</h2>
+<h2>9. User conduct</h2>
 <p>You agree not to use the site for unlawful purposes, to transmit harmful or objectionable material, to gain unauthorised access to systems, or to interfere with other users or site operation.</p>
 
-<h2>9. Limitation of liability</h2>
+<h2>10. Limitation of liability</h2>
 <p>The site and products are provided without warranties beyond those required by law. To the fullest extent permitted, The Kashmir Weaver shall not be liable for indirect, incidental, special, or consequential damages. Our total liability for any claim arising from these terms or your purchase is limited to the amount you paid for the product in question.</p>
 
-<h2>10. Indemnity</h2>
+<h2>11. Indemnity</h2>
 <p>You agree to indemnify The Kashmir Weaver against claims arising from your breach of these terms, misuse of the site, or violation of any third-party rights.</p>
 
-<h2>11. Electronic communications</h2>
+<h2>12. Electronic communications</h2>
 <p>By using the site or emailing us, you consent to receive communications electronically. Agreements, notices, and disclosures provided electronically satisfy any legal requirement that they be in writing.</p>
 
-<h2>12. Governing law</h2>
+<h2>13. Governing law</h2>
 <p>These terms are governed by the laws of India. The courts of Srinagar, Jammu &amp; Kashmir shall have exclusive jurisdiction. Any dispute shall be referred to arbitration in Srinagar under the Arbitration and Conciliation Act, 1996, as amended.</p>
 
-<h2>13. Changes</h2>
+<h2>14. Changes</h2>
 <p>We may modify these terms at any time. The current version is always available on this page. Continued use of the site after changes constitutes acceptance.</p>
 
-<h2>14. Contact</h2>
+<h2>15. Contact</h2>
 <p><a href="mailto:${EMAIL}">${EMAIL}</a> · <a href="${TEL_HREF}">${PHONE}</a> · <a href="/concierge">Concierge</a></p>
 `.trim();
 

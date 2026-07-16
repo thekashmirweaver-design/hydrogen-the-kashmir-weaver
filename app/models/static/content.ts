@@ -210,6 +210,10 @@ export const SHIPPING_SECTIONS: LegalSection[] = [
     title: 'Customs and duties',
     body: 'International customers are responsible for import duties and local taxes. Shipping fees are calculated at checkout.',
   },
+  {
+    title: 'Order cancellation',
+    body: 'To cancel before dispatch, see our Cancellation Policy. Approved cancellations are refunded minus payment gateway fees.',
+  },
 ];
 
 export const REFUND_INTRO =
@@ -316,23 +320,27 @@ export function termsSections(
       body: 'Ready-to-wear pieces may be returned within 14 days of delivery in unworn condition with original packaging. Bespoke, made-to-order, personalised pieces, and Solids (dyed to order) are final sale. Return shipping is the responsibility of the customer unless the item arrived damaged or incorrect. Refunds are processed to the original payment method within 10 business days of receipt.',
     },
     {
-      title: '6. Authenticity',
+      title: '6. Cancellation',
+      body: 'You may cancel an order within 24 hours of payment confirmation if it has not yet been dispatched. Approved cancellation refunds are paid to the original payment method minus payment gateway fees (non-refundable). After that window, or once a bespoke piece has entered production, cancellation may no longer be possible. See our Cancellation Policy for full details.',
+    },
+    {
+      title: '7. Authenticity',
       body: 'Every piece is authentic hand-woven Kashmiri pashmina. A Geographical Indication (GI) tag (GI No. 46) is available on demand. If you have concerns about authenticity, please contact our Concierge team before dispatch.',
     },
     {
-      title: '7. Intellectual Property',
+      title: '8. Intellectual Property',
       body: 'All content on this site — including text, imagery, design, logos, and product descriptions — is the property of The Kashmir Weaver and is protected by applicable copyright and trademark laws. You may not reproduce, distribute, or use any content without our express written permission.',
     },
     {
-      title: '8. Limitation of Liability',
+      title: '9. Limitation of Liability',
       body: 'To the maximum extent permitted by law, The Kashmir Weaver shall not be liable for any indirect, incidental, or consequential damages arising from the use of this site or the purchase of our products. Our total liability is limited to the amount paid for the product in question.',
     },
     {
-      title: '9. Governing Law',
+      title: '10. Governing Law',
       body: 'These terms are governed by the laws of India. Any disputes arising from these terms or your purchase shall be subject to the exclusive jurisdiction of the courts of Srinagar, Jammu & Kashmir.',
     },
     {
-      title: '10. Contact',
+      title: '11. Contact',
       body: `For questions about these terms, please reach out to our Concierge team via email at ${contact.email} or by phone at ${contact.phone}.`,
     },
   ];
