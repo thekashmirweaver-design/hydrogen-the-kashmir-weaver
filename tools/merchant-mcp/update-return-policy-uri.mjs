@@ -10,7 +10,7 @@ import {resolve, dirname} from 'path';
 import {fileURLToPath} from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const MERCHANT_ID = process.env.MERCHANT_ID || '5822844259';
+const MERCHANT_ID = process.env.MERCHANT_ID || '5825882191';
 const KEY_PATH =
   process.env.GOOGLE_APPLICATION_CREDENTIALS ||
   resolve(__dirname, '../../secrets/google/merchant-service-account.json');

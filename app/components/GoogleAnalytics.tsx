@@ -2,11 +2,13 @@ import {useEffect, useRef} from 'react';
 import {useLocation} from 'react-router';
 import {
   useAnalytics,
-  type CartLineUpdatePayload,
   type CartViewPayload,
   type ProductViewPayload,
 } from '@shopify/hydrogen';
-import type {CartLine, ComponentizableCartLine} from '@shopify/hydrogen/storefront-api-types';
+import type {
+  CartLine,
+  ComponentizableCartLine,
+} from '@shopify/hydrogen/storefront-api-types';
 
 export const GA_MEASUREMENT_ID = 'G-2WQQF2JKTQ';
 
@@ -26,6 +28,16 @@ type GaItem = {
   price?: number;
   quantity?: number;
 };
+
+type TrackableCart = {
+  id?: string | null;
+  updatedAt?: string | null;
+  cost?: {
+    totalAmount?: {amount?: string | number; currencyCode?: string} | null;
+    subtotalAmount?: {amount?: string | number; currencyCode?: string} | null;
+  } | null;
+  lines?: unknown;
+} | null | undefined;
 
 let gtagLoadPromise: Promise<void> | null = null;
 
@@ -75,6 +87,26 @@ function scheduleGtagLoad() {
   window.addEventListener('keydown', onInteract, {once: true});
 }
 
+/** Only send hits from Shopify storefront hosts — skip localhost / tunnels. */
+function isShopifyStorefrontHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  if (host === 'localhost' || host.endsWith('.localhost')) return false;
+  if (host.includes('ngrok') || host.endsWith('.local')) return false;
+  if (host === 'thekashmirweaver.shop' || host === 'www.thekashmirweaver.shop') {
+    return true;
+  }
+  if (host.endsWith('.myshopify.com') && !host.endsWith('.o2.myshopify.dev')) {
+    return true;
+  }
+  if (host.endsWith('.hydrogen.shop')) return true;
+  return false;
+}
+
+function shouldSendToGa(): boolean {
+  if (typeof window === 'undefined') return false;
+  return isShopifyStorefrontHost(window.location.hostname);
+}
+
 function gidTail(id?: string | null): string {
   if (!id) return '';
   const parts = id.split('/');
@@ -88,14 +120,6 @@ function moneyAmount(
   const n = typeof money.amount === 'number' ? money.amount : Number(money.amount);
   return Number.isFinite(n) ? n : undefined;
 }
-
-type TrackableCart = {
-  cost?: {
-    totalAmount?: {amount?: string | number; currencyCode?: string} | null;
-    subtotalAmount?: {amount?: string | number; currencyCode?: string} | null;
-  } | null;
-  lines?: unknown;
-} | null | undefined;
 
 function cartCurrency(cart: TrackableCart, fallback = 'USD'): string {
   return (
@@ -169,6 +193,7 @@ async function sendGaEvent(
   name: string,
   params: Record<string, unknown>,
 ): Promise<void> {
+  if (!shouldSendToGa()) return;
   await loadGtag();
   if (typeof window.gtag !== 'function') return;
   window.gtag('event', name, params);
@@ -204,21 +229,90 @@ export function trackBeginCheckoutItems(
   });
 }
 
+function cartSnapshotKey(cart: TrackableCart): string | null {
+  if (!cart?.id || !cart.updatedAt) return null;
+  return `${cart.id}:${cart.updatedAt}`;
+}
+
+/**
+ * Diff settled Shopify carts (from Hydrogen Analytics context) into GA4
+ * cart events. Avoids Hydrogen's one-shot publish race where cart `updatedAt`
+ * is consumed while `canTrack()` is still false.
+ */
+function publishCartDiffToGa(
+  cart: TrackableCart,
+  prevCart: TrackableCart,
+  shopCurrency?: string,
+): void {
+  const currency = cartCurrency(cart, shopCurrency || 'USD');
+  const previousLines = cartLines(prevCart);
+  const currentLines = cartLines(cart);
+  const prevById = new Map(previousLines.map((line) => [line.id, line]));
+  const currentById = new Map(currentLines.map((line) => [line.id, line]));
+
+  for (const [id, prevLine] of prevById) {
+    const nextLine = currentById.get(id);
+    if (!nextLine) {
+      const item = lineToGaItem(prevLine);
+      if (!item) continue;
+      void sendGaEvent('remove_from_cart', {
+        currency,
+        value: (item.price ?? 0) * (item.quantity ?? 1),
+        items: [item],
+      });
+      continue;
+    }
+    if (prevLine.quantity < nextLine.quantity) {
+      const item = lineToGaItem(nextLine);
+      if (!item) continue;
+      const addedQty = nextLine.quantity - prevLine.quantity;
+      const lineItem = {...item, quantity: addedQty};
+      void sendGaEvent('add_to_cart', {
+        currency,
+        value: (lineItem.price ?? 0) * addedQty,
+        items: [lineItem],
+      });
+    } else if (prevLine.quantity > nextLine.quantity) {
+      const item = lineToGaItem(prevLine);
+      if (!item) continue;
+      const removedQty = prevLine.quantity - nextLine.quantity;
+      const lineItem = {...item, quantity: removedQty};
+      void sendGaEvent('remove_from_cart', {
+        currency,
+        value: (lineItem.price ?? 0) * removedQty,
+        items: [lineItem],
+      });
+    }
+  }
+
+  for (const [id, line] of currentById) {
+    if (prevById.has(id)) continue;
+    const item = lineToGaItem(line);
+    if (!item) continue;
+    void sendGaEvent('add_to_cart', {
+      currency,
+      value: (item.price ?? 0) * (item.quantity ?? 1),
+      items: [item],
+    });
+  }
+}
+
 /**
  * Defers GA4 until idle / first interaction so gtag does not compete with LCP.
- * Subscribes to Hydrogen Analytics ecommerce events and forwards them to GA4.
+ * Ecommerce payloads use the Shopify cart from Hydrogen Analytics (SSOT).
  */
 export function GoogleAnalytics(): null {
   const location = useLocation();
   const isFirstPath = useRef(true);
   const bootstrapped = useRef(false);
-  const {subscribe, register, canTrack} = useAnalytics();
+  const lastCartKey = useRef<string | null>(null);
+  const {subscribe, register, canTrack, cart, prevCart, shop} = useAnalytics();
   const {ready} = register('Google Analytics');
 
   useEffect(() => {
     if (bootstrapped.current) return;
     bootstrapped.current = true;
-    scheduleGtagLoad();
+    if (shouldSendToGa()) scheduleGtagLoad();
   }, []);
 
   useEffect(() => {
@@ -232,36 +326,6 @@ export function GoogleAnalytics(): null {
         0,
       );
       void sendGaEvent('view_item', {currency, value, items});
-    });
-
-    subscribe('product_added_to_cart', (payload: CartLineUpdatePayload) => {
-      if (!canTrack()) return;
-      const item = lineToGaItem(payload.currentLine);
-      if (!item) return;
-      const prevQty = payload.prevLine?.quantity ?? 0;
-      const nextQty = payload.currentLine?.quantity ?? item.quantity ?? 1;
-      const addedQty = Math.max(1, nextQty - prevQty);
-      const lineItem = {...item, quantity: addedQty};
-      void sendGaEvent('add_to_cart', {
-        currency: cartCurrency(payload.cart, payload.shop?.currency),
-        value: (lineItem.price ?? 0) * addedQty,
-        items: [lineItem],
-      });
-    });
-
-    subscribe('product_removed_from_cart', (payload: CartLineUpdatePayload) => {
-      if (!canTrack()) return;
-      const item = lineToGaItem(payload.prevLine ?? payload.currentLine);
-      if (!item) return;
-      const prevQty = payload.prevLine?.quantity ?? item.quantity ?? 1;
-      const nextQty = payload.currentLine?.quantity ?? 0;
-      const removedQty = Math.max(1, prevQty - nextQty);
-      const lineItem = {...item, quantity: removedQty};
-      void sendGaEvent('remove_from_cart', {
-        currency: cartCurrency(payload.cart, payload.shop?.currency),
-        value: (lineItem.price ?? 0) * removedQty,
-        items: [lineItem],
-      });
     });
 
     subscribe('cart_viewed', (payload: CartViewPayload) => {
@@ -278,7 +342,24 @@ export function GoogleAnalytics(): null {
     ready();
   }, [subscribe, ready, canTrack]);
 
+  // Cart add/remove: diff Shopify cart state once consent allows tracking.
   useEffect(() => {
+    if (!canTrack()) return;
+    const key = cartSnapshotKey(cart);
+    if (!key) return;
+    if (lastCartKey.current === key) return;
+    lastCartKey.current = key;
+
+    // First settled cart in the session is baseline only (avoid fake adds).
+    if (!prevCart?.updatedAt || prevCart.updatedAt === cart?.updatedAt) {
+      return;
+    }
+
+    publishCartDiffToGa(cart, prevCart, shop?.currency);
+  }, [cart, prevCart, canTrack, shop?.currency]);
+
+  useEffect(() => {
+    if (!shouldSendToGa()) return;
     if (isFirstPath.current) {
       isFirstPath.current = false;
       return;

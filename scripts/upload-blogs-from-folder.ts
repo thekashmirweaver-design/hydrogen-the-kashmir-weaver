@@ -67,6 +67,7 @@ const CATEGORY_MAP: Record<string, JournalCategory> = {
   'how-to-fix-snags-pashmina-shawl': 'Style',
   'ultimate-mothers-day-gift-kashmiri-pashmina': 'Luxury Living',
   'how-to-style-pashmina-everyday-luxury': 'Style',
+  'how-men-wear-cashmere-scarf-pashmina-shawl': 'Style',
 };
 
 const SKIP_FOLDERS = new Set(['4', '7']);

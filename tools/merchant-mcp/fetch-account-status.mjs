@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Deep-dive Google Merchant Center account status for The Kashmir Weaver.
- * Merchant ID: 5822844259
+ * Merchant ID: 5825882191
  */
 import {google} from 'googleapis';
 import {readFileSync, writeFileSync} from 'fs';
@@ -9,7 +9,7 @@ import {resolve, dirname} from 'path';
 import {fileURLToPath} from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const MERCHANT_ID = '5822844259';
+const MERCHANT_ID = '5825882191';
 const KEY_PATH = resolve(
   __dirname,
   '../../secrets/google/merchant-service-account.json',

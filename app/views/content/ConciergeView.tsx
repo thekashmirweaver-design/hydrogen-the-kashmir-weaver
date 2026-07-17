@@ -265,7 +265,7 @@ function InquiryForm() {
             value={type}
             onChange={(e) => setType(e.target.value)}
             toolparamdescription="Reason for contacting the atelier."
-            className="mt-3 block min-h-11 w-full cursor-pointer appearance-none border-0 border-b bg-transparent py-3 text-base text-foreground outline-none transition focus:border-accent"
+            className="mt-3 block min-h-11 w-full cursor-pointer appearance-none border-0 border-b bg-transparent py-3 pl-3 text-base text-foreground outline-none transition focus:border-accent"
             style={{borderBottom: '1px solid var(--border)'}}
           >
             {INQUIRY_TYPES.map((option) => (
@@ -362,7 +362,7 @@ function Field({
   }
 
   const fieldClass =
-    'mt-3 block min-h-11 w-full border-0 border-b bg-transparent py-3 text-base text-foreground outline-none transition focus:border-accent';
+    'mt-3 block min-h-11 w-full border-0 border-b bg-transparent py-3 pl-3 text-base text-foreground outline-none transition focus:border-accent';
 
   return (
     <label className="block">

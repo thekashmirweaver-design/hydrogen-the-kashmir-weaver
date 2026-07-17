@@ -1,12 +1,8 @@
 import {Link} from "react-router";
 import { Hairline } from "./Eyebrow";
 import { BrandLockup } from "~/components/gulriza/BrandLockup";
+import {PaymentMethods} from "~/components/gulriza/PaymentMethods";
 import type {ShopSettings} from "~/lib/shop-settings";
-import {
-  contactMailtoHref,
-  contactTelHref,
-  contactWhatsappHref,
-} from "~/lib/contact";
 
 const OUR_WORLD_PATHS = ["/about", "/heritage", "/craft", "/journal"] as const;
 
@@ -34,12 +30,6 @@ const LEGAL_LINKS = [
 
 export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
   const social = shopSettings?.social ?? {};
-  const contact = shopSettings?.contact;
-  const mailto = contact?.email ? contactMailtoHref(contact.email) : undefined;
-  const tel = contact?.phone ? contactTelHref(contact.phone) : undefined;
-  const whatsapp = contact?.whatsapp
-    ? contactWhatsappHref(contact.whatsapp)
-    : undefined;
 
   const shopLinks = [
     { to: "/collections/all", label: "All Products" },
@@ -71,36 +61,13 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
             >
               Timeless by nature. <br /> Woven by heritage.
             </p>
-            <div className="mt-8 space-y-2 text-sm text-muted-foreground">
+            <div className="mt-8 text-sm text-muted-foreground">
               <Link
                 to="/concierge#contact"
                 className="tracked inline-block transition hover:text-accent"
               >
                 Contact Us
               </Link>
-              {contact?.email && mailto ? (
-                <a
-                  href={mailto}
-                  className="block transition hover:text-accent"
-                >
-                  {contact.email}
-                </a>
-              ) : null}
-              {contact?.whatsapp && whatsapp ? (
-                <a
-                  href={whatsapp}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block transition hover:text-accent"
-                >
-                  WhatsApp {contact.whatsapp}
-                </a>
-              ) : null}
-              {contact?.phone && tel ? (
-                <a href={tel} className="block transition hover:text-accent">
-                  {contact.phone}
-                </a>
-              ) : null}
             </div>
           </div>
 
@@ -111,7 +78,7 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
         </div>
 
         <Hairline />
-        <div className="flex flex-col items-center gap-6 py-8 md:flex-row md:justify-between">
+        <div className="flex flex-col items-center gap-6 py-8 md:flex-row md:justify-between md:gap-8">
           <div className="flex items-center justify-center gap-5 text-muted-foreground md:justify-start">
             {social.instagram && (
               <a href={social.instagram} aria-label="Instagram" target="_blank" rel="noreferrer">
@@ -137,7 +104,8 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
               </a>
             )}
           </div>
-          <p className="text-center text-[0.65rem] uppercase tracking-widest text-muted-foreground md:text-xs">
+          <PaymentMethods className="md:flex-1" />
+          <p className="text-center text-[0.65rem] uppercase tracking-widest text-muted-foreground md:text-right md:text-xs">
             © 2026 The Kashmir Weaver
           </p>
         </div>

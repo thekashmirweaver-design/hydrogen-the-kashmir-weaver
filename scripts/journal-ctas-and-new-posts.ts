@@ -293,6 +293,95 @@ const NEW_ARTICLES = [
 <p>Explore colours made for abaya layering in our <a href="${SOLIDS}"><strong>Solid Pashmina collection</strong></a> — handwoven in Kashmir, in sizes from stole to full shawl and oversized wrap. For a classic cream piece, visit the <a href="${CREAM}">Cream White Cashmere Pashmina</a>.</p>
 `.trim(),
   },
+  {
+    handle: 'how-men-wear-cashmere-scarf-pashmina-shawl',
+    title: 'How Men Wear a Handwoven Cashmere Scarf & Pashmina Shawl',
+    tags: [
+      'Style',
+      "Buyer's Guide",
+      'How to Wear',
+      'Cashmere',
+      'Kashmir',
+      'Pashmina',
+      'Men',
+      'All',
+    ],
+    summary:
+      'A practical guide for men on choosing and wearing a handwoven Kashmir cashmere scarf or pashmina shawl — sizes, colours, office looks, coats, and travel.',
+    seoTitle:
+      'How Men Wear a Cashmere Scarf & Pashmina Shawl | The Kashmir Weaver',
+    seoDescription:
+      'How men choose and wear a handwoven Kashmir cashmere scarf or pashmina shawl. Sizes, colours, coat styling, office and travel looks, plus shop Solid Pashmina.',
+    body: `
+<p>In the US and Europe, “cashmere scarf” is the phrase most men type when they want better neckwear than a stiff wool muffler. In Kashmir, that same fibre — fine Changthangi pashm, hand-spun and handwoven — is offered as a stole, scarf, shawl, or oversized wrap. The difference is not marketing. It is centimetres, drape, and how the piece sits under a coat.</p>
+
+<p>This guide is for men building a first serious scarf or upgrading from machine-knit cashmere. It focuses on solid, unembellished pieces from our <a href="${SOLIDS}">Solid Pashmina</a> collection: quiet luxury that reads as texture and finish, not pattern or logo.</p>
+
+<h2>Scarf vs Shawl: Which Size Men Should Buy First</h2>
+
+<p>Labels vary by brand. For men’s wardrobes, start with size, not buzzwords.</p>
+
+<ul>
+<li><strong>Stole / scarf (about 70 × 200 cm)</strong> — The closest match to what most men mean by “cashmere scarf.” Long enough to loop once under a coat collar, narrow enough to avoid bulk at the shoulders. Best for commuting, offices, and daily wear.</li>
+<li><strong>Classic shawl (about 100 × 200 cm)</strong> — More fabric across the chest and shoulders. Ideal if you want one piece that doubles as a travel wrap, evening cover over a blazer, or blanket on a cold flight.</li>
+<li><strong>Oversized wrap</strong> — Maximum coverage for deep winter or long-haul travel. Choose this when you already know you want cape-like warmth, not as a first everyday scarf.</li>
+</ul>
+
+<p>If you are buying one piece for Western city winters, begin with the stole/scarf. Add a classic shawl when you travel often or want evening drape over a suit. For a fuller size breakdown, see our <a href="${STOREFRONT}/journal/cashmere-scarf-guide-handwoven-kashmir">cashmere scarf guide</a>.</p>
+
+<h2>How Men Actually Wear It</h2>
+
+<h3>Under the coat collar</h3>
+<p>Fold the stole lengthwise once for a cleaner edge. Drape evenly around the neck so both ends fall inside the overcoat. This is the most polished office look — warmth without a thick knot fighting the lapels.</p>
+
+<h3>The single loop</h3>
+<p>Fold in half, place behind the neck, and pull the loose ends through the loop. Secure in wind, neat with a peacoat or trench, and easy to loosen indoors.</p>
+
+<h3>Open drape over a blazer</h3>
+<p>Use a classic shawl. Rest it across both shoulders with ends hanging evenly in front, or toss one end over the opposite shoulder. Works for dinners, galleries, and cool restaurants when you leave the coat at the door.</p>
+
+<h3>Travel wrap</h3>
+<p>Wear the stole looped through the airport. Once the cabin cools, open a shawl fully across the chest and lap. Handwoven pashmina packs small and recovers softness better than airline synthetics.</p>
+
+<p>For more draping ideas that translate well for anyone, see <a href="${STOREFRONT}/journal/eight-practical-ways-to-wear-a-pashmina-shawl">eight practical ways to wear a pashmina shawl</a>.</p>
+
+<h2>Colours That Work in a Men’s Capsule</h2>
+
+<p>Men’s coats are mostly navy, charcoal, camel, black, and olive. Your scarf should either match that quiet register or lift it slightly.</p>
+
+<ul>
+<li><strong>Charcoal, slate, and deep taupe</strong> — The safest everyday choices. They disappear into dark coats while still showing the weave up close.</li>
+<li><strong>Navy</strong> — Excellent with grey flannel, denim, and camel. Strong for office weeks.</li>
+<li><strong>Cream or soft ivory</strong> — The contrast piece. Against a navy or black coat it reads intentional without looking loud. Also the most gift-friendly neutral. Start with our <a href="${CREAM}">Cream White Cashmere Pashmina</a> if you want one versatile gift.</li>
+<li><strong>Black</strong> — Tonal and modern with black outerwear. Best when you want texture, not colour.</li>
+<li><strong>Warm camel or khaki brown</strong> — Natural with olive field jackets and tan coats; softer than pure white against skin tones that prefer warmth.</li>
+</ul>
+
+<p>For a first purchase, charcoal/slate or navy will get the most wear. Cream is the better gift when you do not know the recipient’s coat colour.</p>
+
+<h2>Office, Weekend, Evening</h2>
+
+<p><strong>Office:</strong> Prefer a stole in charcoal, navy, or taupe. Keep the drape inside the coat or in a single neat loop. Avoid heavy embroidery for daily boardrooms; solids signal quiet luxury.</p>
+
+<p><strong>Weekend:</strong> Pair the same stole with a crewneck sweater and denim, or a chore jacket. A slightly looser loop looks less formal without looking careless.</p>
+
+<p><strong>Evening:</strong> Switch to a classic shawl over a dark blazer or turtleneck. An open shoulder drape photographs cleanly and feels more deliberate than a tight scarf knot.</p>
+
+<h2>Why Handwoven Kashmir Beats Generic “Cashmere”</h2>
+
+<p>Many men’s scarves labelled cashmere are machine-knit from commercial grades. Handwoven Kashmiri pashmina is spun from fine Himalayan Changthangi fibre (typically in the 12–16 micron range for true pashm), woven on traditional looms in Kashmir. It should feel warm before it feels heavy, drape rather than cling, and improve with gentle wear rather than pill into a fuzzy ball in one season.</p>
+
+<p>Be wary of prices that seem too low for a generous “100% cashmere” size, overly shiny fabric, and vague origin claims. For a practical authenticity checklist, see <a href="${STOREFRONT}/journal/how-to-tell-if-pashmina-is-real">how to tell if a pashmina is real</a>. For fibre language, read <a href="${STOREFRONT}/journal/pashmina-vs-cashmere-actual-difference">pashmina vs cashmere</a>.</p>
+
+<h2>Care, Briefly</h2>
+
+<p>Handwash cool with a mild wool detergent when needed, or dry clean sparingly. Dry flat. Store folded in a breathable bag — never hanging long-term from a hook, which can stretch the weave. A well-chosen solid piece should last decades of winters, which is why size and fibre quality matter more than chasing a trend colour.</p>
+
+<hr />
+<h2>Shop Solid Pashmina</h2>
+<p>True men’s style with cashmere is not about making a statement. It is about finishing a coat the way a good watch finishes a wrist: quiet, warm, and built to be used. Browse our <a href="${SOLIDS}"><strong>Solid Pashmina collection</strong></a> — handwoven Kashmiri cashmere in stole, shawl, and wrap sizes. Start with charcoal, slate, navy, or our <a href="${CREAM}">Cream White Cashmere Pashmina</a> for the most wearable first piece.</p>
+`.trim(),
+  },
 ];
 
 async function getJournalBlogId(): Promise<string> {

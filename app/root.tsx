@@ -40,7 +40,7 @@ import {loadShopSettings} from '~/lib/shop-settings';
 import {loadLocalization} from '~/lib/localization';
 import {persistBuyerMarket} from '~/lib/i18n';
 import {isCartFormAction} from '~/lib/cart-form-action';
-import {isCompleteCart, useLiveCart} from '~/lib/use-live-cart';
+import {isCompleteCart, useSettledLiveCart} from '~/lib/use-live-cart';
 import {
   cartWithStorefrontCheckoutUrl,
   checkoutLocale,
@@ -293,10 +293,9 @@ export function Layout({children}: {children?: React.ReactNode}) {
 }
 
 /**
- * Feed CartAnalytics a settled live cart (fetcher response), not the stale
- * deferred root Promise. Root `shouldRevalidate` skips cart form posts, so
- * without this bridge Hydrogen never sees a new `updatedAt` and GA4
- * `add_to_cart` / `remove_from_cart` never fire.
+ * Feed CartAnalytics the settled Shopify cart (loader + completed cart
+ * actions). Optimistic UI lines stay in useLiveCart for chrome only — Analytics
+ * must see real Storefront `updatedAt` so cart events stay Shopify-sourced.
  */
 function AnalyticsCartProvider({
   cart,
@@ -325,11 +324,11 @@ function AnalyticsCartProvider({
     };
   }, [cart]);
 
-  const liveCart = useLiveCart(resolvedCart, {marketCountry});
+  const settledCart = useSettledLiveCart(resolvedCart, {marketCountry});
 
   return (
     <Analytics.Provider
-      cart={liveCart as CartReturn | null}
+      cart={settledCart as CartReturn | null}
       shop={shop}
       consent={consent}
     >

@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
  * Local Merchant Center MCP for The Kashmir Weaver.
- * Forked from mcp-google-merchant-center with ALLOWED_IDS fixed for 5822844259.
+ * Forked from mcp-google-merchant-center with ALLOWED_IDS fixed for 5825882191.
  */
 import {Server} from '@modelcontextprotocol/sdk/server/index.js';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {CallToolRequestSchema, ListToolsRequestSchema} from '@modelcontextprotocol/sdk/types.js';
 import {google} from 'googleapis';
 
-const DEFAULT_MERCHANT_ID = process.env.MERCHANT_ID || '5822844259';
+const DEFAULT_MERCHANT_ID = process.env.MERCHANT_ID || '5825882191';
 const ALLOWED_IDS = (
-  process.env.MERCHANT_ALLOWED_IDS || '5822844259'
+  process.env.MERCHANT_ALLOWED_IDS || '5825882191'
 )
   .split(',')
   .map((id) => id.trim())

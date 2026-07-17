@@ -205,6 +205,48 @@ function applyOptimisticCartFromFetchers(
   return optimisticCart;
 }
 
+function useCartMarketCountry(options?: {marketCountry?: string}) {
+  const [searchParams] = useSearchParams();
+  return (
+    searchParams.get('country')?.toUpperCase() ??
+    options?.marketCountry?.toUpperCase() ??
+    null
+  );
+}
+
+function useCartFetchers() {
+  const fetchers = useFetchers();
+  return fetchers.filter(
+    (fetcher) => fetcher.formData && isCartFormAction(fetcher.formAction),
+  );
+}
+
+/**
+ * Settled Shopify cart only (loader + completed cart actions).
+ * No optimistic overlay — use for Hydrogen Analytics so `updatedAt` diffs
+ * match Admin/Storefront cart mutations.
+ */
+export function useSettledLiveCart(
+  cart: CartApiQueryFragment | null | undefined,
+  options?: {marketCountry?: string},
+): CartApiQueryFragment | null {
+  const marketCountry = useCartMarketCountry(options);
+  const cartFetchers = useCartFetchers();
+
+  for (let i = cartFetchers.length - 1; i >= 0; i--) {
+    const fetcher = cartFetchers[i];
+    const data = fetcher.data as CartActionData | undefined;
+    if (fetcher.state === 'idle' && data && 'cart' in data) {
+      const nextCart = data.cart ?? null;
+      if (shouldSkipMarketFetcher(fetcher.key, marketCountry, nextCart)) continue;
+      return nextCart;
+    }
+  }
+
+  if (isCompleteCart(cart)) return cart ?? null;
+  return cachedCart ?? null;
+}
+
 /**
  * Instant cart UI during mutations without re-running the root loader.
  * Only in-flight fetchers affect optimistic state — idle fetchers are ignored
@@ -214,16 +256,8 @@ export function useLiveCart(
   cart: CartApiQueryFragment | null | undefined,
   options?: {marketCountry?: string},
 ): CartApiQueryFragment | null {
-  const fetchers = useFetchers();
-  const [searchParams] = useSearchParams();
-  const marketCountry =
-    searchParams.get('country')?.toUpperCase() ??
-    options?.marketCountry?.toUpperCase() ??
-    null;
-
-  const cartFetchers = fetchers.filter(
-    (fetcher) => fetcher.formData && isCartFormAction(fetcher.formAction),
-  );
+  const marketCountry = useCartMarketCountry(options);
+  const cartFetchers = useCartFetchers();
 
   const pendingFetchers = cartFetchers.filter(
     (fetcher) => fetcher.state !== 'idle',
