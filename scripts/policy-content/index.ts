@@ -1,5 +1,6 @@
 /** Kashmir Weaver policy HTML — source of truth for Shopify seed scripts. */
 
+import {BUSINESS} from '../../app/lib/business.ts';
 import {CONTACT, phoneDigits} from '../../app/lib/contact.ts';
 
 const EMAIL = CONTACT.email;
@@ -10,8 +11,7 @@ const SITE =
   (typeof process !== 'undefined' &&
     process.env.PUBLIC_STORE_URL?.replace(/^https?:\/\//, '').replace(/\/$/, '')) ||
   'thekashmirweaver.shop';
-const RETURNS_ADDRESS =
-  'H 10-A, Firdousa Abad, Batamaloo, Srinagar, Jammu and Kashmir 190009, India';
+const RETURNS_ADDRESS = BUSINESS.fullAddress;
 
 export const SHIPPING_POLICY_HTML = `
 <p class="policy-lead">Every piece leaves our Srinagar atelier fully insured and tracked. This policy describes how we deliver hand-woven pashmina worldwide.</p>
