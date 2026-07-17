@@ -16,6 +16,7 @@ import {
   contactWhatsappHref,
   resolveContact,
 } from '~/lib/contact';
+import {BUSINESS} from '~/lib/business';
 import {CONCIERGE_INQUIRY_TYPES} from '~/lib/webmcp';
 import type {RootLoader} from '~/root';
 
@@ -151,6 +152,26 @@ export function ConciergeView() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="mx-auto mt-24 max-w-[800px] px-6 md:px-10">
+        <Reveal>
+          <div className="text-center">
+            <Eyebrow>Atelier</Eyebrow>
+            <h2
+              className="font-display mt-6 text-3xl md:text-4xl"
+              style={{fontWeight: 400}}
+            >
+              Studio address
+            </h2>
+          </div>
+          <div className="mt-10 space-y-3 text-center text-sm leading-relaxed text-muted-foreground md:text-base">
+            <p className="text-foreground">{BUSINESS.name}</p>
+            <p>{BUSINESS.fullAddress}</p>
+            {BUSINESS.gstin ? <p>GSTIN: {BUSINESS.gstin}</p> : null}
+            <p>Hours: {BUSINESS.hours}</p>
+          </div>
+        </Reveal>
       </section>
 
       <section className="mx-auto mt-32 max-w-[1400px] px-6 md:px-10">

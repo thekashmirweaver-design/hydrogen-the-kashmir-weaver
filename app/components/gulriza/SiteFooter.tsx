@@ -2,7 +2,6 @@ import {Link} from "react-router";
 import { Hairline } from "./Eyebrow";
 import { BrandLockup } from "~/components/gulriza/BrandLockup";
 import type {ShopSettings} from "~/lib/shop-settings";
-import {BUSINESS} from "~/lib/business";
 import {
   contactMailtoHref,
   contactTelHref,
@@ -101,10 +100,6 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
                 <a href={tel} className="block transition hover:text-accent">
                   {contact.phone}
                 </a>
-              ) : null}
-              <p className="pt-2 leading-relaxed">{BUSINESS.fullAddress}</p>
-              {BUSINESS.gstin ? (
-                <p className="leading-relaxed">GSTIN: {BUSINESS.gstin}</p>
               ) : null}
             </div>
           </div>
