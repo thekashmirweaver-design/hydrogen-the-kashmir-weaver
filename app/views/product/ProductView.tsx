@@ -1,4 +1,4 @@
-import {Link, useFetcher, type FetcherWithComponents} from 'react-router';
+import {Link, useFetcher, useRouteLoaderData, type FetcherWithComponents} from 'react-router';
 import {lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {
@@ -11,6 +11,8 @@ import {
 import {CartForm, Analytics} from '@shopify/hydrogen';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
 import {trackBeginCheckoutItems} from '~/components/GoogleAnalytics';
+import {trackMetaInitiateCheckoutItems} from '~/components/MetaPixel';
+import type {RootLoader} from '~/root';
 import {Accordion} from '~/components/gulriza/Accordion';
 import {ProductTile} from '~/components/gulriza/ProductTile';
 import {CatalogImage} from '~/components/gulriza/CatalogImage';
@@ -67,6 +69,8 @@ export function ProductView({
   product: Product;
   relatedProducts: Product[];
 }) {
+  const root = useRouteLoaderData<RootLoader>('root');
+  const metaPixelId = root?.metaPixelId;
   const variants = product.variants ?? [];
   const initialVariant =
     variants.find((v) => v.id === product.variantId) ??
@@ -324,23 +328,30 @@ export function ProductView({
         reloadDocument
         onClick={() => {
           if (!activeVariantId) return;
+          const items = [
+            {
+              item_id: activeVariantId.replace(
+                /^gid:\/\/shopify\/ProductVariant\//,
+                '',
+              ),
+              item_name: product.name,
+              item_variant: selectedVariant?.title,
+              item_brand: product.vendor,
+              item_category: product.productType,
+              price: displayPrice.amount,
+              quantity: buyNowQuantity,
+            },
+          ];
           trackBeginCheckoutItems(
-            [
-              {
-                item_id: activeVariantId.replace(
-                  /^gid:\/\/shopify\/ProductVariant\//,
-                  '',
-                ),
-                item_name: product.name,
-                item_variant: selectedVariant?.title,
-                item_brand: product.vendor,
-                item_category: product.productType,
-                price: displayPrice.amount,
-                quantity: buyNowQuantity,
-              },
-            ],
+            items,
             displayPrice.currencyCode,
             displayPrice.amount * buyNowQuantity,
+          );
+          trackMetaInitiateCheckoutItems(
+            items,
+            displayPrice.currencyCode,
+            displayPrice.amount * buyNowQuantity,
+            metaPixelId,
           );
         }}
         className="btn-secondary block w-full py-3.5 text-center tracked touch-manipulation"
@@ -875,23 +886,30 @@ export function ProductView({
                 reloadDocument
                 onClick={() => {
                   if (!activeVariantId) return;
+                  const items = [
+                    {
+                      item_id: activeVariantId.replace(
+                        /^gid:\/\/shopify\/ProductVariant\//,
+                        '',
+                      ),
+                      item_name: product.name,
+                      item_variant: selectedVariant?.title,
+                      item_brand: product.vendor,
+                      item_category: product.productType,
+                      price: displayPrice.amount,
+                      quantity: buyNowQuantity,
+                    },
+                  ];
                   trackBeginCheckoutItems(
-                    [
-                      {
-                        item_id: activeVariantId.replace(
-                          /^gid:\/\/shopify\/ProductVariant\//,
-                          '',
-                        ),
-                        item_name: product.name,
-                        item_variant: selectedVariant?.title,
-                        item_brand: product.vendor,
-                        item_category: product.productType,
-                        price: displayPrice.amount,
-                        quantity: buyNowQuantity,
-                      },
-                    ],
+                    items,
                     displayPrice.currencyCode,
                     displayPrice.amount * buyNowQuantity,
+                  );
+                  trackMetaInitiateCheckoutItems(
+                    items,
+                    displayPrice.currencyCode,
+                    displayPrice.amount * buyNowQuantity,
+                    metaPixelId,
                   );
                 }}
                 className="btn-secondary tracked px-4 py-3.5 text-center text-[0.7rem] uppercase tracking-[0.1em] touch-manipulation"

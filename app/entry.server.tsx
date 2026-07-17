@@ -114,17 +114,20 @@ export default async function handleRequest(
     },
     // Bundled @fontsource assets are served from Oxygen CDN, not the storefront origin.
     fontSrc: ["'self'", 'https://cdn.shopify.com'],
-    // Google Analytics (gtag.js) — same domains as Hydrogen GTM cookbook.
+    // Google Analytics (gtag.js) + Meta Pixel (fbevents.js).
     scriptSrc: [
       "'self'",
       'https://cdn.shopify.com',
       'https://*.googletagmanager.com',
+      'https://connect.facebook.net',
     ],
     imgSrc: [
       "'self'",
       'https://cdn.shopify.com',
       'https://*.google-analytics.com',
       'https://*.googletagmanager.com',
+      'https://www.facebook.com',
+      'https://*.facebook.com',
       ...crossStorefrontImgOrigins,
       ...devOrigins,
     ],
@@ -133,6 +136,9 @@ export default async function handleRequest(
       'https://*.google-analytics.com',
       'https://*.analytics.google.com',
       'https://*.googletagmanager.com',
+      'https://connect.facebook.net',
+      'https://www.facebook.com',
+      'https://*.facebook.com',
       ...extraOrigins,
       ...devOrigins,
     ],

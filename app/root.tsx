@@ -34,6 +34,7 @@ import {AccountWebComponents} from '~/components/gulriza/AccountWebComponents';
 import {
   GoogleAnalytics,
 } from '~/components/GoogleAnalytics';
+import {MetaPixel, META_PIXEL_ID} from '~/components/MetaPixel';
 import {ThemeProvider} from '~/lib/theme';
 import {getCatalogOptions} from '~/lib/catalog-options';
 import {loadShopSettings} from '~/lib/shop-settings';
@@ -170,6 +171,8 @@ export async function loader(args: Route.LoaderArgs) {
       args.request.url,
     ),
     publicAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
+    /** Meta Pixel ID for catalogue ads (ViewContent / AddToCart / InitiateCheckout). */
+    metaPixelId: env.PUBLIC_META_PIXEL_ID?.trim() || META_PIXEL_ID,
     shop: getShopAnalytics({
       storefront,
       publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
@@ -366,6 +369,7 @@ export default function App() {
         <Outlet />
       </PageLayout>
       <GoogleAnalytics />
+      <MetaPixel />
     </AnalyticsCartProvider>
   );
 }

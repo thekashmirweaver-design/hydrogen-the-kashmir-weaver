@@ -14,9 +14,11 @@ import {useLiveCart} from '~/lib/use-live-cart';
 import {checkoutLocale, toStorefrontCheckoutUrl} from '~/lib/resolve-checkout-url';
 import {Analytics} from '@shopify/hydrogen';
 import {trackBeginCheckout} from '~/components/GoogleAnalytics';
+import {trackMetaInitiateCheckout} from '~/components/MetaPixel';
 
 export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}) {
   const root = useRouteLoaderData<RootLoader>('root');
+  const metaPixelId = root?.metaPixelId;
   const {selectedCurrency} = useLocalization();
   const cart = useLiveCart(loaderCart, {
     marketCountry: selectedCurrency.countryCode,
@@ -113,7 +115,10 @@ export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}
               {checkoutUrl ? (
                 <a
                   href={checkoutUrl}
-                  onClick={() => trackBeginCheckout(cart)}
+                  onClick={() => {
+                      trackBeginCheckout(cart);
+                      trackMetaInitiateCheckout(cart, metaPixelId);
+                    }}
                   className="tracked mt-8 hidden w-full items-center justify-center py-4 transition hover:opacity-90 lg:flex"
                   style={{
                     background: 'var(--accent)',
@@ -159,7 +164,10 @@ export function CartView({cart: loaderCart}: {cart: CartApiQueryFragment | null}
             </div>
             <a
               href={checkoutUrl}
-              onClick={() => trackBeginCheckout(cart)}
+              onClick={() => {
+                      trackBeginCheckout(cart);
+                      trackMetaInitiateCheckout(cart, metaPixelId);
+                    }}
               className="tracked shrink-0 px-6 py-3.5 text-[0.72rem] uppercase tracking-[0.12em] transition hover:opacity-90 touch-manipulation"
               style={{
                 background: 'var(--accent)',
