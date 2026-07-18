@@ -1,7 +1,7 @@
 /**
  * Syncs active journal blog articles in Shopify Admin:
  *   - Category tags (Heritage, Craft, Style, Travel, Luxury Living)
- *   - Full body HTML from static catalog
+ *   - Full body HTML from static catalog (with featured image embedded mid-body)
  *   - Publish dates and excerpts
  *
  * Run: npm run sync:journal
@@ -10,6 +10,7 @@ import {existsSync, readFileSync} from 'node:fs';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {POSTS, ARTICLES} from '../app/models/static/journal.ts';
+import {embedImageInBodyHtml} from './lib/journal-body-image.ts';
 
 function loadEnvFile() {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -136,7 +137,12 @@ async function upsertArticle(
   existingId: string | undefined,
   post: (typeof POSTS)[number],
 ) {
-  const bodyHtml = bodyHtmlForSlug(post.slug, post.excerpt);
+  const imageUrl = assetUrl(post.img);
+  const bodyHtml = embedImageInBodyHtml(
+    bodyHtmlForSlug(post.slug, post.excerpt),
+    imageUrl,
+    post.title,
+  );
   const tags = [post.cat];
 
   if (existingId) {
@@ -162,7 +168,7 @@ async function upsertArticle(
           tags,
           isPublished: true,
           publishDate: post.date,
-          image: {url: assetUrl(post.img), altText: post.title},
+          image: {url: imageUrl, altText: post.title},
         },
       },
     );
@@ -199,7 +205,7 @@ async function upsertArticle(
         tags,
         isPublished: true,
         publishDate: post.date,
-        image: {url: assetUrl(post.img), altText: post.title},
+        image: {url: imageUrl, altText: post.title},
       },
     },
   );

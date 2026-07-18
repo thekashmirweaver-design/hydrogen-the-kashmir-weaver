@@ -1,7 +1,9 @@
 /**
  * Uploads blog articles from the `Blogs/` folder into the Shopify `journal`
  * blog. Articles with a local hero image get that image uploaded via the
- * Files API and attached. Articles without an image go up text-only.
+ * Files API, set as the article featured image, and embedded mid-body
+ * (after the first paragraph) so Hydrogen renders it between text.
+ * Articles without an image go up text-only.
  *
  * Existing articles on the journal blog (the 7 seeded by `seed:shopify`) are
  * left untouched; this script only upserts by handle, so re-running is safe.
@@ -25,6 +27,10 @@ import {
 } from 'node:fs';
 import {basename, extname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {
+  embedImageInBodyHtml,
+  escapeHtml,
+} from './lib/journal-body-image.ts';
 
 const API_VERSION = '2025-01';
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
@@ -190,13 +196,6 @@ function parseBlogFile(filePath: string): ParsedBlog | null {
   }
 
   return {source: filePath, title, handle, excerpt, altText, bodyHtml, imagePath};
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }
 
 function discoverBlogs(): Array<{textFile: string; skip: boolean}> {
@@ -597,6 +596,13 @@ async function main() {
             throw imgErr;
           }
         }
+      }
+      if (imageUrl) {
+        p.bodyHtml = embedImageInBodyHtml(
+          p.bodyHtml,
+          imageUrl,
+          p.altText || p.title,
+        );
       }
       const {action} = await upsertArticle(
         shop,

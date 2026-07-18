@@ -15,6 +15,7 @@
     "seed:shopify": "tsx scripts/seed-shopify-admin.ts",
     "sync:journal": "tsx scripts/sync-journal-articles.ts",
     "upload:blogs": "tsx scripts/upload-blogs-from-folder.ts",
+    "embed:journal-images": "tsx scripts/embed-journal-body-images.ts",
     "seed:sizes": "tsx scripts/seed-product-sizes.ts",
     "seed:dummy-product": "tsx scripts/seed-dummy-test-product.ts",
     "seed:collections": "tsx scripts/seed-shopify-collections.ts",
