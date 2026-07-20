@@ -13,6 +13,8 @@ type CatalogImageProps = {
   sizes?: string;
   style?: CSSProperties;
   onClick?: (e: MouseEvent) => void;
+  onMouseMove?: (e: MouseEvent) => void;
+  onMouseLeave?: (e: MouseEvent) => void;
   showSkeleton?: boolean;
   srcSet?: string;
   /** LCP / above-fold: no opacity hide, eager + high fetchPriority by default. */
@@ -55,6 +57,8 @@ export function CatalogImage({
   sizes = '(min-width: 1024px) 280px, (min-width: 640px) 50vw, 100vw',
   style,
   onClick,
+  onMouseMove,
+  onMouseLeave,
   showSkeleton: showSkeletonProp,
   srcSet,
   priority = false,
@@ -83,7 +87,12 @@ export function CatalogImage({
     ...style,
     // Priority images paint immediately — opacity:0 until onLoad delays LCP.
     opacity: priority || loaded ? 1 : 0,
-    transition: priority ? undefined : 'opacity 320ms ease-out',
+    transition: [
+      style?.transition,
+      priority ? undefined : 'opacity 320ms ease-out',
+    ]
+      .filter(Boolean)
+      .join(', ') || undefined,
   };
 
   const inner = isShopifyCdn(image.src) ? (
@@ -100,6 +109,8 @@ export function CatalogImage({
       sizes={sizes}
       style={imageStyle}
       onClick={onClick}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
       onLoad={() => setLoaded(true)}
       // React 18: Hydrogen Image forwards unknown props onto <img>; camelCase
       // fetchPriority warns — use the HTML attribute name.
@@ -119,6 +130,8 @@ export function CatalogImage({
       {...(fetchPriority ? {fetchpriority: fetchPriority} : {})}
       style={imageStyle}
       onClick={onClick}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
       width={image.width}
       height={image.height}
       {...(srcSet ? {srcSet} : {})}

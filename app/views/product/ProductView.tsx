@@ -6,6 +6,8 @@ import {
   ChevronRight,
   ArrowRight,
   ZoomIn,
+  ZoomOut,
+  Maximize2,
   X,
 } from 'lucide-react';
 import {CartForm, Analytics} from '@shopify/hydrogen';
@@ -128,9 +130,17 @@ export function ProductView({
   const [selectedShadeCode, setSelectedShadeCode] = useState(defaultShadeCode);
   const [quantity, setQuantity] = useState(1);
   const [fullOpen, setFullOpen] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
+  const [zoomOrigin, setZoomOrigin] = useState({x: 50, y: 50});
+  const [lightboxPanning, setLightboxPanning] = useState(false);
+  const [mainZoomed, setMainZoomed] = useState(false);
+  const [mainZoomOrigin, setMainZoomOrigin] = useState({x: 50, y: 50});
+  const [mainPanning, setMainPanning] = useState(false);
   const [tryColoursOpen, setTryColoursOpen] = useState(false);
   const [recolorImgIdx, setRecolorImgIdx] = useState(0);
   const lightboxRef = useRef<HTMLDivElement>(null);
+  const mainImgRef = useRef<HTMLDivElement>(null);
+  const lightboxImgRef = useRef<HTMLDivElement>(null);
   const formatPrice = useFormatPrice();
   const {open: openCartDrawer} = useCartDrawer();
   const addToBagFetcher = useFetcher({key: 'add-to-bag'});
@@ -208,18 +218,24 @@ export function ProductView({
   const activeImage = displayImages[imgIdx] ?? displayImages[0];
   const selectImage = useCallback((i: number) => {
     setImgIdx(i);
+    setZoomed(false);
+    setMainZoomed(false);
   }, []);
   const prevImg = useCallback(() => {
     setImgIdx((i) => (i - 1 + imgCount) % imgCount);
+    setZoomed(false);
+    setMainZoomed(false);
   }, [imgCount]);
   const nextImg = useCallback(() => {
     setImgIdx((i) => (i + 1) % imgCount);
+    setZoomed(false);
+    setMainZoomed(false);
   }, [imgCount]);
 
   const gallerySwipe = useHorizontalSwipe({
     onSwipeLeft: nextImg,
     onSwipeRight: prevImg,
-    enabled: imgCount > 1,
+    enabled: imgCount > 1 && !mainZoomed,
   });
 
   const lightboxSwipe = useHorizontalSwipe({
@@ -252,7 +268,11 @@ export function ProductView({
   }, [buyNowVariantId, buyNowQuantity, usesColourStudio, selectedShade]);
 
   useEffect(() => {
-    if (!fullOpen) return;
+    if (!fullOpen) {
+      setZoomed(false);
+      setLightboxPanning(false);
+      return;
+    }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setFullOpen(false);
       else if (e.key === 'ArrowLeft' && imgCount > 1) prevImg();
@@ -421,11 +441,60 @@ export function ProductView({
                 className="group relative mx-auto w-fit max-w-full touch-pan-y select-none md:col-start-2 md:row-start-1"
                 {...gallerySwipe}
               >
-                <div key={imgIdx} className="gallery-image-fade relative">
+                <div
+                  key={imgIdx}
+                  className="gallery-image-fade relative overflow-hidden"
+                >
                   <CatalogImage
                     image={activeImage!}
-                    onClick={() => setFullOpen(true)}
-                    className="h-full w-full max-h-[min(75dvh,720px)] cursor-zoom-in object-contain"
+                    onClick={(e) => {
+                      setMainPanning(false);
+                      if (!mainZoomed) {
+                        const rect = (
+                          e.currentTarget as HTMLElement
+                        ).getBoundingClientRect();
+                        const x = ((e.clientX - rect.left) / rect.width) * 100;
+                        const y = ((e.clientY - rect.top) / rect.height) * 100;
+                        setMainZoomOrigin({
+                          x: Math.min(100, Math.max(0, x)),
+                          y: Math.min(100, Math.max(0, y)),
+                        });
+                        requestAnimationFrame(() => {
+                          requestAnimationFrame(() => setMainZoomed(true));
+                        });
+                      } else {
+                        setMainZoomed(false);
+                      }
+                    }}
+                    onMouseMove={
+                      mainZoomed
+                        ? (e) => {
+                            const rect = (
+                              e.currentTarget as HTMLElement
+                            ).getBoundingClientRect();
+                            const x =
+                              ((e.clientX - rect.left) / rect.width) * 100;
+                            const y =
+                              ((e.clientY - rect.top) / rect.height) * 100;
+                            if (!mainPanning) setMainPanning(true);
+                            setMainZoomOrigin({
+                              x: Math.min(100, Math.max(0, x)),
+                              y: Math.min(100, Math.max(0, y)),
+                            });
+                          }
+                        : undefined
+                    }
+                    onMouseLeave={() => setMainPanning(false)}
+                    className="h-full w-full max-h-[min(75dvh,720px)] object-contain"
+                    style={{
+                      transformOrigin: `${mainZoomOrigin.x}% ${mainZoomOrigin.y}%`,
+                      transform: mainZoomed ? 'scale(2.5)' : 'scale(1)',
+                      cursor: mainZoomed ? 'zoom-out' : 'zoom-in',
+                      willChange: 'transform',
+                      transition: mainPanning
+                        ? 'none'
+                        : 'transform 450ms cubic-bezier(0.22, 1, 0.36, 1)',
+                    }}
                     wrapperClassName="relative mx-auto w-auto max-h-[min(75dvh,720px)] max-w-full"
                     wrapperStyle={
                       activeImage?.width && activeImage?.height
@@ -440,7 +509,9 @@ export function ProductView({
                   />
                 </div>
                 <div
-                  className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 motion-reduce:opacity-0"
+                  className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-200 motion-reduce:opacity-0 ${
+                    mainZoomed ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
+                  }`}
                   aria-hidden
                 >
                   <span
@@ -453,6 +524,22 @@ export function ProductView({
                     <ZoomIn className="h-5 w-5" strokeWidth={1} />
                   </span>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFullOpen(true);
+                  }}
+                  aria-label="View full screen"
+                  className="touch-target absolute right-3 top-3 z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full border text-foreground/90 transition hover:text-accent active:opacity-80 md:right-4 md:top-4"
+                  style={{
+                    borderColor: 'var(--border)',
+                    background: 'var(--overlay-pill-bg)',
+                  }}
+                >
+                  <Maximize2 className="h-5 w-5" strokeWidth={1} />
+                </button>
 
                 {soldOut && (
                   <div
@@ -983,19 +1070,95 @@ export function ProductView({
               )}
 
               <div
-                className="relative flex min-h-0 flex-1 touch-pan-y select-none items-center justify-center p-4 md:p-10"
-                {...lightboxSwipe}
+                className={`relative flex min-h-0 flex-1 select-none items-center justify-center overflow-hidden p-4 md:p-10 ${
+                  zoomed ? 'touch-none' : 'touch-pan-y'
+                }`}
+                {...(zoomed ? {} : lightboxSwipe)}
               >
-                <div key={imgIdx} className="gallery-image-fade flex h-full w-full items-center justify-center">
+                <div
+                  key={imgIdx}
+                  className="gallery-image-fade flex h-full w-full items-center justify-center"
+                >
                   <CatalogImage
                     image={activeImage!}
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLightboxPanning(false);
+                      if (!zoomed) {
+                        const rect = (
+                          e.currentTarget as HTMLElement
+                        ).getBoundingClientRect();
+                        const x = ((e.clientX - rect.left) / rect.width) * 100;
+                        const y = ((e.clientY - rect.top) / rect.height) * 100;
+                        setZoomOrigin({
+                          x: Math.min(100, Math.max(0, x)),
+                          y: Math.min(100, Math.max(0, y)),
+                        });
+                        requestAnimationFrame(() => {
+                          requestAnimationFrame(() => setZoomed(true));
+                        });
+                      } else {
+                        setZoomed(false);
+                      }
+                    }}
+                    onMouseMove={
+                      zoomed
+                        ? (e) => {
+                            const rect = (
+                              e.currentTarget as HTMLElement
+                            ).getBoundingClientRect();
+                            const x =
+                              ((e.clientX - rect.left) / rect.width) * 100;
+                            const y =
+                              ((e.clientY - rect.top) / rect.height) * 100;
+                            if (!lightboxPanning) setLightboxPanning(true);
+                            setZoomOrigin({
+                              x: Math.min(100, Math.max(0, x)),
+                              y: Math.min(100, Math.max(0, y)),
+                            });
+                          }
+                        : undefined
+                    }
+                    onMouseLeave={() => setLightboxPanning(false)}
                     className="max-h-full max-w-full object-contain"
+                    style={{
+                      transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
+                      transform: zoomed ? 'scale(2.5)' : 'scale(1)',
+                      cursor: zoomed ? 'zoom-out' : 'zoom-in',
+                      willChange: 'transform',
+                      transition: lightboxPanning
+                        ? 'none'
+                        : 'transform 450ms cubic-bezier(0.22, 1, 0.36, 1)',
+                    }}
                     wrapperClassName="flex h-full w-full items-center justify-center"
                     loading="eager"
                     sizes="100vw"
                   />
                 </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!zoomed) setZoomOrigin({x: 50, y: 50});
+                    setZoomed((z) => !z);
+                  }}
+                  aria-label={zoomed ? 'Zoom out' : 'Zoom in'}
+                  aria-pressed={zoomed}
+                  className="touch-target absolute z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full border transition hover:text-accent active:opacity-80"
+                  style={{
+                    borderColor: 'var(--border)',
+                    background: 'var(--gallery-close-bg)',
+                    bottom: 'max(1.25rem, env(safe-area-inset-bottom))',
+                    right: 'max(1.25rem, env(safe-area-inset-right))',
+                  }}
+                >
+                  {zoomed ? (
+                    <ZoomOut className="h-5 w-5" strokeWidth={1} />
+                  ) : (
+                    <ZoomIn className="h-5 w-5" strokeWidth={1} />
+                  )}
+                </button>
                 {imgCount > 1 && (
                   <>
                     <button
