@@ -344,8 +344,8 @@ async function setShopMetafields(shopId: string) {
       type: 'json',
       value: JSON.stringify({
         featuredCollectionHandle: DEFAULT_FEATURED_COLLECTION_HANDLE,
-        collectionHandles: collectionHandles.slice(0, 4),
-        collectionCount: 4,
+        collectionHandles: collectionHandles.filter((h) => h !== DEFAULT_FEATURED_COLLECTION_HANDLE).slice(0, 5),
+        collectionCount: 5,
         collectionPreviewCount: 3,
         bestSellingCount: 8,
         newestCount: 8,

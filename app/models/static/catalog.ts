@@ -110,6 +110,20 @@ const rawCollections: RawCollection[] = [
     },
   },
   {
+    handle: "checker",
+    id: "col_checker",
+    name: "Checkers",
+    tagline: "Classic patterns, timeless weave.",
+    story:
+      "Checker weaves bring a bold, geometric rhythm to Pashmina. Alternating bands of colour are woven directly into the fabric, creating a striking visual pattern that bridges tradition and modern sensibility. Each piece is handwoven on the traditional loom, ensuring the pattern is integral to the cloth — never printed or dyed on.",
+    hero: modern,
+    seo: {
+      title: "Checkers — The Kashmir Weaver",
+      description:
+        "Checker weaves bring a bold, geometric rhythm to Pashmina. Classic alternating bands of colour handwoven into fine cashmere.",
+    },
+  },
+  {
     id: "col_homepage_featured",
     handle: DEFAULT_FEATURED_COLLECTION_HANDLE,
     name: "Homepage Featured",
@@ -164,6 +178,7 @@ const C = {
   tilla: { handle: "tilla", name: "Tilla Embroidery" },
   kani: { handle: "kani", name: "Kani Pashmina" },
   maheenKari: { handle: "maheen-kari", name: "Maheen Kari" },
+  checker: { handle: "checker", name: "Checkers" },
   // Backwards compatibility aliases for existing catalog array items
   jamawar: { handle: "sozni", name: "Sozni Embroidery" },
   reversible: { handle: "solids", name: "Solid Pashmina" },
