@@ -30,9 +30,11 @@ export function contactMailtoHref(email: string) {
   return `mailto:${email}`;
 }
 
-export function contactWhatsappHref(phone: string) {
+export function contactWhatsappHref(phone: string, message?: string) {
   const digits = phoneDigits(phone);
-  return digits ? `https://wa.me/${digits}` : undefined;
+  if (!digits) return undefined;
+  const url = `https://wa.me/${digits}`;
+  return message ? `${url}?text=${encodeURIComponent(message)}` : url;
 }
 
 export function resolveContact(override?: ContactOverride): ContactInfo {
@@ -43,8 +45,11 @@ export function resolveContact(override?: ContactOverride): ContactInfo {
   };
 }
 
+export const WHATSAPP_MESSAGE =
+  "Hi, I'm browsing The Kashmir Weaver collection and would love some assistance.";
+
 export const CONTACT_HREFS = {
   email: contactMailtoHref(CONTACT.email),
   phone: contactTelHref(CONTACT.phone)!,
-  whatsapp: contactWhatsappHref(CONTACT.whatsapp)!,
+  whatsapp: contactWhatsappHref(CONTACT.whatsapp, WHATSAPP_MESSAGE)!,
 } as const;
