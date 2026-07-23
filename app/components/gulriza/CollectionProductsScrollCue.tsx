@@ -13,7 +13,7 @@ function scrollToProducts() {
   });
 }
 
-/** Hides once the products section enters the viewport. Clears CartFab when bag has items. */
+/** Hides once the products section enters the viewport. Clears FAB speed dial when bag has items. */
 export function CollectionProductsScrollCue() {
   const [visible, setVisible] = useState(true);
   const {cartQuantity} = useCartDrawer();
@@ -43,7 +43,7 @@ export function CollectionProductsScrollCue() {
         visible ? "opacity-100" : "pointer-events-none opacity-0"
       } ${bagOpen ? "max-md:-translate-x-[calc(50%+2.75rem)]" : ""}`}
       style={{
-        // Lift above CartFab when the bag has items (FAB sits bottom-right).
+        // Lift above FAB speed dial when the bag has items (FAB sits bottom-right).
         bottom: bagOpen
           ? "calc(5.5rem + env(safe-area-inset-bottom))"
           : "calc(1.5rem + env(safe-area-inset-bottom))",

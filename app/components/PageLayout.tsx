@@ -18,11 +18,11 @@ import {SiteHeader} from '~/components/gulriza/SiteHeader';
 import {SiteFooter} from '~/components/gulriza/SiteFooter';
 import {ScrollToTop} from '~/components/gulriza/ScrollToTop';
 
-// Code-split below-the-fold / rarely-used UI. Both render inert (fixed
+// Code-split below-the-fold / rarely-used UI. Render inert (fixed
 // floating buttons) until interacted with, so the null Suspense fallback
 // is invisible.
-const CartFab = lazy(() =>
-  import('~/components/gulriza/CartFab').then((m) => ({default: m.CartFab})),
+const FabSpeedDial = lazy(() =>
+  import('~/components/gulriza/FabSpeedDial').then((m) => ({default: m.FabSpeedDial})),
 );
 const WebMcpTools = lazy(() =>
   import('~/components/gulriza/WebMcpTools').then((m) => ({default: m.WebMcpTools})),
@@ -158,7 +158,7 @@ export function PageLayout({
           <RouteTransitionOutlet routeKey={routeKey}>{children}</RouteTransitionOutlet>
           {chromeReady ? (
             <Suspense fallback={null}>
-              <CartFab />
+              <FabSpeedDial />
             </Suspense>
           ) : null}
           <SiteFooter shopSettings={shopSettings} />
