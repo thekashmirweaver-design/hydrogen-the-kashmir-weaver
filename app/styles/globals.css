@@ -1049,6 +1049,17 @@
   }
 }
 
+@keyframes fab-pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
 .animate-glass-glaze {
   position: relative;
   overflow: hidden;
