@@ -1,0 +1,118 @@
+[
+  {
+    "folder": 1,
+    "handle": "multicolor-vertical-stripe-floral-vine-kani-cashmere-pashmina-shawl",
+    "status": "created",
+    "productId": "gid://shopify/Product/9335253336279",
+    "adminUrl": "https://70yuey-sr.myshopify.com/admin/products/9335253336279",
+    "storefrontUrl": "https://thekashmirweaver.shop/products/multicolor-vertical-stripe-floral-vine-kani-cashmere-pashmina-shawl",
+    "sellUsd": "1960.00",
+    "costUsd": "786.00",
+    "costInr": 75857,
+    "images": 8,
+    "verified": {
+      "id": "gid://shopify/Product/9335253336279",
+      "handle": "multicolor-vertical-stripe-floral-vine-kani-cashmere-pashmina-shawl",
+      "status": "DRAFT",
+      "title": "Multicolor Vertical Stripe Floral Vine Kani Cashmere Pashmina Shawl — Handwoven in Kashmir",
+      "vendor": "MK",
+      "productType": "Kani",
+      "category": {
+        "name": "Scarves & Shawls"
+      },
+      "collections": {
+        "nodes": [
+          {
+            "handle": "kani"
+          },
+          {
+            "handle": "homepage-featured"
+          }
+        ]
+      },
+      "variants": {
+        "nodes": [
+          {
+            "sku": "TKW-KANI-114-M",
+            "barcode": "TKW-KANI-114-M",
+            "price": "1960.00",
+            "compareAtPrice": null,
+            "inventoryQuantity": 1,
+            "inventoryItem": {
+              "tracked": true,
+              "unitCost": {
+                "amount": "786.0"
+              },
+              "countryCodeOfOrigin": "IN",
+              "harmonizedSystemCode": "621420",
+              "measurement": {
+                "weight": {
+                  "value": 220,
+                  "unit": "GRAMS"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "folder": 2,
+    "handle": "cream-taupe-floral-jaal-mihrab-border-kani-cashmere-pashmina-shawl",
+    "status": "created",
+    "productId": "gid://shopify/Product/9335253401815",
+    "adminUrl": "https://70yuey-sr.myshopify.com/admin/products/9335253401815",
+    "storefrontUrl": "https://thekashmirweaver.shop/products/cream-taupe-floral-jaal-mihrab-border-kani-cashmere-pashmina-shawl",
+    "sellUsd": "2880.00",
+    "costUsd": "1155.00",
+    "costInr": 111469,
+    "images": 6,
+    "verified": {
+      "id": "gid://shopify/Product/9335253401815",
+      "handle": "cream-taupe-floral-jaal-mihrab-border-kani-cashmere-pashmina-shawl",
+      "status": "DRAFT",
+      "title": "Cream Taupe Floral Jaal Mihrab Border Kani Cashmere Pashmina Shawl — Handwoven in Kashmir",
+      "vendor": "MK",
+      "productType": "Kani",
+      "category": {
+        "name": "Scarves & Shawls"
+      },
+      "collections": {
+        "nodes": [
+          {
+            "handle": "kani"
+          },
+          {
+            "handle": "homepage-featured"
+          }
+        ]
+      },
+      "variants": {
+        "nodes": [
+          {
+            "sku": "TKW-KANI-115-M",
+            "barcode": "TKW-KANI-115-M",
+            "price": "2880.00",
+            "compareAtPrice": null,
+            "inventoryQuantity": 1,
+            "inventoryItem": {
+              "tracked": true,
+              "unitCost": {
+                "amount": "1155.0"
+              },
+              "countryCodeOfOrigin": "IN",
+              "harmonizedSystemCode": "621420",
+              "measurement": {
+                "weight": {
+                  "value": 220,
+                  "unit": "GRAMS"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+]

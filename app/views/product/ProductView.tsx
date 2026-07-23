@@ -414,18 +414,18 @@ export function ProductView({
         />
       ) : null}
       <div className="mx-auto max-w-[1600px] px-6 pt-8 md:px-10">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs tracking-[0.25em] text-muted-foreground uppercase">
-          <Link to="/" className="inline-flex min-h-11 items-center hover:text-accent">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0 text-xs tracking-[0.25em] text-muted-foreground uppercase">
+          <Link to="/" className="inline-flex min-h-7 items-center hover:text-accent">
             Home
           </Link>
           <span>/</span>
-          <Link to="/collections" className="inline-flex min-h-11 items-center hover:text-accent">
+          <Link to="/collections" className="inline-flex min-h-7 items-center hover:text-accent">
             Collections
           </Link>
           <span>/</span>
           <Link
             to={`/collections/${product.collectionSlug}`}
-            className="inline-flex min-h-11 items-center hover:text-accent"
+            className="inline-flex min-h-7 items-center hover:text-accent"
           >
             {product.collectionName}
           </Link>
@@ -532,7 +532,7 @@ export function ProductView({
                     setFullOpen(true);
                   }}
                   aria-label="View full screen"
-                  className="touch-target absolute right-3 top-3 z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full border text-foreground/90 transition hover:text-accent active:opacity-80 md:right-4 md:top-4"
+                  className="touch-target absolute right-3 top-3 z-10 flex min-h-11 min-w-11 items-center justify-center rounded-full border text-white transition hover:text-accent active:opacity-80 md:right-4 md:top-4"
                   style={{
                     borderColor: 'var(--border)',
                     background: 'var(--overlay-pill-bg)',

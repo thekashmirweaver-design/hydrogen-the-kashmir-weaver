@@ -13,6 +13,8 @@ const STOREFRONT = 'https://thekashmirweaver.shop';
 const SOLIDS = `${STOREFRONT}/collections/solids`;
 const CREAM = `${STOREFRONT}/products/cream-white-cashmere-pashmina-shawl-handwoven-in-kashmir`;
 const KANI_COL = `${STOREFRONT}/collections/kani`;
+const FEATURED = `${STOREFRONT}/collections/homepage-featured`;
+const ALL = `${STOREFRONT}/collections/all`;
 const KANI_PDP_1 = `${STOREFRONT}/products/ivory-floral-kani-handwoven-pashmina-shawl-pure-cashmere-from-kashmir`;
 const KANI_PDP_2 = `${STOREFRONT}/products/handwoven-kani-pashmina-shawl-ivory-black-purple-floral-heritage-weave`;
 
@@ -73,6 +75,15 @@ async function adminGraphql<T>(
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+function shopLinksList(): string {
+  return `<ul>
+<li><a href="${SOLIDS}"><strong>Solid Pashmina →</strong></a></li>
+<li><a href="${KANI_COL}"><strong>Kani Pashmina →</strong></a></li>
+<li><a href="${FEATURED}"><strong>Featured Pieces →</strong></a></li>
+<li><a href="${ALL}"><strong>Shop everything →</strong></a></li>
+</ul>`;
+}
+
 function ctaSolids(opts?: {secondaryCream?: boolean; intro?: string}): string {
   const intro =
     opts?.intro ??
@@ -84,16 +95,17 @@ function ctaSolids(opts?: {secondaryCream?: boolean; intro?: string}): string {
 <hr />
 <h2>Shop The Kashmir Weaver</h2>
 <p>${intro}</p>
-<p><a href="${SOLIDS}"><strong>Explore Solid Pashmina →</strong></a></p>
+${shopLinksList()}
 ${cream}`.trim();
 }
 
 function ctaKani(): string {
   return `
 <hr />
-<h2>Shop Kani &amp; Solid Pashmina</h2>
+<h2>Shop The Kashmir Weaver</h2>
 <p>For the woven tapestry tradition described above, browse our <a href="${KANI_COL}">Kani Pashmina</a> collection — including the <a href="${KANI_PDP_1}">Ivory Floral Kani</a> and <a href="${KANI_PDP_2}">Ivory Black Purple Floral Kani</a>.</p>
-<p>For everyday colour and drape, start with <a href="${SOLIDS}"><strong>Solid Pashmina →</strong></a></p>`.trim();
+<p>For everyday colour and drape, solids, featured picks, and the full catalogue:</p>
+${shopLinksList()}`.trim();
 }
 
 const PRIORITY_CTAS: Record<

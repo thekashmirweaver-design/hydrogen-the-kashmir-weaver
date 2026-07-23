@@ -13,8 +13,8 @@ import {fileURLToPath} from 'node:url';
 const API_VERSION = '2025-10';
 const PRICE = '2200.00';
 const BASE_DIR =
-  '/Users/iambqc/Downloads/THE KASHMIR WEAVER/PRODUCTS/GENERATED/MUDASIR/KANI';
-const DEFAULT_FOLDERS = [3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15];
+  '/Users/iambqc/Downloads/THE KASHMIR WEAVER/PRODUCTS/GENERATED/MUDASIR/Series 1/KANI';
+const DEFAULT_FOLDERS = [1, 2];
 const COLLECTION_HANDLES = ['kani', 'homepage-featured'] as const;
 const VENDOR = 'The Kashmir Weaver';
 const PRODUCT_TYPE = 'Kani';
