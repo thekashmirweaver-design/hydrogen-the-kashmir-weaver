@@ -2,6 +2,7 @@ import {useEffect, useRef} from 'react';
 import {useLocation} from 'react-router';
 import {
   useAnalytics,
+  type CartLineUpdatePayload,
   type CartViewPayload,
   type ProductViewPayload,
 } from '@shopify/hydrogen';
@@ -40,6 +41,8 @@ type TrackableCart = {
 } | null | undefined;
 
 let gtagLoadPromise: Promise<void> | null = null;
+let lastAddToCartDedupe = '';
+let lastAddToCartAt = 0;
 
 function loadGtag(): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve();
@@ -73,9 +76,9 @@ function scheduleGtagLoad() {
   };
 
   if (typeof window.requestIdleCallback === 'function') {
-    window.requestIdleCallback(run, {timeout: 4000});
+    window.requestIdleCallback(run, {timeout: 15000});
   } else {
-    window.setTimeout(run, 2500);
+    window.setTimeout(run, 8000);
   }
 
   const onInteract = () => {
@@ -87,24 +90,20 @@ function scheduleGtagLoad() {
   window.addEventListener('keydown', onInteract, {once: true});
 }
 
-/** Only send hits from Shopify storefront hosts — skip localhost / tunnels. */
-function isShopifyStorefrontHost(hostname: string): boolean {
+/**
+ * Production Hydrogen host only — skip localhost, tunnels, myshopify Online Store,
+ * and Oxygen preview so GA4 stays clean for thekashmirweaver.shop.
+ */
+function isPrimaryStorefrontHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
-  if (host === 'localhost' || host.endsWith('.localhost')) return false;
-  if (host.includes('ngrok') || host.endsWith('.local')) return false;
-  if (host === 'thekashmirweaver.shop' || host === 'www.thekashmirweaver.shop') {
-    return true;
-  }
-  if (host.endsWith('.myshopify.com') && !host.endsWith('.o2.myshopify.dev')) {
-    return true;
-  }
-  if (host.endsWith('.hydrogen.shop')) return true;
-  return false;
+  return (
+    host === 'thekashmirweaver.shop' || host === 'www.thekashmirweaver.shop'
+  );
 }
 
 function shouldSendToGa(): boolean {
   if (typeof window === 'undefined') return false;
-  return isShopifyStorefrontHost(window.location.hostname);
+  return isPrimaryStorefrontHost(window.location.hostname);
 }
 
 function gidTail(id?: string | null): string {
@@ -189,6 +188,18 @@ function cartValue(cart: TrackableCart): number | undefined {
   return moneyAmount(cart?.cost?.totalAmount ?? cart?.cost?.subtotalAmount);
 }
 
+function shouldSkipDuplicateAddToCart(items: GaItem[]): boolean {
+  if (!items.length) return false;
+  const key = items
+    .map((i) => `${i.item_id}:${i.quantity ?? 0}:${i.price ?? 0}`)
+    .join('|');
+  const now = Date.now();
+  if (key === lastAddToCartDedupe && now - lastAddToCartAt < 2500) return true;
+  lastAddToCartDedupe = key;
+  lastAddToCartAt = now;
+  return false;
+}
+
 async function sendGaEvent(
   name: string,
   params: Record<string, unknown>,
@@ -197,6 +208,22 @@ async function sendGaEvent(
   await loadGtag();
   if (typeof window.gtag !== 'function') return;
   window.gtag('event', name, params);
+}
+
+function sendAddToCartEvent(
+  items: GaItem[],
+  currency: string,
+  value?: number,
+): void {
+  if (!items.length) return;
+  if (shouldSkipDuplicateAddToCart(items)) return;
+  void sendGaEvent('add_to_cart', {
+    currency,
+    value:
+      value ??
+      items.reduce((sum, i) => sum + (i.price ?? 0) * (i.quantity ?? 1), 0),
+    items,
+  });
 }
 
 /**
@@ -229,6 +256,18 @@ export function trackBeginCheckoutItems(
   });
 }
 
+/**
+ * Fire add_to_cart from PDP / bag actions. Host-gated only — do not wait on
+ * Customer Privacy `canTrack()` (that race was dropping ATC and view_item).
+ */
+export function trackAddToCart(
+  items: GaItem[],
+  currency = 'USD',
+  value?: number,
+): void {
+  sendAddToCartEvent(items, currency, value);
+}
+
 function cartSnapshotKey(cart: TrackableCart): string | null {
   if (!cart?.id || !cart.updatedAt) return null;
   return `${cart.id}:${cart.updatedAt}`;
@@ -236,8 +275,7 @@ function cartSnapshotKey(cart: TrackableCart): string | null {
 
 /**
  * Diff settled Shopify carts (from Hydrogen Analytics context) into GA4
- * cart events. Avoids Hydrogen's one-shot publish race where cart `updatedAt`
- * is consumed while `canTrack()` is still false.
+ * cart events. Backup for quantity changes when product_added_to_cart is missed.
  */
 function publishCartDiffToGa(
   cart: TrackableCart,
@@ -266,12 +304,11 @@ function publishCartDiffToGa(
       const item = lineToGaItem(nextLine);
       if (!item) continue;
       const addedQty = nextLine.quantity - prevLine.quantity;
-      const lineItem = {...item, quantity: addedQty};
-      void sendGaEvent('add_to_cart', {
+      sendAddToCartEvent(
+        [{...item, quantity: addedQty}],
         currency,
-        value: (lineItem.price ?? 0) * addedQty,
-        items: [lineItem],
-      });
+        (item.price ?? 0) * addedQty,
+      );
     } else if (prevLine.quantity > nextLine.quantity) {
       const item = lineToGaItem(prevLine);
       if (!item) continue;
@@ -289,24 +326,59 @@ function publishCartDiffToGa(
     if (prevById.has(id)) continue;
     const item = lineToGaItem(line);
     if (!item) continue;
-    void sendGaEvent('add_to_cart', {
+    sendAddToCartEvent(
+      [item],
       currency,
-      value: (item.price ?? 0) * (item.quantity ?? 1),
-      items: [item],
-    });
+      (item.price ?? 0) * (item.quantity ?? 1),
+    );
   }
+}
+
+function addToCartFromAnalyticsPayload(payload: CartLineUpdatePayload): void {
+  const line = payload.currentLine;
+  if (!line) return;
+  const item = lineToGaItem(line);
+  if (!item) return;
+  const prevQty = payload.prevLine?.quantity ?? 0;
+  const addedQty = Math.max(1, (item.quantity ?? 1) - prevQty);
+  const lineItem = {...item, quantity: addedQty};
+  sendAddToCartEvent(
+    [lineItem],
+    cartCurrency(payload.cart, payload.shop?.currency || 'USD'),
+    (lineItem.price ?? 0) * addedQty,
+  );
+}
+
+function removeFromCartFromAnalyticsPayload(
+  payload: CartLineUpdatePayload,
+): void {
+  const line = payload.prevLine ?? payload.currentLine;
+  if (!line) return;
+  const item = lineToGaItem(line);
+  if (!item) return;
+  const nextQty = payload.currentLine?.quantity ?? 0;
+  const prevQty = payload.prevLine?.quantity ?? item.quantity ?? 1;
+  const removedQty = Math.max(1, prevQty - nextQty);
+  const lineItem = {...item, quantity: removedQty};
+  void sendGaEvent('remove_from_cart', {
+    currency: cartCurrency(payload.cart, payload.shop?.currency || 'USD'),
+    value: (lineItem.price ?? 0) * removedQty,
+    items: [lineItem],
+  });
 }
 
 /**
  * Defers GA4 until idle / first interaction so gtag does not compete with LCP.
- * Ecommerce payloads use the Shopify cart from Hydrogen Analytics (SSOT).
+ * Ecommerce payloads use Hydrogen Analytics + direct PDP hooks (SSOT).
+ * Purchase fires from Shopify Customer Events — see
+ * scripts/ga4-shopify-custom-pixel.js.
  */
 export function GoogleAnalytics(): null {
   const location = useLocation();
   const isFirstPath = useRef(true);
   const bootstrapped = useRef(false);
   const lastCartKey = useRef<string | null>(null);
-  const {subscribe, register, canTrack, cart, prevCart, shop} = useAnalytics();
+  const {subscribe, register, cart, prevCart, shop} = useAnalytics();
   const {ready} = register('Google Analytics');
 
   useEffect(() => {
@@ -316,8 +388,8 @@ export function GoogleAnalytics(): null {
   }, []);
 
   useEffect(() => {
+    // Host gate only — do not require canTrack (consent race dropped ecommerce).
     subscribe('product_viewed', (payload: ProductViewPayload) => {
-      if (!canTrack()) return;
       const items = productsPayloadToItems(payload);
       if (!items.length) return;
       const currency = payload.shop?.currency || 'USD';
@@ -329,7 +401,6 @@ export function GoogleAnalytics(): null {
     });
 
     subscribe('cart_viewed', (payload: CartViewPayload) => {
-      if (!canTrack()) return;
       const items = cartToItems(payload.cart);
       if (!items.length) return;
       void sendGaEvent('view_cart', {
@@ -339,12 +410,20 @@ export function GoogleAnalytics(): null {
       });
     });
 
-    ready();
-  }, [subscribe, ready, canTrack]);
+    subscribe('product_added_to_cart', (payload: CartLineUpdatePayload) => {
+      addToCartFromAnalyticsPayload(payload);
+    });
 
-  // Cart add/remove: diff Shopify cart state once consent allows tracking.
+    subscribe('product_removed_from_cart', (payload: CartLineUpdatePayload) => {
+      removeFromCartFromAnalyticsPayload(payload);
+    });
+
+    ready();
+  }, [subscribe, ready]);
+
+  // Cart add/remove backup: diff settled cart when Analytics line events miss.
   useEffect(() => {
-    if (!canTrack()) return;
+    if (!shouldSendToGa()) return;
     const key = cartSnapshotKey(cart);
     if (!key) return;
     if (lastCartKey.current === key) return;
@@ -356,7 +435,7 @@ export function GoogleAnalytics(): null {
     }
 
     publishCartDiffToGa(cart, prevCart, shop?.currency);
-  }, [cart, prevCart, canTrack, shop?.currency]);
+  }, [cart, prevCart, shop?.currency]);
 
   useEffect(() => {
     if (!shouldSendToGa()) return;
