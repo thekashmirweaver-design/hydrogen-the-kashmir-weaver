@@ -1,0 +1,19 @@
+type = "web_pixel_extension"
+name = "meta-purchase-pixel"
+uid = "7f1339e0-fe07-4e95-a00f-e758c0341ff3"
+runtime_context = "strict"
+
+[customer_privacy]
+analytics = true
+marketing = true
+preferences = false
+sale_of_data = "enabled"
+
+[settings]
+type = "object"
+
+[settings.fields.pixelID]
+name = "Meta Pixel ID"
+description = "Meta Pixel ID from Events Manager (digits only)"
+type = "single_line_text_field"
+validations = [{name = "min", value = "1"}]

@@ -12,8 +12,14 @@ import {
 } from 'lucide-react';
 import {CartForm, Analytics} from '@shopify/hydrogen';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
-import {trackBeginCheckoutItems} from '~/components/GoogleAnalytics';
-import {trackMetaInitiateCheckoutItems} from '~/components/MetaPixel';
+import {
+  trackAddToCart,
+  trackBeginCheckoutItems,
+} from '~/components/GoogleAnalytics';
+import {
+  trackMetaAddToCart,
+  trackMetaInitiateCheckoutItems,
+} from '~/components/MetaPixel';
 import type {RootLoader} from '~/root';
 import {Accordion} from '~/components/gulriza/Accordion';
 import {ProductTile} from '~/components/gulriza/ProductTile';
@@ -147,6 +153,13 @@ export function ProductView({
   const wasAddingRef = useRef(false);
   useFocusTrap(fullOpen, lightboxRef);
 
+  const canChooseQuantity = showQuantitySelector(selectedVariant);
+  const maxQuantity = maxCartQuantity(selectedVariant);
+  const quantityHint =
+    canChooseQuantity && maxQuantity < UNTRACKED_MAX_QTY
+      ? `Max ${maxQuantity} per order`
+      : undefined;
+
   // After Add to Bag succeeds, open the cart drawer (and close Colour Studio if open).
   useEffect(() => {
     const busy =
@@ -158,10 +171,50 @@ export function ProductView({
     }
     if (wasAddingRef.current && addToBagFetcher.state === 'idle') {
       wasAddingRef.current = false;
+      const actionData = addToBagFetcher.data as
+        | {cart?: unknown; errors?: Array<{message?: string}> | null}
+        | undefined;
+      const failed = Boolean(actionData?.errors?.length);
+      if (!failed && activeVariantId) {
+        const qty = canChooseQuantity ? quantity : 1;
+        const atcItems = [
+          {
+            item_id: activeVariantId,
+            item_name: product.name,
+            item_category: product.productType,
+            price: displayPrice.amount,
+            quantity: qty,
+          },
+        ];
+        trackAddToCart(
+          atcItems,
+          displayPrice.currencyCode,
+          displayPrice.amount * qty,
+        );
+        trackMetaAddToCart(
+          atcItems,
+          displayPrice.currencyCode,
+          displayPrice.amount * qty,
+          metaPixelId,
+        );
+      }
       if (tryColoursOpen) setTryColoursOpen(false);
       openCartDrawer();
     }
-  }, [addToBagFetcher.state, tryColoursOpen, openCartDrawer]);
+  }, [
+    addToBagFetcher.state,
+    addToBagFetcher.data,
+    tryColoursOpen,
+    openCartDrawer,
+    activeVariantId,
+    canChooseQuantity,
+    quantity,
+    product.name,
+    product.productType,
+    displayPrice.amount,
+    displayPrice.currencyCode,
+    metaPixelId,
+  ]);
 
   useEffect(() => {
     setImgIdx(0);
@@ -172,13 +225,6 @@ export function ProductView({
     setImgIdx(0);
     setSelectedShadeCode(defaultShadeCode);
   }, [product.handle, defaultShadeCode]);
-
-  const canChooseQuantity = showQuantitySelector(selectedVariant);
-  const maxQuantity = maxCartQuantity(selectedVariant);
-  const quantityHint =
-    canChooseQuantity && maxQuantity < UNTRACKED_MAX_QTY
-      ? `Max ${maxQuantity} per order`
-      : undefined;
 
   const choosableOptions = useMemo(
     () => (product.options ?? []).filter((option) => option.values.length > 1),
@@ -505,6 +551,7 @@ export function ProductView({
                         : {aspectRatio: '4 / 5', maxHeight: 'min(75dvh, 720px)'}
                     }
                     loading="eager"
+                    priority
                     sizes="(min-width: 1024px) 55vw, 100vw"
                   />
                 </div>

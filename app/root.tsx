@@ -19,9 +19,8 @@ import {
   useLocation,
 } from 'react-router';
 import type {Route} from './+types/root';
-import inter400Woff2 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
-import cormorant400Woff2 from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-400-normal.woff2?url';
-import ebGaramond400Woff2 from '@fontsource/eb-garamond/files/eb-garamond-latin-400-normal.woff2?url';
+import inter300Woff2 from '@fontsource/inter/files/inter-latin-300-normal.woff2?url';
+import cormorant300Woff2 from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-300-normal.woff2?url';
 // The `?url` import resolves the hashed asset path for the
 // <link rel="preload"> below; the side-effect import keeps the CSS in the
 // bundle. The duplicate import is intentional.
@@ -30,7 +29,6 @@ import appStylesUrl from '~/styles/globals.css?url';
 import '~/styles/globals.css';
 import {PageLayout, NotFoundView} from './components/PageLayout';
 import {HeroPreloadLink} from '~/components/gulriza/ThemeBootScript';
-import {AccountWebComponents} from '~/components/gulriza/AccountWebComponents';
 import {
   GoogleAnalytics,
 } from '~/components/GoogleAnalytics';
@@ -104,21 +102,14 @@ export function links() {
   return [
     {
       rel: 'preload',
-      href: inter400Woff2,
+      href: inter300Woff2,
       as: 'font',
       type: 'font/woff2',
       crossOrigin: 'anonymous',
     },
     {
       rel: 'preload',
-      href: cormorant400Woff2,
-      as: 'font',
-      type: 'font/woff2',
-      crossOrigin: 'anonymous',
-    },
-    {
-      rel: 'preload',
-      href: ebGaramond400Woff2,
+      href: cormorant300Woff2,
       as: 'font',
       type: 'font/woff2',
       crossOrigin: 'anonymous',
@@ -126,11 +117,6 @@ export function links() {
     {
       rel: 'preconnect',
       href: 'https://cdn.shopify.com',
-    },
-    {
-      // Theme boot script (entry.server) injects the LCP hero preload for the resolved theme.
-      rel: 'preconnect',
-      href: 'https://www.googletagmanager.com',
     },
     {
       // Preload the bundled app CSS in parallel with the HTML download so
@@ -171,7 +157,9 @@ export async function loader(args: Route.LoaderArgs) {
       args.request.url,
     ),
     publicAccessToken: env.PUBLIC_STOREFRONT_API_TOKEN,
-    /** Meta Pixel ID for catalogue ads (ViewContent / AddToCart / InitiateCheckout). */
+    /** Meta Pixel ID for catalogue ads (ViewContent / AddToCart / InitiateCheckout).
+     * Purchase fires from Shopify Customer Events custom pixels (checkout domain):
+     * scripts/meta-pixel-shopify-custom-pixel.js and scripts/ga4-shopify-custom-pixel.js. */
     metaPixelId: env.PUBLIC_META_PIXEL_ID?.trim() || META_PIXEL_ID,
     shop: getShopAnalytics({
       storefront,
@@ -287,7 +275,6 @@ export function Layout({children}: {children?: React.ReactNode}) {
       </head>
       <body>
         <ThemeProvider>{children}</ThemeProvider>
-        <AccountWebComponents />
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
       </body>

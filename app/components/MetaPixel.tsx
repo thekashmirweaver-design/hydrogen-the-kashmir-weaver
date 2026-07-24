@@ -2,6 +2,7 @@ import {useEffect, useRef} from 'react';
 import {useLocation, useRouteLoaderData} from 'react-router';
 import {
   useAnalytics,
+  type CartLineUpdatePayload,
   type CartViewPayload,
   type ProductViewPayload,
 } from '@shopify/hydrogen';
@@ -155,25 +156,21 @@ function productsToMeta(payload: ProductViewPayload): MetaContent | null {
   };
 }
 
-/** Only send hits from Shopify storefront hosts — skip localhost / tunnels. */
-function isShopifyStorefrontHost(hostname: string): boolean {
+/**
+ * Production Hydrogen host only — skip localhost, tunnels, myshopify Online Store,
+ * and Oxygen preview so Meta stays aligned with thekashmirweaver.shop.
+ */
+function isPrimaryStorefrontHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
-  if (host === 'localhost' || host.endsWith('.localhost')) return false;
-  if (host.includes('ngrok') || host.endsWith('.local')) return false;
-  if (host === 'thekashmirweaver.shop' || host === 'www.thekashmirweaver.shop') {
-    return true;
-  }
-  if (host.endsWith('.myshopify.com') && !host.endsWith('.o2.myshopify.dev')) {
-    return true;
-  }
-  if (host.endsWith('.hydrogen.shop')) return true;
-  return false;
+  return (
+    host === 'thekashmirweaver.shop' || host === 'www.thekashmirweaver.shop'
+  );
 }
 
 function shouldSendToMeta(pixelId?: string | null): boolean {
   if (!pixelId?.trim()) return false;
   if (typeof window === 'undefined') return false;
-  return isShopifyStorefrontHost(window.location.hostname);
+  return isPrimaryStorefrontHost(window.location.hostname);
 }
 
 function loadFbq(pixelId: string): Promise<void> {
@@ -229,9 +226,9 @@ function scheduleFbqLoad(pixelId: string) {
   };
 
   if (typeof window.requestIdleCallback === 'function') {
-    window.requestIdleCallback(run, {timeout: 4000});
+    window.requestIdleCallback(run, {timeout: 15000});
   } else {
-    window.setTimeout(run, 2500);
+    window.setTimeout(run, 8000);
   }
 
   const onInteract = () => {
@@ -243,43 +240,49 @@ function scheduleFbqLoad(pixelId: string) {
   window.addEventListener('keydown', onInteract, {once: true});
 }
 
+/** Collapse PDP click + Hydrogen analytics double-fires within a short window. */
+let lastAddToCartDedupe = '';
+let lastAddToCartAt = 0;
+
+function shouldSkipDuplicateAddToCart(params?: MetaContent): boolean {
+  if (!params?.content_ids?.length) return false;
+  const key = `${params.content_ids.join(',')}:${params.num_items ?? 0}:${params.value ?? 0}`;
+  const now = Date.now();
+  if (key === lastAddToCartDedupe && now - lastAddToCartAt < 2500) return true;
+  lastAddToCartDedupe = key;
+  lastAddToCartAt = now;
+  return false;
+}
+
 async function sendMetaEvent(
   pixelId: string,
   name: string,
   params?: MetaContent,
+  eventId?: string,
 ): Promise<void> {
   if (!shouldSendToMeta(pixelId)) return;
+  if (name === 'AddToCart' && shouldSkipDuplicateAddToCart(params)) return;
   await loadFbq(pixelId);
   if (typeof window.fbq !== 'function') return;
-  if (params) window.fbq('track', name, params);
-  else window.fbq('track', name);
+  const options = eventId ? {eventID: eventId} : undefined;
+  if (params) window.fbq('track', name, params, options);
+  else window.fbq('track', name, undefined, options);
 }
 
-function cartSnapshotKey(cart: TrackableCart): string | null {
-  if (!cart?.id || !cart.updatedAt) return null;
-  return `${cart.id}:${cart.updatedAt}`;
-}
-
-function publishCartDiffToMeta(
+function addToCartFromLine(
   pixelId: string,
-  cart: TrackableCart,
-  prevCart: TrackableCart,
-  shopCurrency?: string,
+  line: CartLine | ComponentizableCartLine | null | undefined,
+  currency: string,
+  prevQuantity = 0,
+  eventId?: string,
 ): void {
-  const currency = cartCurrency(cart, shopCurrency || 'USD');
-  const previousLines = cartLines(prevCart);
-  const currentLines = cartLines(cart);
-  const prevById = new Map(previousLines.map((line) => [line.id, line]));
-  const currentById = new Map(currentLines.map((line) => [line.id, line]));
-
-  for (const [id, prevLine] of prevById) {
-    const nextLine = currentById.get(id);
-    if (!nextLine) continue;
-    if (prevLine.quantity >= nextLine.quantity) continue;
-    const row = lineMeta(nextLine);
-    if (!row) continue;
-    const addedQty = nextLine.quantity - prevLine.quantity;
-    void sendMetaEvent(pixelId, 'AddToCart', {
+  const row = lineMeta(line);
+  if (!row) return;
+  const addedQty = Math.max(1, row.quantity - prevQuantity);
+  void sendMetaEvent(
+    pixelId,
+    'AddToCart',
+    {
       content_ids: [row.id],
       content_type: 'product',
       content_name: row.name,
@@ -288,24 +291,26 @@ function publishCartDiffToMeta(
       currency,
       num_items: addedQty,
       contents: [{id: row.id, quantity: addedQty, item_price: row.price}],
-    });
-  }
+    },
+    eventId,
+  );
+}
 
-  for (const [id, line] of currentById) {
-    if (prevById.has(id)) continue;
-    const row = lineMeta(line);
-    if (!row) continue;
-    void sendMetaEvent(pixelId, 'AddToCart', {
-      content_ids: [row.id],
-      content_type: 'product',
-      content_name: row.name,
-      content_category: row.category,
-      value: (row.price ?? 0) * row.quantity,
-      currency,
-      num_items: row.quantity,
-      contents: [{id: row.id, quantity: row.quantity, item_price: row.price}],
-    });
-  }
+function addToCartFromAnalyticsPayload(
+  pixelId: string,
+  payload: CartLineUpdatePayload,
+): void {
+  const line = payload.currentLine;
+  if (!line) return;
+  const currency = cartCurrency(payload.cart, payload.shop?.currency || 'USD');
+  const prevQty = payload.prevLine?.quantity ?? 0;
+  addToCartFromLine(
+    pixelId,
+    line,
+    currency,
+    prevQty,
+    line.id ? `atc_${gidTail(line.id)}_${line.quantity}` : undefined,
+  );
 }
 
 /**
@@ -357,9 +362,52 @@ export function trackMetaInitiateCheckoutItems(
 }
 
 /**
+ * Fire AddToCart from PDP / bag actions. Same host gate as InitiateCheckout —
+ * do not wait on Customer Privacy `canTrack()` (that race was dropping ATC).
+ */
+export function trackMetaAddToCart(
+  items: Array<{
+    item_id: string;
+    item_name?: string;
+    item_category?: string;
+    price?: number;
+    quantity?: number;
+  }>,
+  currency = 'USD',
+  value?: number,
+  pixelId?: string | null,
+): void {
+  const id = pixelId?.trim() || META_PIXEL_ID;
+  if (!shouldSendToMeta(id) || !items.length) return;
+  const content_ids = items.map((i) => gidTail(i.item_id)).filter(Boolean);
+  if (!content_ids.length) return;
+  const num_items = items.reduce((sum, i) => sum + (i.quantity ?? 1), 0);
+  void sendMetaEvent(id, 'AddToCart', {
+    content_ids,
+    content_type: 'product',
+    content_name: items[0]?.item_name,
+    content_category: items[0]?.item_category,
+    currency,
+    value:
+      value ??
+      items.reduce((sum, i) => sum + (i.price ?? 0) * (i.quantity ?? 1), 0),
+    num_items,
+    contents: items
+      .map((i) => ({
+        id: gidTail(i.item_id),
+        quantity: i.quantity ?? 1,
+        item_price: i.price,
+      }))
+      .filter((c) => c.id),
+  });
+}
+
+/**
  * Meta Pixel for catalogue ads. Sends Shopify variant IDs as content_ids so
  * they match the Facebook & Instagram sales-channel catalogue sync.
- * Requires PUBLIC_META_PIXEL_ID in Oxygen / .env.
+ * Purchase must fire from Shopify checkout (Customer Events custom pixel) —
+ * see scripts/meta-pixel-shopify-custom-pixel.js (and GA4 twin
+ * scripts/ga4-shopify-custom-pixel.js).
  */
 export function MetaPixel(): null {
   const data = useRouteLoaderData<RootLoader>('root');
@@ -367,8 +415,7 @@ export function MetaPixel(): null {
   const location = useLocation();
   const isFirstPath = useRef(true);
   const bootstrapped = useRef(false);
-  const lastCartKey = useRef<string | null>(null);
-  const {subscribe, register, canTrack, cart, prevCart, shop} = useAnalytics();
+  const {subscribe, register} = useAnalytics();
   const {ready} = register('Meta Pixel');
 
   useEffect(() => {
@@ -383,40 +430,28 @@ export function MetaPixel(): null {
       return;
     }
 
+    // Host gate only — do not require canTrack (consent race dropped ViewContent).
     subscribe('product_viewed', (payload: ProductViewPayload) => {
-      if (!canTrack()) return;
       const params = productsToMeta(payload);
       if (!params) return;
       void sendMetaEvent(pixelId, 'ViewContent', params);
     });
 
     subscribe('cart_viewed', (payload: CartViewPayload) => {
-      if (!canTrack()) return;
       const params = cartToMeta(payload.cart, payload.shop?.currency);
       if (!params) return;
-      // Not a standard Meta event — use trackCustom so it does not skew match rate.
       void loadFbq(pixelId).then(() => {
         if (!shouldSendToMeta(pixelId) || typeof window.fbq !== 'function') return;
         window.fbq('trackCustom', 'ViewCart', params);
       });
     });
 
+    subscribe('product_added_to_cart', (payload: CartLineUpdatePayload) => {
+      addToCartFromAnalyticsPayload(pixelId, payload);
+    });
+
     ready();
-  }, [subscribe, ready, canTrack, pixelId]);
-
-  useEffect(() => {
-    if (!pixelId || !canTrack()) return;
-    const key = cartSnapshotKey(cart);
-    if (!key) return;
-    if (lastCartKey.current === key) return;
-    lastCartKey.current = key;
-
-    if (!prevCart?.updatedAt || prevCart.updatedAt === cart?.updatedAt) {
-      return;
-    }
-
-    publishCartDiffToMeta(pixelId, cart, prevCart, shop?.currency);
-  }, [cart, prevCart, canTrack, shop?.currency, pixelId]);
+  }, [subscribe, ready, pixelId]);
 
   useEffect(() => {
     if (!shouldSendToMeta(pixelId)) return;
