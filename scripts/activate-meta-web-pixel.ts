@@ -11,6 +11,7 @@ import {resolve} from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const PIXEL_ID = '1724382275473712';
+const GA_MEASUREMENT_ID = 'G-2WQQF2JKTQ';
 const API_VERSION = '2025-10';
 
 function loadEnv(): Record<string, string> {
@@ -119,7 +120,10 @@ async function activate(shop: string, token: string, label: string) {
   );
   console.log('Existing webPixel:', who.data?.webPixel || null);
 
-  const settings = JSON.stringify({pixelID: PIXEL_ID});
+  const settings = JSON.stringify({
+    pixelID: PIXEL_ID,
+    gaMeasurementId: GA_MEASUREMENT_ID,
+  });
 
   if (who.data?.webPixel?.id) {
     const updated = await gql(
