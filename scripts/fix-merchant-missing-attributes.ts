@@ -215,7 +215,12 @@ async function ensurePrimaryTakesSupplemental(
     (r: {supplementalDataSourceName?: string}) =>
       String(r.supplementalDataSourceName || '').includes(supplementalId),
   );
-  if (hasSupp) return false;
+  // Supplemental must win over Shopify App API so bad values like
+  // color="Default Title" do not override Hydrogen fixes.
+  const orderOk =
+    hasSupp &&
+    String(rule[0]?.supplementalDataSourceName || '').includes(supplementalId);
+  if (orderOk) return false;
   await api(
     `https://merchantapi.googleapis.com/datasources/v1/accounts/${MERCHANT}/dataSources/${primaryId}?updateMask=primaryProductDataSource.defaultRule`,
     {
@@ -224,10 +229,10 @@ async function ensurePrimaryTakesSupplemental(
         primaryProductDataSource: {
           defaultRule: {
             takeFromDataSources: [
-              {self: true},
               {
                 supplementalDataSourceName: `accounts/${MERCHANT}/dataSources/${supplementalId}`,
               },
+              {self: true},
             ],
           },
         },
@@ -282,14 +287,39 @@ async function shopifyVariantInfo(
   const variant = (product.variants?.nodes || []).find(
     (v: {id: string}) => v.id.endsWith(`/${variantId}`),
   );
-  const color =
-    variant?.selectedOptions?.find(
-      (o: {name: string}) => o.name.toLowerCase() === 'color',
+  let color =
+    variant?.selectedOptions?.find((o: {name: string}) =>
+      /color|colour|shade/i.test(o.name),
     )?.value || null;
-  const size =
+  if (color && /^default title$/i.test(color)) color = null;
+  let size =
     variant?.selectedOptions?.find((o: {name: string}) =>
       /size|dimension|length|accessory/i.test(o.name),
     )?.value || null;
+  if (size && /^default title$/i.test(size)) size = null;
+  if (!color && product.title) {
+    const map: [RegExp, string][] = [
+      [/crimson|burgundy|maroon|red/i, 'Red'],
+      [/mustard|gold|yellow/i, 'Yellow'],
+      [/olive|mint|sage|green/i, 'Green'],
+      [/cream|ivory|beige|taupe/i, 'Beige'],
+      [/navy|indigo|teal|turquoise|blue/i, 'Blue'],
+      [/magenta|rose|pink/i, 'Pink'],
+      [/chocolate|coffee|cocoa|brown/i, 'Brown'],
+      [/black|charcoal/i, 'Black'],
+      [/white/i, 'White'],
+      [/purple/i, 'Purple'],
+      [/peach|coral|orange|saffron/i, 'Orange'],
+      [/grey|gray/i, 'Grey'],
+    ];
+    for (const [re, c] of map) {
+      if (re.test(product.title)) {
+        color = c;
+        break;
+      }
+    }
+    if (!color) color = 'Multicolor';
+  }
   const imageLink =
     variant?.image?.url || product.featuredImage?.url || null;
   const additionalImageLinks = (product.images?.nodes || [])
@@ -411,10 +441,15 @@ async function main() {
       );
     }
     if (mc.brand) productAttributes.brand = mc.brand;
-    const color = mc.color || shop.color;
-    if (color) productAttributes.color = color;
-    const size = mc.sizes?.[0] || shop.size;
-    if (size) productAttributes.size = size;
+    let color = shop.color || mc.color;
+    if (color && /^default title$/i.test(String(color))) color = shop.color;
+    if (color && !/^default title$/i.test(String(color))) {
+      productAttributes.color = color;
+    }
+    const size = shop.size || mc.sizes?.[0];
+    if (size && !/^default title$/i.test(String(size))) {
+      productAttributes.size = size;
+    }
     if (mc.googleProductCategory) {
       productAttributes.googleProductCategory = mc.googleProductCategory;
     }
