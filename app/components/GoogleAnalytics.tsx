@@ -75,19 +75,21 @@ function scheduleGtagLoad() {
     void loadGtag();
   };
 
-  if (typeof window.requestIdleCallback === 'function') {
-    window.requestIdleCallback(run, {timeout: 15000});
-  } else {
-    window.setTimeout(run, 8000);
-  }
-
   const onInteract = () => {
     run();
     window.removeEventListener('pointerdown', onInteract);
     window.removeEventListener('keydown', onInteract);
+    window.removeEventListener('scroll', onInteract);
   };
   window.addEventListener('pointerdown', onInteract, {once: true, passive: true});
   window.addEventListener('keydown', onInteract, {once: true});
+  window.addEventListener('scroll', onInteract, {once: true, passive: true});
+
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(run, {timeout: 60000});
+  } else {
+    window.setTimeout(run, 45000);
+  }
 }
 
 /**

@@ -52,15 +52,17 @@ export class AppSession implements HydrogenSession {
     return this.#session.flash;
   }
 
-  get unset() {
+  // Bind methods so reading `.set` / `.unset` does not mark the session dirty
+  // (Oxygen FPC stays cacheable when market values are already persisted).
+  unset = (key: string) => {
     this.isPending = true;
-    return this.#session.unset;
-  }
+    this.#session.unset(key);
+  };
 
-  get set() {
+  set = (key: string, value: unknown) => {
     this.isPending = true;
-    return this.#session.set;
-  }
+    this.#session.set(key, value);
+  };
 
   destroy() {
     return this.#sessionStorage.destroySession(this.#session);

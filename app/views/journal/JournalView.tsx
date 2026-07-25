@@ -99,17 +99,18 @@ export function JournalView({
                     alt={feature.alt ?? feature.title}
                     width={feature.width ?? undefined}
                     height={feature.height ?? undefined}
-                    className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
+                    // No CSS mask on LCP — masks inflate render delay in LH.
+                    className="absolute inset-0 h-full w-full object-cover"
                     loading="eager"
                     fetchPriority="high"
                     priority
                     showSkeleton={false}
                     sizes="(min-width: 768px) 66vw, 100vw"
                     srcSetOptions={{
-                      intervals: 5,
-                      startingWidth: 400,
-                      incrementSize: 200,
-                      placeholderWidth: 400,
+                      intervals: 3,
+                      startingWidth: 360,
+                      incrementSize: 180,
+                      placeholderWidth: 360,
                     }}
                   />
                 </div>

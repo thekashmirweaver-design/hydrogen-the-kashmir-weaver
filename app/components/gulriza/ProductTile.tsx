@@ -178,12 +178,22 @@ export function ProductTile({
                   filter: soldOut ? "grayscale(0.6)" : undefined,
                 }}
                 sizes={sizes}
-                srcSetOptions={{
-                  intervals: 4,
-                  startingWidth: 200,
-                  incrementSize: 150,
-                  placeholderWidth: 200,
-                }}
+                srcSetOptions={
+                  priority && i === 0
+                    ? {
+                        // Keep LCP srcset lean for mobile 4G (≤640w).
+                        intervals: 3,
+                        startingWidth: 320,
+                        incrementSize: 160,
+                        placeholderWidth: 320,
+                      }
+                    : {
+                        intervals: 4,
+                        startingWidth: 200,
+                        incrementSize: 150,
+                        placeholderWidth: 200,
+                      }
+                }
                 priority={priority && i === 0}
                 loading={priority && i === 0 ? "eager" : "lazy"}
               />

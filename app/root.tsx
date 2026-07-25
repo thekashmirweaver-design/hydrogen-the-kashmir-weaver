@@ -268,7 +268,7 @@ function AppStyles({nonce}: {nonce: string}) {
 @font-face{font-family:'Cormorant Garamond';font-style:normal;font-display:swap;font-weight:300;src:url(${cormorant300Woff2}) format('woff2')}
 @font-face{font-family:'Cormorant Garamond';font-style:italic;font-display:swap;font-weight:300;src:url(${cormorant300ItalicWoff2}) format('woff2')}
 :root{color-scheme:dark;--background:#08100f;--foreground:#f7f3ec;--accent:#ceac6c;--muted-foreground:#d6d0c6;--on-photo-fg:#f7f3ec;--on-photo-muted:#f7f3ecc7;--on-photo-accent:#ceac6c;--photo-scrim-rgb:8 16 15;--header-glass:#08100fc7;--border:#ffffff14;--surface:#0f1d1a;--marquee-h:36px;--nav-h:4.75rem}
-:root[data-theme=light]{color-scheme:light;--background:#f6f1e7;--foreground:#2a221a;--accent:#8a6b34;--muted-foreground:#7a6c56;--header-glass:#f6f1e7b8;--border:#2a221a1a;--surface:#efe7d6}
+:root[data-theme=light]{color-scheme:light;--background:#f6f1e7;--foreground:#2a221a;--accent:#856531;--muted-foreground:#7a6c56;--header-glass:#f6f1e7b8;--border:#2a221a1a;--surface:#efe7d6}
 @media (min-width:768px){:root{--nav-h:5rem}}
 html,body{margin:0;background:var(--background);color:var(--foreground);font-family:Inter,system-ui,sans-serif;font-weight:400}
 img,picture{display:block;max-width:100%}

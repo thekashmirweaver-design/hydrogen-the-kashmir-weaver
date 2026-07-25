@@ -77,7 +77,8 @@ export function CatalogImage({
   const showSkeleton = showSkeletonProp ?? !priority;
   const [loaded, setLoaded] = useState(priority);
   const imgRef = useRef<HTMLImageElement>(null);
-  const decoding = 'async';
+  // Sync decode for LCP candidates so paint isn't deferred behind the event loop.
+  const decoding = priority ? 'sync' : 'async';
 
   useEffect(() => {
     if (priority) {
@@ -114,6 +115,7 @@ export function CatalogImage({
       }}
       className={className}
       loading={loading}
+      decoding={decoding}
       sizes={sizes}
       srcSetOptions={srcSetOptions}
       style={imageStyle}

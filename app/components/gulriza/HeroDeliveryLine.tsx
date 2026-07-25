@@ -20,12 +20,34 @@ export function HeroDeliveryLine({className = ''}: {className?: string}) {
       return () => media.removeEventListener('change', syncMotion);
     }
 
-    const id = window.setInterval(() => {
-      setIndex((current) => (current + 1) % WORDS.length);
-    }, CYCLE_MS);
+    // Wait for motion-ready so the hero word swap does not inflate Speed Index.
+    let intervalId: number | undefined;
+    const start = () => {
+      if (intervalId != null) return;
+      intervalId = window.setInterval(() => {
+        setIndex((current) => (current + 1) % WORDS.length);
+      }, CYCLE_MS);
+    };
+    const root = document.documentElement;
+    if (root.classList.contains('motion-ready')) {
+      start();
+    } else {
+      const observer = new MutationObserver(() => {
+        if (root.classList.contains('motion-ready')) {
+          observer.disconnect();
+          start();
+        }
+      });
+      observer.observe(root, {attributes: true, attributeFilter: ['class']});
+      return () => {
+        observer.disconnect();
+        if (intervalId != null) window.clearInterval(intervalId);
+        media.removeEventListener('change', syncMotion);
+      };
+    }
 
     return () => {
-      window.clearInterval(id);
+      if (intervalId != null) window.clearInterval(intervalId);
       media.removeEventListener('change', syncMotion);
     };
   }, []);

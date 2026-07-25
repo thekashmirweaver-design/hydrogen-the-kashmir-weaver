@@ -85,8 +85,8 @@
   --foreground: #2a221a;        /* deep walnut ink */
   --muted-foreground: #7a6c56;  /* dusty taupe */
 
-  /* Accent — same antique gold, deeper for contrast on light */
-  --accent: #8a6b34;
+  /* Accent — antique gold, deepened to ≥4.5:1 on ivory (#f6f1e7) */
+  --accent: #856531;
   --accent-soft: #b08a52;
   /* Eyebrows — deep walnut for clear contrast on ivory */
   --eyebrow: #2a221a;

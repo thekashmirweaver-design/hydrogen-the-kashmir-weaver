@@ -743,9 +743,15 @@
 
 .marquee-track {
   animation: gulriza-marquee 15s linear infinite;
+  /* Pause until html.motion-ready — continuous scroll tanks Speed Index. */
+  animation-play-state: paused;
 }
 
-.marquee-track:hover {
+html.motion-ready .marquee-track {
+  animation-play-state: running;
+}
+
+html.motion-ready .marquee-track:hover {
   animation-play-state: paused;
 }
 
@@ -810,30 +816,43 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  margin: 0;
   background: transparent;
+}
+
+.range-thumb::-webkit-slider-runnable-track {
+  height: 100%;
+  background: transparent;
+}
+
+.range-thumb::-moz-range-track {
+  height: 100%;
+  background: transparent;
+  border: none;
 }
 
 .range-thumb::-webkit-slider-thumb {
   -webkit-appearance: none;
   pointer-events: auto;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
+  margin-top: 0;
   border-radius: 9999px;
   background: var(--accent);
-  border: 3px solid var(--background);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  border: 2px solid var(--background);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--foreground) 18%, transparent);
   cursor: pointer;
   touch-action: none;
 }
 
 .range-thumb::-moz-range-thumb {
   pointer-events: auto;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 9999px;
   background: var(--accent);
-  border: 3px solid var(--background);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  border: 2px solid var(--background);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--foreground) 18%, transparent);
   cursor: pointer;
   touch-action: none;
 }
@@ -1223,6 +1242,11 @@
     rgba(255, 255, 255, 0) 100%
   );
   animation: glass-glaze 6s ease-in-out infinite;
+  animation-play-state: paused;
   pointer-events: none;
   z-index: 10;
+}
+
+html.motion-ready .animate-glass-glaze::after {
+  animation-play-state: running;
 }
