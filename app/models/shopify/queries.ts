@@ -269,7 +269,6 @@ export const CATALOG_MENU_PRODUCT_FRAGMENT = `#graphql
     id
     handle
     title
-    description
     availableForSale
     createdAt
     featuredImage {
@@ -306,6 +305,29 @@ export const ALL_MENU_PRODUCTS_QUERY = `#graphql
       edges {
         node {
           ...CatalogMenuProduct
+        }
+      }
+    }
+  }
+  ${CATALOG_MONEY_FRAGMENT}
+  ${CATALOG_IMAGE_FRAGMENT}
+  ${CATALOG_MENU_PRODUCT_FRAGMENT}
+` as const;
+
+/** Lightweight featured-collection products for carousels / homepage tiles. */
+export const FEATURED_LISTING_PRODUCTS_QUERY = `#graphql
+  query FeaturedListingProducts(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+    $first: Int!
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      products(first: $first, sortKey: MANUAL) {
+        edges {
+          node {
+            ...CatalogMenuProduct
+          }
         }
       }
     }

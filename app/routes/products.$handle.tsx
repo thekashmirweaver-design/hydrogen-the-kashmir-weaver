@@ -2,7 +2,7 @@ import {useLoaderData} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {getProductPage} from '~/controllers';
 import {getCatalogOptions} from '~/lib/catalog-options';
-import {loadSharedCatalog} from '~/lib/shared-catalog';
+import {loadSharedCatalogMenu} from '~/lib/shared-catalog';
 import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
 import {ProductView} from '~/views/product/ProductView';
 
@@ -24,7 +24,7 @@ export async function loader({params, context, request}: Route.LoaderArgs) {
   const handle = params.handle;
   if (!handle) throw new Response('Not found', {status: 404});
   const catalogOptions = getCatalogOptions(context);
-  const catalog = await loadSharedCatalog(request, catalogOptions);
+  const catalog = await loadSharedCatalogMenu(request, catalogOptions);
   const page = await getProductPage(handle, catalogOptions, catalog);
   if (!page) throw new Response('Not found', {status: 404});
   return page;

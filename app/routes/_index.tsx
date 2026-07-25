@@ -3,9 +3,8 @@ import type {Route} from './+types/_index';
 import {getHomePage} from '~/controllers';
 import {getCatalogOptions} from '~/lib/catalog-options';
 import {loadHomepageFeatured} from '~/lib/homepage-featured';
-import {loadSharedCatalog} from '~/lib/shared-catalog';
+import {loadSharedCatalogMenu} from '~/lib/shared-catalog';
 import {HomeView} from '~/views/home/HomeView';
-import {useCatalog} from '~/contexts/catalog-context';
 import {
   getStoreUrlFromMatches,
   organizationLd,
@@ -37,10 +36,11 @@ export async function loader({context, request}: Route.LoaderArgs) {
   const catalogOptions = getCatalogOptions(context);
   const [featured, catalog] = await Promise.all([
     loadHomepageFeatured(context.storefront),
-    loadSharedCatalog(request, catalogOptions),
+    loadSharedCatalogMenu(request, catalogOptions),
   ]);
   const home = await getHomePage(catalogOptions, featured, catalog);
   return {
+    products: home.products,
     featuredProducts: home.featuredProducts,
     featuredCollections: home.featuredCollections,
     heroImageUrl: featured.heroImageUrl,
@@ -49,13 +49,20 @@ export async function loader({context, request}: Route.LoaderArgs) {
   };
 }
 
+export function headers() {
+  // Allow Oxygen edge cache for anonymous HTML; cart/session cookies still bypass.
+  return {
+    'Cache-Control':
+      'public, max-age=0, s-maxage=60, stale-while-revalidate=600',
+  };
+}
+
 export default function HomeRoute() {
   const data = useLoaderData<typeof loader>();
-  const catalog = useCatalog();
 
   return (
     <HomeView
-      products={catalog.products}
+      products={data.products}
       collectionPreviewCount={data.collectionPreviewCount}
       featuredProducts={data.featuredProducts}
       featuredCollections={data.featuredCollections}

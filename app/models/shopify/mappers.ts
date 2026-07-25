@@ -79,7 +79,7 @@ export type ShopifyMenuProductNode = {
   id: string;
   handle: string;
   title: string;
-  description: string;
+  description?: string;
   availableForSale: boolean;
   createdAt: string;
   featuredImage?: ShopifyImage | null;
@@ -432,9 +432,6 @@ export function mapProduct(node: ShopifyProductNode): Product {
 /** Lightweight product row for header search and footer on non-shop routes. */
 export function mapMenuProduct(node: ShopifyMenuProductNode): Product {
   const collection = node.collections.edges[0]?.node;
-  const description = node.description.trim();
-  const shortDescription =
-    description.length > 160 ? `${description.slice(0, 157)}…` : description;
   const images = node.featuredImage
     ? [toImage(node.featuredImage, node.title)]
     : [{src: DEFAULT_PRODUCT_IMAGE, alt: node.title}];
@@ -451,7 +448,7 @@ export function mapMenuProduct(node: ShopifyMenuProductNode): Product {
       compareAt && Number.parseFloat(compareAt.amount) > 0
         ? toMoney(compareAt)
         : undefined,
-    shortDescription: shortDescription || node.title,
+    shortDescription: node.title,
     description: '',
     story: '',
     images,

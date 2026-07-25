@@ -318,8 +318,12 @@ export function ProductCatalog({
           ) : (
             <>
               <div ref={gridRef} className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-16 lg:grid-cols-3">
-                {filtered.map((p) => (
-                  <ProductTile key={p.handle} product={p} />
+                {filtered.map((p, index) => (
+                  <ProductTile
+                    key={p.handle}
+                    product={p}
+                    priority={index < 3}
+                  />
                 ))}
               </div>
               {paginationEnabled && (

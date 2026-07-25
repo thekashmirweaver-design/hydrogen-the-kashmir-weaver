@@ -19,7 +19,7 @@ export function getThemeBootScriptTag(nonce: string): string {
   return `<script id="tkw-theme-boot" nonce="${safeNonce}">${body}</script>`;
 }
 
-/** Placeholder claimed by React; boot script fills imagesrcset before paint. */
+/** Default dark LCP preload in SSR; boot script may swap for light before paint. */
 export function HeroPreloadLink() {
   return (
     <link
@@ -27,6 +27,11 @@ export function HeroPreloadLink() {
       rel="preload"
       as="image"
       type="image/avif"
+      // React DOM: imageSrcSet → imagesrcset
+      imageSrcSet={`${heroDark.avifSmall} 800w, ${heroDark.avif} 1536w`}
+      imageSizes="(min-width: 768px) 55vw, 100vw"
+      // @ts-expect-error React 18: fetchPriority not in link types
+      fetchPriority="high"
       suppressHydrationWarning
     />
   );

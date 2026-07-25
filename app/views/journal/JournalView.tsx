@@ -102,7 +102,15 @@ export function JournalView({
                     className="absolute inset-0 h-full w-full object-cover edge-fade-bottom"
                     loading="eager"
                     fetchPriority="high"
+                    priority
+                    showSkeleton={false}
                     sizes="(min-width: 768px) 66vw, 100vw"
+                    srcSetOptions={{
+                      intervals: 5,
+                      startingWidth: 400,
+                      incrementSize: 200,
+                      placeholderWidth: 400,
+                    }}
                   />
                 </div>
               </div>
@@ -181,11 +189,7 @@ export function JournalView({
                 Previous
               </Link>
             ) : (
-              <span
-                aria-hidden
-                className="inline-flex min-h-11 items-center gap-2 px-6 py-3 text-xs uppercase tracking-[0.25em] opacity-30"
-                style={{background: 'var(--surface)', color: 'var(--foreground)'}}
-              >
+              <span className="invisible inline-flex min-h-11 items-center gap-2 px-6 py-3" aria-hidden>
                 <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
                 Previous
               </span>
@@ -207,11 +211,7 @@ export function JournalView({
                 <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
               </Link>
             ) : (
-              <span
-                aria-hidden
-                className="inline-flex min-h-11 items-center gap-2 px-6 py-3 text-xs uppercase tracking-[0.25em] opacity-30"
-                style={{background: 'var(--surface)', color: 'var(--foreground)'}}
-              >
+              <span className="invisible inline-flex min-h-11 items-center gap-2 px-6 py-3" aria-hidden>
                 Next
                 <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
               </span>

@@ -1,5 +1,5 @@
 import {Link, useLocation, useNavigate, useNavigation, useFetchers, type FetcherWithComponents} from "react-router";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Search, ShoppingBag, Menu, X, ChevronDown, Check, Globe, ArrowRight } from "lucide-react";
 import { CartForm, useAnalytics } from "@shopify/hydrogen";
@@ -16,6 +16,7 @@ import { useFocusTrap } from "~/hooks/use-focus-trap";
 import type {ShopSettings, NavItem} from "~/lib/shop-settings";
 import {BrandLockup, BrandMark} from "~/components/gulriza/BrandLockup";
 import {ThemeToggle} from "~/components/gulriza/ThemeToggle";
+import {useCatalog} from "~/contexts/catalog-context";
 
 // Code-split the 400-line SearchModal — only needed when the user opens
 // search. The modal is portaled and mounted hidden, so a null fallback is
@@ -38,6 +39,21 @@ function isHeaderExcluded(to: string) {
   return HEADER_EXCLUDED_PATHS.some(
     (path) => to === path || to.startsWith(`${path}/`),
   );
+}
+
+function isCollectionsNavItem(item: NavItem) {
+  const path = item.to.split("?")[0]?.replace(/\/$/, "") || item.to;
+  return (
+    item.label.trim().toLowerCase() === "collections" ||
+    path === "/collections"
+  );
+}
+
+function isCollectionsSectionPath(pathname: string) {
+  if (pathname === "/collections") return true;
+  if (!pathname.startsWith("/collections/")) return false;
+  // Shop lives at /collections/all — keep that on the Shop CTA, not Collections.
+  return pathname !== "/collections/all";
 }
 
 const MENU_CLOSE_MS = 300;
@@ -128,6 +144,7 @@ export function SiteHeader({
   const {publish} = useAnalytics();
   const {cartQuantity, open: openCart} = useCartDrawer();
   const {selectedCurrency} = useLocalization();
+  const {collections} = useCatalog();
   const {pathname, search} = useLocation();
   const marketTo = useCallback(
     (path: string) => marketHref(path, search, selectedCurrency.countryCode),
@@ -138,11 +155,23 @@ export function SiteHeader({
   const [menuVisible, setMenuVisible] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [chromeReady, setChromeReady] = useState(false);
+  const [mobileCollectionsOpen, setMobileCollectionsOpen] = useState(false);
   const count = cartQuantity;
   const menuRef = useRef<HTMLDivElement>(null);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const menuClosingRef = useRef(false);
   useFocusTrap(open, menuRef);
+
+  const collectionNavLinks = useMemo<NavItem[]>(
+    () => [
+      {to: "/collections", label: "All"},
+      ...collections.map((c) => ({
+        to: `/collections/${c.handle}`,
+        label: c.name,
+      })),
+    ],
+    [collections],
+  );
 
   useEffect(() => {
     setChromeReady(true);
@@ -181,6 +210,9 @@ export function SiteHeader({
   useEffect(() => {
     if (!open) return;
     menuClosingRef.current = false;
+    if (isCollectionsSectionPath(pathname)) {
+      setMobileCollectionsOpen(true);
+    }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         requestMenuClose();
@@ -198,7 +230,7 @@ export function SiteHeader({
       unlockScroll();
       cancelAnimationFrame(raf);
     };
-  }, [open, requestMenuClose]);
+  }, [open, requestMenuClose, pathname]);
 
   // Reset the animation/closing state once the panel is fully unmounted so the
   // next open replays the entrance transition from scratch.
@@ -212,6 +244,7 @@ export function SiteHeader({
   useEffect(() => {
     setOpen(false);
     setSearchOpen(false);
+    setMobileCollectionsOpen(false);
   }, [pathname]);
 
   // In-flow above the page (not overlaid on the hero). Marquee scrolls away;
@@ -233,7 +266,7 @@ export function SiteHeader({
         <Marquee messages={shopSettings?.marquee} />
       </div>
       <header
-        className="sticky top-0 z-50 w-full border-b backdrop-blur-md transition-[padding] duration-500"
+        className="sticky top-0 z-50 w-full border-b transition-[padding] duration-500 md:backdrop-blur-md"
         style={{
           backgroundColor: "var(--header-glass)",
           borderColor: "var(--border)",
@@ -252,6 +285,18 @@ export function SiteHeader({
             <nav className="hidden items-center gap-4 lg:flex xl:gap-7">
               {navItems.map((n) => {
                 const isShop = n.label === "Shop";
+                if (isCollectionsNavItem(n)) {
+                  return (
+                    <CollectionsNavDropdown
+                      key={n.to}
+                      label={n.label}
+                      links={collectionNavLinks}
+                      marketTo={marketTo}
+                      pathname={pathname}
+                      className={navInkClass}
+                    />
+                  );
+                }
                 const isActive = pathname === n.to;
                 return (
                   <Link
@@ -400,6 +445,87 @@ export function SiteHeader({
                   <p className="eyebrow mb-5 text-[var(--eyebrow)]">Explore</p>
                   <ul className="flex flex-col">
                     {navItems.map((n, i) => {
+                      if (isCollectionsNavItem(n)) {
+                        const sectionActive = isCollectionsSectionPath(pathname);
+                        return (
+                          <li key={n.to}>
+                            {i > 0 ? (
+                              <div
+                                className="h-px w-full"
+                                style={{ background: "var(--hairline)" }}
+                                aria-hidden
+                              />
+                            ) : null}
+                            <button
+                              type="button"
+                              aria-expanded={mobileCollectionsOpen}
+                              aria-controls="mobile-collections-submenu"
+                              onClick={() =>
+                                setMobileCollectionsOpen((prev) => !prev)
+                              }
+                              className="collections-nav-trigger font-display -mx-2 flex min-h-14 w-[calc(100%+1rem)] items-center justify-between gap-4 px-2 py-4 text-left text-[1.75rem] leading-none tracking-wide active:opacity-80"
+                              data-open={mobileCollectionsOpen ? "true" : undefined}
+                              data-active={sectionActive ? "true" : undefined}
+                            >
+                              <span>{n.label}</span>
+                              <ChevronDown
+                                className="h-4 w-4 shrink-0 opacity-40 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                                strokeWidth={1.25}
+                                aria-hidden
+                                style={{
+                                  transform: mobileCollectionsOpen
+                                    ? "rotate(180deg)"
+                                    : "rotate(0deg)",
+                                }}
+                              />
+                            </button>
+                            <div
+                              id="mobile-collections-submenu"
+                              className="collections-submenu"
+                              data-open={mobileCollectionsOpen ? "true" : undefined}
+                              aria-hidden={!mobileCollectionsOpen}
+                            >
+                              <div className="collections-submenu__inner">
+                                <ul className="mb-3 flex flex-col gap-0.5 pb-2">
+                                  {collectionNavLinks.map((link, index) => {
+                                    const isActive =
+                                      link.to === "/collections"
+                                        ? pathname === "/collections"
+                                        : pathname === link.to ||
+                                          pathname.startsWith(`${link.to}/`);
+                                    return (
+                                      <li
+                                        key={link.to}
+                                        className="collections-submenu__item"
+                                        style={
+                                          {
+                                            "--i": index,
+                                          } as CSSProperties
+                                        }
+                                      >
+                                        <Link
+                                          to={marketTo(link.to)}
+                                          onClick={requestMenuClose}
+                                          tabIndex={
+                                            mobileCollectionsOpen ? undefined : -1
+                                          }
+                                          aria-current={
+                                            isActive ? "page" : undefined
+                                          }
+                                          className={`collections-menu-item${isActive ? " is-active" : ""}`}
+                                        >
+                                          {link.label}
+                                        </Link>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      }
+
                       const isActive = pathname === n.to;
                       return (
                         <li key={n.to}>
@@ -458,6 +584,151 @@ export function SiteHeader({
           ) : null}
         </header>
     </>
+  );
+}
+
+function CollectionsNavDropdown({
+  label,
+  links,
+  marketTo,
+  pathname,
+  className,
+}: {
+  label: string;
+  links: NavItem[];
+  marketTo: (path: string) => string;
+  pathname: string;
+  className: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeTimerRef = useRef<number | null>(null);
+  const sectionActive = isCollectionsSectionPath(pathname);
+
+  const clearCloseTimer = useCallback(() => {
+    if (closeTimerRef.current != null) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  const requestClose = useCallback(() => {
+    clearCloseTimer();
+    setOpen(false);
+  }, [clearCloseTimer]);
+
+  const requestOpen = useCallback(() => {
+    clearCloseTimer();
+    setOpen(true);
+  }, [clearCloseTimer]);
+
+  useEffect(() => {
+    requestClose();
+  }, [pathname, requestClose]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        requestClose();
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        requestClose();
+        triggerRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, requestClose]);
+
+  useEffect(() => {
+    return () => clearCloseTimer();
+  }, [clearCloseTimer]);
+
+  return (
+    <div
+      ref={wrapRef}
+      className="relative"
+      onMouseEnter={requestOpen}
+      onMouseLeave={() => {
+        clearCloseTimer();
+        closeTimerRef.current = window.setTimeout(() => setOpen(false), 140);
+      }}
+    >
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`${label} menu`}
+        onClick={() => (open ? requestClose() : requestOpen())}
+        data-open={open ? "true" : undefined}
+        data-active={sectionActive ? "true" : undefined}
+        className={`${className} collections-nav-trigger inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5`}
+      >
+        <span>{label}</span>
+        <ChevronDown
+          className="h-3 w-3 shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+          strokeWidth={1.5}
+          aria-hidden
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        />
+      </button>
+
+      <div
+        role="menu"
+        aria-label={label}
+        className="absolute left-0 top-[calc(100%+0.55rem)] z-50 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border shadow-[0_18px_50px_rgb(var(--shadow-rgb)/0.22)] transition-[opacity,transform,visibility] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] origin-top-left motion-reduce:transition-none"
+        style={{
+          background: "var(--surface)",
+          borderColor: "var(--border)",
+          opacity: open ? 1 : 0,
+          transform: open ? "scale(1) translateY(0)" : "scale(0.96) translateY(-6px)",
+          pointerEvents: open ? "auto" : "none",
+          visibility: open ? "visible" : "hidden",
+        }}
+      >
+        <ul className="flex flex-col gap-0.5 p-1.5">
+          {links.map((link, index) => {
+            const isActive =
+              link.to === "/collections"
+                ? pathname === "/collections"
+                : pathname === link.to || pathname.startsWith(`${link.to}/`);
+            return (
+              <li
+                key={link.to}
+                role="none"
+                className="transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                style={{
+                  opacity: open ? 1 : 0,
+                  transform: open ? "translateY(0)" : "translateY(-4px)",
+                  transitionDelay: open ? `${40 + index * 28}ms` : "0ms",
+                }}
+              >
+                <Link
+                  to={marketTo(link.to)}
+                  role="menuitem"
+                  aria-current={isActive ? "page" : undefined}
+                  onClick={requestClose}
+                  className={`collections-menu-item${isActive ? " is-active" : ""}`}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
   );
 }
 

@@ -4,6 +4,7 @@ import type {CatalogSnapshot, Collection, Product} from '~/models/types';
 import type {PageMetadata} from '~/controllers/catalog.controller';
 import type {CatalogPageInfo} from '~/lib/catalog-pagination';
 import {getSortConfig} from '~/lib/catalog-pagination';
+import {toListingProducts} from '~/lib/listing-product';
 import {resolveCatalogSnapshot} from '~/lib/shared-catalog';
 
 export type ShopPageViewModel = {
@@ -16,11 +17,15 @@ export async function getShopPage(
   sort?: 'newest' | 'best-selling' | 'price-asc' | 'price-desc',
 ): Promise<ShopPageViewModel> {
   const {sortKey, reverse} = getSortConfig(sort ?? 'newest', false);
-  return CatalogRepository.listProductsPage({
+  const page = await CatalogRepository.listProductsPage({
     ...options,
     sortKey,
     sortReverse: reverse,
   });
+  return {
+    products: toListingProducts(page.products),
+    pageInfo: page.pageInfo,
+  };
 }
 
 export type CollectionsPageViewModel = {
@@ -116,7 +121,7 @@ export async function getCollectionPage(
 
   return {
     collection,
-    products,
+    products: toListingProducts(products),
     pageInfo,
     metadata,
     collectionLd: {

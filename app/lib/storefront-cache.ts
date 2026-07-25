@@ -1,8 +1,8 @@
 import type {Storefront} from '@shopify/hydrogen';
 
 const PROD_CONTENT_TTL = {
-  maxAge: 60 * 3,
-  staleWhileRevalidate: 60,
+  maxAge: 60 * 10,
+  staleWhileRevalidate: 60 * 5,
 } as const;
 
 function contentCache(storefront: Storefront) {

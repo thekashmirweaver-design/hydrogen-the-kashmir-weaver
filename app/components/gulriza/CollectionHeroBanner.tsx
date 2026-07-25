@@ -36,7 +36,7 @@ export function CollectionHeroBanner({
               ? 'h-full w-full object-cover object-top md:h-auto md:w-full'
               : 'absolute inset-0 h-full w-full object-cover object-top md:static md:h-auto md:w-full'
           }
-          sizes="100vw"
+          sizes="(min-width: 1280px) 1200px, 100vw"
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : undefined}
           priority={priority}

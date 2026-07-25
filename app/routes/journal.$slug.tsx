@@ -10,6 +10,11 @@ import {
   getStoreUrlFromMatches,
   seoBundle,
 } from '~/lib/seo';
+import journalFontsUrl from '~/styles/journal-fonts.css?url';
+
+export const links: Route.LinksFunction = () => [
+  {rel: 'stylesheet', href: journalFontsUrl},
+];
 
 export const meta: Route.MetaFunction = ({data, location, matches}) => {
   if (!data?.metadata) return [{title: 'Journal — The Kashmir Weaver'}];

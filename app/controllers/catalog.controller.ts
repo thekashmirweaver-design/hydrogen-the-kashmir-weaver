@@ -5,6 +5,7 @@ import {
   loadHomepageFeatured,
   pickCollectionsByHandles,
 } from '~/lib/homepage-featured';
+import {toListingProducts} from '~/lib/listing-product';
 import {resolveCatalogSnapshot} from '~/lib/shared-catalog';
 import {truncateMetaDescription} from '~/lib/meta-description';
 
@@ -93,18 +94,40 @@ export async function getHomePage(
   featured?: Awaited<ReturnType<typeof loadHomepageFeatured>>,
   catalog?: CatalogSnapshot,
 ): Promise<HomePageViewModel> {
-  const {products, collections} = await resolveCatalogSnapshot(options, catalog);
-  const featuredProducts = await CatalogRepository.listFeaturedCollectionProducts(
-    options,
-    featured?.featuredCollectionHandle,
-    featured?.featuredCount,
+  // Prefer the caller-supplied snapshot (menu catalog on `/`) — never force a
+  // full PDP catalog fetch just to render a few collection preview tiles.
+  const snapshot =
+    catalog ??
+    (options
+      ? await CatalogRepository.getCatalogMenuSnapshot(options)
+      : await resolveCatalogSnapshot(options, catalog));
+  const {products, collections} = snapshot;
+  const featuredProducts = toListingProducts(
+    await CatalogRepository.listFeaturedCollectionProducts(
+      options,
+      featured?.featuredCollectionHandle,
+      featured?.featuredCount,
+    ),
   );
   const featuredCollections = pickCollectionsByHandles(
     collections,
     featured?.collectionHandles ?? [],
     {limit: featured?.collectionCount ?? 2},
   );
-  return {products, collections, featuredProducts, featuredCollections};
+  const previewCount = featured?.collectionPreviewCount ?? 3;
+  const previewProducts = toListingProducts(
+    featuredCollections.flatMap((collection) =>
+      products
+        .filter((product) => product.collectionSlug === collection.handle)
+        .slice(0, previewCount),
+    ),
+  );
+  return {
+    products: previewProducts,
+    collections: featuredCollections,
+    featuredProducts,
+    featuredCollections,
+  };
 }
 
 export type ProductPageViewModel = {
@@ -121,18 +144,22 @@ export async function getProductPage(
   catalog?: CatalogSnapshot,
 ): Promise<ProductPageViewModel | null> {
   const snapshot = await resolveCatalogSnapshot(options, catalog);
+  // Always fetch the full PDP document — catalog snapshots are listing-slimmed
+  // for SSR payload size and may omit description/variants/shades.
   const product =
-    snapshot.products.find((item) => item.handle === handle) ??
-    (await CatalogRepository.findProductByHandle(handle, options));
+    (await CatalogRepository.findProductByHandle(handle, options)) ??
+    snapshot.products.find((item) => item.handle === handle);
   if (!product) return null;
 
-  const relatedProducts = snapshot.products
-    .filter(
-      (p) =>
-        p.handle !== product.handle &&
-        p.collectionSlug === product.collectionSlug,
-    )
-    .slice(0, 3);
+  const relatedProducts = toListingProducts(
+    snapshot.products
+      .filter(
+        (p) =>
+          p.handle !== product.handle &&
+          p.collectionSlug === product.collectionSlug,
+      )
+      .slice(0, 3),
+  );
 
   const url = `/products/${handle}`;
   const title = product.seo?.title ?? `${product.name} — The Kashmir Weaver`;

@@ -3,7 +3,7 @@ import {Analytics} from '@shopify/hydrogen';
 import type {Route} from './+types/collections.$handle';
 import {getCollectionPage} from '~/controllers';
 import {getCatalogOptions} from '~/lib/catalog-options';
-import {loadSharedCatalog} from '~/lib/shared-catalog';
+import {loadSharedCatalogMenu} from '~/lib/shared-catalog';
 import {CollectionView} from '~/views/collections/CollectionView';
 import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
 
@@ -24,7 +24,7 @@ export async function loader({params, context, request}: Route.LoaderArgs) {
   if (!handle) throw new Response('Not found', {status: 404});
 
   const catalogOptions = getCatalogOptions(context);
-  const catalog = await loadSharedCatalog(request, catalogOptions);
+  const catalog = await loadSharedCatalogMenu(request, catalogOptions);
   const page = await getCollectionPage(handle, catalogOptions, catalog);
 
   if (!page) throw new Response('Not found', {status: 404});

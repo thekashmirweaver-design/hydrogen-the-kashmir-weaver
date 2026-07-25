@@ -11,6 +11,13 @@ type CatalogImageProps = {
   loading?: 'eager' | 'lazy';
   fetchPriority?: 'high' | 'low' | 'auto';
   sizes?: string;
+  /** Cap Shopify CDN srcset generation for listing tiles. */
+  srcSetOptions?: {
+    intervals?: number;
+    startingWidth?: number;
+    incrementSize?: number;
+    placeholderWidth?: number;
+  };
   style?: CSSProperties;
   onClick?: (e: MouseEvent) => void;
   onMouseMove?: (e: MouseEvent) => void;
@@ -55,6 +62,7 @@ export function CatalogImage({
   loading: loadingProp,
   fetchPriority: fetchPriorityProp,
   sizes = '(min-width: 1024px) 280px, (min-width: 640px) 50vw, 100vw',
+  srcSetOptions,
   style,
   onClick,
   onMouseMove,
@@ -69,7 +77,7 @@ export function CatalogImage({
   const showSkeleton = showSkeletonProp ?? !priority;
   const [loaded, setLoaded] = useState(priority);
   const imgRef = useRef<HTMLImageElement>(null);
-  const decoding = loading === 'eager' ? 'sync' : 'async';
+  const decoding = 'async';
 
   useEffect(() => {
     if (priority) {
@@ -107,6 +115,7 @@ export function CatalogImage({
       className={className}
       loading={loading}
       sizes={sizes}
+      srcSetOptions={srcSetOptions}
       style={imageStyle}
       onClick={onClick}
       onMouseMove={onMouseMove}
@@ -167,6 +176,7 @@ export function EditorialImage({
   loading = 'lazy',
   fetchPriority,
   sizes = '100vw',
+  srcSetOptions,
   style,
   showSkeleton = true,
   srcSet,
@@ -181,6 +191,7 @@ export function EditorialImage({
   loading?: 'lazy' | 'eager';
   fetchPriority?: 'high' | 'low' | 'auto';
   sizes?: string;
+  srcSetOptions?: CatalogImageProps['srcSetOptions'];
   style?: CSSProperties;
   showSkeleton?: boolean;
   srcSet?: string;
@@ -194,6 +205,7 @@ export function EditorialImage({
       loading={loading}
       fetchPriority={fetchPriority}
       sizes={sizes}
+      srcSetOptions={srcSetOptions}
       style={style}
       showSkeleton={showSkeleton}
       srcSet={srcSet}
@@ -268,7 +280,7 @@ export function HeroPicture({
         width={width}
         height={height}
         loading={loading}
-        decoding={loading === 'eager' ? 'sync' : 'async'}
+        decoding="sync"
         // React 18 DOM: camelCase fetchPriority is not recognized.
         fetchpriority={fetchPriority}
         className={className}

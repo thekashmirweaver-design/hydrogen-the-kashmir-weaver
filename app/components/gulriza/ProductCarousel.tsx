@@ -140,7 +140,7 @@ export function ProductCarousel({products}: {products: Product[]}) {
               <ProductTile
                 product={product}
                 disableSwipe
-                priority={idx < 2}
+                priority={false}
                 sizes="(min-width: 1280px) 300px, (min-width: 1024px) 280px, (min-width: 768px) 32vw, 85vw"
               />
             </Reveal>

@@ -178,6 +178,12 @@ export function ProductTile({
                   filter: soldOut ? "grayscale(0.6)" : undefined,
                 }}
                 sizes={sizes}
+                srcSetOptions={{
+                  intervals: 4,
+                  startingWidth: 200,
+                  incrementSize: 150,
+                  placeholderWidth: 200,
+                }}
                 priority={priority && i === 0}
                 loading={priority && i === 0 ? "eager" : "lazy"}
               />

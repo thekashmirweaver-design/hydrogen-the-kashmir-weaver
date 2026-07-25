@@ -24,6 +24,7 @@ import {
   ALL_PRODUCTS_QUERY_NO_INVENTORY,
   COLLECTION_BY_HANDLE_QUERY,
   COLLECTION_BY_HANDLE_QUERY_NO_INVENTORY,
+  FEATURED_LISTING_PRODUCTS_QUERY,
   FOOTER_MENU_HANDLE,
   HEADER_MENU_HANDLE,
   PRODUCT_BY_HANDLE_QUERY,
@@ -209,6 +210,29 @@ export async function listProductsByCollection(
   }
 
   return products;
+}
+
+/** Menu-weight fields only — for homepage / search carousels. */
+export async function listFeaturedListingProducts(
+  storefront: Storefront,
+  handle: string,
+  first = 12,
+): Promise<Product[]> {
+  type FeaturedListingResult = {
+    collection?: {
+      products: {edges: Array<{node: ShopifyMenuProductNode}>};
+    } | null;
+  };
+  const data = await storefront.query<FeaturedListingResult>(
+    FEATURED_LISTING_PRODUCTS_QUERY,
+    {
+      variables: {handle, first},
+      cache: productCache(storefront),
+    },
+  );
+  return (
+    data.collection?.products.edges.map(({node}) => mapMenuProduct(node)) ?? []
+  );
 }
 
 export async function listMenuProducts(

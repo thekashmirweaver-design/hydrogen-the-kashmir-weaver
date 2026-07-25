@@ -20,17 +20,15 @@ import {
 } from 'react-router';
 import type {Route} from './+types/root';
 import inter400Woff2 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
-import cormorant400Woff2 from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-400-normal.woff2?url';
-import ebGaramond400Woff2 from '@fontsource/eb-garamond/files/eb-garamond-latin-400-normal.woff2?url';
-// The `?url` import resolves the hashed asset path for the
-// <link rel="preload"> below; the side-effect import keeps the CSS in the
-// bundle. The duplicate import is intentional.
-// eslint-disable-next-line import/no-duplicates
+import cormorant300Woff2 from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-300-normal.woff2?url';
+import cormorant300ItalicWoff2 from '@fontsource/cormorant-garamond/files/cormorant-garamond-latin-300-italic.woff2?url';
+// Hashed CSS URL for preload + deferred mobile apply. Do not side-effect
+// import globals.css — that always emits a render-blocking link. Desktop
+// gets a media-gated blocking link; mobile paints from critical CSS first.
 import appStylesUrl from '~/styles/globals.css?url';
-import '~/styles/globals.css';
+import secondaryFontsUrl from '~/styles/secondary-fonts.css?url';
 import {PageLayout, NotFoundView} from './components/PageLayout';
 import {HeroPreloadLink} from '~/components/gulriza/ThemeBootScript';
-import {AccountWebComponents} from '~/components/gulriza/AccountWebComponents';
 import {
   GoogleAnalytics,
 } from '~/components/GoogleAnalytics';
@@ -110,15 +108,16 @@ export function links() {
       crossOrigin: 'anonymous',
     },
     {
+      // Hero display copy uses Cormorant 300; 400 weights load via secondary-fonts after paint.
       rel: 'preload',
-      href: cormorant400Woff2,
+      href: cormorant300Woff2,
       as: 'font',
       type: 'font/woff2',
       crossOrigin: 'anonymous',
     },
     {
       rel: 'preload',
-      href: ebGaramond400Woff2,
+      href: cormorant300ItalicWoff2,
       as: 'font',
       type: 'font/woff2',
       crossOrigin: 'anonymous',
@@ -128,15 +127,9 @@ export function links() {
       href: 'https://cdn.shopify.com',
     },
     {
-      // Theme boot script (entry.server) injects the LCP hero preload for the resolved theme.
-      rel: 'preconnect',
-      href: 'https://www.googletagmanager.com',
-    },
-    {
       // Preload the bundled app CSS in parallel with the HTML download so
       // the browser already has it cached when <Links/> emits the
-      // blocking <link rel="stylesheet"> below. This shaves the
-      // render-blocking time off FCP without losing the cascade.
+      // blocking <link rel="stylesheet"> below.
       rel: 'preload',
       href: appStylesUrl,
       as: 'style',
@@ -267,6 +260,91 @@ function loadDeferredData({context, request}: Route.LoaderArgs) {
   };
 }
 
+function AppStyles({nonce}: {nonce: string}) {
+  // Keep in sync with HomeView hero + SiteHeader chrome so mobile async CSS
+  // does not CLS when the full Tailwind bundle applies.
+  const criticalCss = `
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:400;src:url(${inter400Woff2}) format('woff2')}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-display:swap;font-weight:300;src:url(${cormorant300Woff2}) format('woff2')}
+@font-face{font-family:'Cormorant Garamond';font-style:italic;font-display:swap;font-weight:300;src:url(${cormorant300ItalicWoff2}) format('woff2')}
+:root{color-scheme:dark;--background:#08100f;--foreground:#f7f3ec;--accent:#ceac6c;--muted-foreground:#d6d0c6;--on-photo-fg:#f7f3ec;--on-photo-muted:#f7f3ecc7;--on-photo-accent:#ceac6c;--photo-scrim-rgb:8 16 15;--header-glass:#08100fc7;--border:#ffffff14;--surface:#0f1d1a;--marquee-h:36px;--nav-h:4.75rem}
+:root[data-theme=light]{color-scheme:light;--background:#f6f1e7;--foreground:#2a221a;--accent:#8a6b34;--muted-foreground:#7a6c56;--header-glass:#f6f1e7b8;--border:#2a221a1a;--surface:#efe7d6}
+@media (min-width:768px){:root{--nav-h:5rem}}
+html,body{margin:0;background:var(--background);color:var(--foreground);font-family:Inter,system-ui,sans-serif;font-weight:400}
+img,picture{display:block;max-width:100%}
+.site-marquee{height:var(--marquee-h);box-sizing:border-box;overflow:hidden}
+header{min-height:var(--nav-h);box-sizing:border-box;background:var(--header-glass)}
+[data-lcp-hero]{position:relative;min-height:100dvh;width:100%;overflow:hidden}
+[data-lcp-hero-media]{position:absolute;inset-block:0;inset-inline-end:0;width:100%;height:100%}
+@media (min-width:768px){[data-lcp-hero-media]{width:62%}}
+@media (min-width:1024px){[data-lcp-hero-media]{width:55%}}
+[data-lcp-hero-media] img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
+.hero-theme-layer{position:absolute;inset:0}
+.hero-theme-layer--light{display:none}
+:root[data-theme=light] .hero-theme-layer--dark{display:none}
+:root[data-theme=light] .hero-theme-layer--light{display:block}
+`.replace(/\n/g, '');
+
+  return (
+    <>
+      <style
+        id="tkw-critical-css"
+        dangerouslySetInnerHTML={{__html: criticalCss}}
+      />
+      {/* Desktop / tablet: render-blocking for matching viewports (avoids async CLS). */}
+      <link
+        rel="stylesheet"
+        href={appStylesUrl}
+        media="(min-width: 768px)"
+      />
+      {/* Mobile: non-blocking; activated after load via sync head script. */}
+      <link
+        data-async-css=""
+        rel="stylesheet"
+        href={appStylesUrl}
+        media="print"
+      />
+      <script
+        nonce={nonce}
+        dangerouslySetInnerHTML={{
+          __html:
+            "(function(){var l=document.querySelector('link[data-async-css]');if(!l)return;var desktop=window.matchMedia('(min-width:768px)').matches;var home=location.pathname==='/'||location.pathname==='';if(desktop||!home){l.media='all';return}var apply=function(){l.media='all'};if(l.sheet)apply();else l.addEventListener('load',apply);})();",
+        }}
+      />
+      <noscript>
+        <link rel="stylesheet" href={appStylesUrl} />
+      </noscript>
+    </>
+  );
+}
+
+function SecondaryFonts() {
+  useEffect(() => {
+    if (document.getElementById('secondary-fonts')) return;
+    const link = document.createElement('link');
+    link.id = 'secondary-fonts';
+    link.rel = 'stylesheet';
+    link.href = secondaryFontsUrl;
+    const load = () => document.head.appendChild(link);
+    if (document.readyState === 'complete') {
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(load, {timeout: 4000});
+      } else {
+        window.setTimeout(load, 1);
+      }
+      return;
+    }
+    window.addEventListener('load', () => {
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(load, {timeout: 4000});
+      } else {
+        window.setTimeout(load, 1);
+      }
+    }, {once: true});
+  }, []);
+  return null;
+}
+
 export function Layout({children}: {children?: React.ReactNode}) {
   const nonce = useNonce();
 
@@ -284,11 +362,12 @@ export function Layout({children}: {children?: React.ReactNode}) {
         />
         <Meta />
         <Links />
+        <AppStyles nonce={nonce} />
         <HeroPreloadLink />
       </head>
       <body>
         <ThemeProvider>{children}</ThemeProvider>
-        <AccountWebComponents />
+        <SecondaryFonts />
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
       </body>

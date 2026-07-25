@@ -4,6 +4,7 @@ import {getJournalPage} from '~/controllers';
 import {getJournalOptions} from '~/lib/catalog-options';
 import {JournalView} from '~/views/journal/JournalView';
 import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
+import journalFontsUrl from '~/styles/journal-fonts.css?url';
 
 function parsePageParam(value: string | null): number {
   if (!value) return 1;
@@ -12,6 +13,7 @@ function parsePageParam(value: string | null): number {
 }
 
 export const links: Route.LinksFunction = () => [
+  {rel: 'stylesheet', href: journalFontsUrl},
   {
     rel: 'alternate',
     type: 'application/rss+xml',

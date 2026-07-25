@@ -76,8 +76,8 @@ export async function loadHomepageFeatured(
   try {
     const data = await storefront.query<HomepageFeaturedQueryResult>(
       HOMEPAGE_FEATURED_QUERY,
-      // Homepage config is tiny; avoid CacheLong serving a stale featuredCount cap.
-      {cache: storefront.CacheNone()},
+      // Short CDN cache — config is tiny but CacheNone forced origin work every hit.
+      {cache: storefront.CacheShort()},
     );
     const parsed = parseJsonField<{
       featuredCollectionHandle?: string;

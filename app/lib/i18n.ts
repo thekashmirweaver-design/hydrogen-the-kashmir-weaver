@@ -35,16 +35,28 @@ export function persistBuyerMarket(
   const normalizedCountry = country.toUpperCase();
   if (!isCountryCode(normalizedCountry)) return;
 
-  persistI18n(session, {
-    country: normalizedCountry,
-    language:
-      language && isLanguageCode(language.toUpperCase())
-        ? (language.toUpperCase() as I18nBase['language'])
-        : DEFAULT_I18N.language,
-  });
+  const nextLanguage: I18nBase['language'] =
+    language && isLanguageCode(language.toUpperCase())
+      ? (language.toUpperCase() as I18nBase['language'])
+      : DEFAULT_I18N.language;
+
+  // Avoid dirtying the session (Set-Cookie → Oxygen FPC uncacheable) when
+  // market values are already stored.
+  const countryChanged =
+    session?.get(SESSION_COUNTRY_KEY) !== normalizedCountry;
+  const languageChanged = session?.get(SESSION_LANGUAGE_KEY) !== nextLanguage;
+  if (countryChanged || languageChanged) {
+    persistI18n(session, {
+      country: normalizedCountry,
+      language: nextLanguage,
+    });
+  }
 
   const normalizedCurrency = currencyCode?.trim().toUpperCase();
-  if (normalizedCurrency) {
+  if (
+    normalizedCurrency &&
+    session?.get(SESSION_CURRENCY_KEY) !== normalizedCurrency
+  ) {
     session?.set(SESSION_CURRENCY_KEY, normalizedCurrency);
   }
 }

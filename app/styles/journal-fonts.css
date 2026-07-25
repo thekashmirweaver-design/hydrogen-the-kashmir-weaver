@@ -1,0 +1,4 @@
+/* Journal / long-form body copy — kept off the global critical CSS path. */
+@import "@fontsource/eb-garamond/latin-400.css";
+@import "@fontsource/eb-garamond/latin-400-italic.css";
+@import "@fontsource/eb-garamond/latin-500.css";

@@ -7,6 +7,7 @@ import {PRODUCT_LIST_PAGE_SIZE} from '~/lib/catalog-constants';
 import type {PaginatedProducts} from '~/lib/catalog-pagination';
 import {DEFAULT_FEATURED_COLLECTION_HANDLE} from '~/lib/featured-collection';
 import {loadHomepageFeatured} from '~/lib/homepage-featured';
+import {toListingProducts} from '~/lib/listing-product';
 import {excludeUnavailableFromListing} from '~/lib/product-inventory';
 
 export type CatalogSource = 'shopify' | 'static';
@@ -186,6 +187,22 @@ export async function listFeaturedCollectionProducts(
   featuredCollectionHandle: string = DEFAULT_FEATURED_COLLECTION_HANDLE,
   count?: number | null,
 ): Promise<Product[]> {
+  const first =
+    count != null && count > 0 ? count : PRODUCT_LIST_PAGE_SIZE;
+
+  if (options?.storefront && !options.useStatic) {
+    try {
+      const products = await ShopifyRepository.listFeaturedListingProducts(
+        options.storefront,
+        featuredCollectionHandle,
+        first,
+      );
+      return excludeUnavailableFromListing(products);
+    } catch (error) {
+      console.warn('[catalog] featured listing fetch failed', error);
+    }
+  }
+
   const products = await listProductsByCollection(
     featuredCollectionHandle,
     options,
@@ -366,10 +383,8 @@ async function attachFeaturedProducts(
     handle = featured.featuredCollectionHandle;
     count = featured.featuredCount;
   }
-  const featuredProducts = await listFeaturedCollectionProducts(
-    options,
-    handle,
-    count,
+  const featuredProducts = toListingProducts(
+    await listFeaturedCollectionProducts(options, handle, count),
   );
   return {
     ...snapshot,
@@ -401,7 +416,26 @@ export async function getCatalogMenuSnapshot(
     }),
     options,
   );
-  return attachFeaturedProducts(snapshot, options);
+  // Skip attachFeaturedProducts here — that extra Storefront round-trip was on
+  // the critical path for every HTML document. Search uses `products` instead;
+  // homepage loads featured via its own loader.
+  const products = toListingProducts(
+    excludeUnavailableFromListing(
+      withStaticDummyProducts(snapshot.products, options),
+    ),
+    1,
+  );
+  return {
+    products,
+    collections: snapshot.collections.filter(
+      (collection) =>
+        !isHomepageFeaturedCollection(
+          collection.handle,
+          DEFAULT_FEATURED_COLLECTION_HANDLE,
+        ),
+    ),
+    featuredProducts: [],
+  };
 }
 
 export async function getCatalogSnapshot(
@@ -415,5 +449,10 @@ export async function getCatalogSnapshot(
     }),
     options,
   );
-  return attachFeaturedProducts(snapshot, options);
+  const withFeatured = await attachFeaturedProducts(snapshot, options);
+  return {
+    ...withFeatured,
+    // Grid/search payloads do not need PDP HTML/variants — fetch full docs on PDP.
+    products: toListingProducts(withFeatured.products, 2),
+  };
 }

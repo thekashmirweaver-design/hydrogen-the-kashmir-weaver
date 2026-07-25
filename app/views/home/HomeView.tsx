@@ -13,11 +13,34 @@ import {ProductTile} from '~/components/gulriza/ProductTile';
 import {ScrollIndicator} from '~/components/gulriza/ScrollIndicator';
 import {TrustStrip} from '~/components/gulriza/TrustStrip';
 import {EditorialImage, HeroPicture} from '~/components/gulriza/CatalogImage';
-import {heroDark, heroLight} from '~/lib/hero-image-urls';
+import {heroDark, heroLight, type HeroImageSet} from '~/lib/hero-image-urls';
 import {useTheme} from '~/lib/theme';
 import type {Collection, Product} from '~/models/types';
 
 const artisan = '/assets/craft-artisan.png';
+
+/** Metafield may point at local /assets/hero-portrait* — keep the AVIF picture set. */
+function localHeroSet(url?: string): HeroImageSet | null {
+  if (!url) return null;
+  const path = url.split('?')[0] ?? url;
+  if (
+    path === heroDark.jpg ||
+    path === heroDark.avif ||
+    path === heroDark.webp ||
+    path === '/assets/hero-portrait.jpg'
+  ) {
+    return heroDark;
+  }
+  if (
+    path === heroLight.jpg ||
+    path === heroLight.avif ||
+    path === heroLight.webp ||
+    path === '/assets/hero-portrait-light.jpg'
+  ) {
+    return heroLight;
+  }
+  return null;
+}
 
 export function HomeView({
   products,
@@ -70,21 +93,22 @@ function Hero({
     'A woman wrapped in a cream embroidered pashmina shawl, framed by a stone arch overlooking a Himalayan lake at golden hour.';
   const sizes = '(min-width: 768px) 55vw, 100vw';
   const pictureClass =
-    'absolute inset-0 h-full w-full object-cover edge-fade-left';
+    'absolute inset-0 h-full w-full object-cover';
   const pictureStyle = {objectPosition: 'center'} as const;
 
-  // Optional Shopify/metafield override replaces the dark hero only.
-  const shopifyHero = Boolean(heroImageUrlProp);
-  const darkJpg = heroImageUrlProp || heroDark.jpg;
-  const darkUsesLocalSet = !heroImageUrlProp;
+  // Optional Shopify CDN override replaces the dark hero only. Local
+  // /assets/hero-portrait* metafield values keep the AVIF/WebP picture set.
+  const localDarkSet = localHeroSet(heroImageUrlProp) ?? (!heroImageUrlProp ? heroDark : null);
+  const remoteDarkHero =
+    heroImageUrlProp && !localHeroSet(heroImageUrlProp) ? heroImageUrlProp : null;
 
   return (
-    <section className="relative min-h-[100dvh] w-full overflow-hidden">
-      <div className="absolute inset-y-0 right-0 w-full md:w-[62%] lg:w-[55%]">
+    <section className="relative min-h-[100dvh] w-full overflow-hidden" data-lcp-hero>
+      <div className="absolute inset-y-0 right-0 w-full md:w-[62%] lg:w-[55%]" data-lcp-hero-media>
         <div className="hero-theme-layer hero-theme-layer--dark">
-          {shopifyHero ? (
+          {remoteDarkHero ? (
             <EditorialImage
-              src={darkJpg}
+              src={remoteDarkHero}
               alt={darkAlt}
               className={pictureClass}
               style={pictureStyle}
@@ -94,14 +118,14 @@ function Hero({
               fetchPriority={isLight ? 'low' : 'high'}
               showSkeleton={false}
             />
-          ) : (
+          ) : localDarkSet ? (
             <HeroPicture
-              jpg={darkJpg}
-              jpgSmall={darkUsesLocalSet ? heroDark.jpgSmall : undefined}
-              webp={darkUsesLocalSet ? heroDark.webp : undefined}
-              webpSmall={darkUsesLocalSet ? heroDark.webpSmall : undefined}
-              avif={darkUsesLocalSet ? heroDark.avif : undefined}
-              avifSmall={darkUsesLocalSet ? heroDark.avifSmall : undefined}
+              jpg={localDarkSet.jpg}
+              jpgSmall={localDarkSet.jpgSmall}
+              webp={localDarkSet.webp}
+              webpSmall={localDarkSet.webpSmall}
+              avif={localDarkSet.avif}
+              avifSmall={localDarkSet.avifSmall}
               alt={darkAlt}
               className={pictureClass}
               style={pictureStyle}
@@ -111,7 +135,7 @@ function Hero({
               loading={isLight ? 'lazy' : 'eager'}
               fetchPriority={isLight ? 'low' : 'high'}
             />
-          )}
+          ) : null}
         </div>
         <div className="hero-theme-layer hero-theme-layer--light">
           <HeroPicture
@@ -166,7 +190,7 @@ function Hero({
 
           <Link
             to="/collections/all"
-            className="home-hero-cta mt-8 md:mt-10 inline-flex items-center gap-6 rounded-full border px-8 py-4 backdrop-blur-md transition-all duration-300 group animate-glass-glaze"
+            className="home-hero-cta mt-8 md:mt-10 inline-flex items-center gap-6 rounded-full border px-8 py-4 transition-all duration-300 group md:backdrop-blur-md md:animate-glass-glaze"
             style={{
               backgroundColor: 'rgb(var(--photo-scrim-rgb) / 0.4)',
               borderColor: 'color-mix(in srgb, var(--on-photo-fg) 28%, transparent)',

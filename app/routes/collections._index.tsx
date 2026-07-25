@@ -2,7 +2,7 @@ import type {Route} from './+types/collections._index';
 import {buildCollectionsPageViewModel} from '~/controllers/shop.controller';
 import {CollectionsView} from '~/views/collections/CollectionsView';
 import {getCatalogOptions} from '~/lib/catalog-options';
-import {loadSharedCatalog} from '~/lib/shared-catalog';
+import {loadSharedCatalogMenu} from '~/lib/shared-catalog';
 import {useCatalog} from '~/contexts/catalog-context';
 import {getStoreUrlFromMatches, seoBundle} from '~/lib/seo';
 
@@ -25,7 +25,7 @@ export const meta: Route.MetaFunction = ({data, location, matches}) => {
 };
 
 export async function loader({context, request}: Route.LoaderArgs) {
-  const catalog = await loadSharedCatalog(request, getCatalogOptions(context));
+  const catalog = await loadSharedCatalogMenu(request, getCatalogOptions(context));
   return {collectionCount: catalog.collections.length};
 }
 
