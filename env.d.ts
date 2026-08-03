@@ -18,6 +18,8 @@ declare global {
     CONCIERGE_EMAIL_FROM?: string;
     /** Canonical storefront URL (e.g. https://thekashmirweaver.shop). Used by seed scripts and CSP. */
     PUBLIC_STORE_URL?: string;
+    /** Google Search Console site verification token (meta tag content value). */
+    PUBLIC_GOOGLE_SITE_VERIFICATION?: string;
     /** Meta Pixel ID for catalogue ads (ViewContent / AddToCart / InitiateCheckout). */
     PUBLIC_META_PIXEL_ID?: string;
   }

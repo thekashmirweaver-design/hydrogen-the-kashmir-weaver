@@ -10,6 +10,7 @@ import type {
   CartLine,
   ComponentizableCartLine,
 } from '@shopify/hydrogen/storefront-api-types';
+import {canTrackForCategory} from '~/lib/tracking-consent';
 
 export const GA_MEASUREMENT_ID = 'G-2WQQF2JKTQ';
 
@@ -72,7 +73,10 @@ function loadGtag(): Promise<void> {
 
 function scheduleGtagLoad() {
   const run = () => {
-    void loadGtag();
+    void canTrackForCategory('analytics').then((allowed) => {
+      if (!allowed) return;
+      return loadGtag();
+    });
   };
 
   const onInteract = () => {
@@ -207,6 +211,7 @@ async function sendGaEvent(
   params: Record<string, unknown>,
 ): Promise<void> {
   if (!shouldSendToGa()) return;
+  if (!(await canTrackForCategory('analytics'))) return;
   await loadGtag();
   if (typeof window.gtag !== 'function') return;
   window.gtag('event', name, params);
@@ -260,7 +265,7 @@ export function trackBeginCheckoutItems(
 
 /**
  * Fire add_to_cart from PDP / bag actions. Host-gated only — do not wait on
- * Customer Privacy `canTrack()` (that race was dropping ATC and view_item).
+ * customer privacy races; consent is enforced at dispatch time.
  */
 export function trackAddToCart(
   items: GaItem[],
@@ -380,7 +385,8 @@ export function GoogleAnalytics(): null {
   const isFirstPath = useRef(true);
   const bootstrapped = useRef(false);
   const lastCartKey = useRef<string | null>(null);
-  const {subscribe, register, cart, prevCart, shop} = useAnalytics();
+  const lastSettledCart = useRef<TrackableCart>(null);
+  const {subscribe, register, cart, shop} = useAnalytics();
   const {ready} = register('Google Analytics');
 
   useEffect(() => {
@@ -390,7 +396,7 @@ export function GoogleAnalytics(): null {
   }, []);
 
   useEffect(() => {
-    // Host gate only — do not require canTrack (consent race dropped ecommerce).
+    // Host + consent gates are handled in sendGaEvent.
     subscribe('product_viewed', (payload: ProductViewPayload) => {
       const items = productsPayloadToItems(payload);
       if (!items.length) return;
@@ -423,7 +429,7 @@ export function GoogleAnalytics(): null {
     ready();
   }, [subscribe, ready]);
 
-  // Cart add/remove backup: diff settled cart when Analytics line events miss.
+  // Cart add/remove backup: diff settled cart snapshots when line events miss.
   useEffect(() => {
     if (!shouldSendToGa()) return;
     const key = cartSnapshotKey(cart);
@@ -431,13 +437,12 @@ export function GoogleAnalytics(): null {
     if (lastCartKey.current === key) return;
     lastCartKey.current = key;
 
-    // First settled cart in the session is baseline only (avoid fake adds).
-    if (!prevCart?.updatedAt || prevCart.updatedAt === cart?.updatedAt) {
-      return;
+    const previous = lastSettledCart.current;
+    if (previous?.updatedAt && previous.updatedAt !== cart?.updatedAt) {
+      publishCartDiffToGa(cart, previous, shop?.currency);
     }
-
-    publishCartDiffToGa(cart, prevCart, shop?.currency);
-  }, [cart, prevCart, shop?.currency]);
+    lastSettledCart.current = cart;
+  }, [cart, shop?.currency]);
 
   useEffect(() => {
     if (!shouldSendToGa()) return;
@@ -445,10 +450,13 @@ export function GoogleAnalytics(): null {
       isFirstPath.current = false;
       return;
     }
-    void loadGtag().then(() => {
-      if (typeof window.gtag !== 'function') return;
-      window.gtag('config', GA_MEASUREMENT_ID, {
-        page_path: `${location.pathname}${location.search}`,
+    void canTrackForCategory('analytics').then((allowed) => {
+      if (!allowed) return;
+      return loadGtag().then(() => {
+        if (typeof window.gtag !== 'function') return;
+        window.gtag('config', GA_MEASUREMENT_ID, {
+          page_path: `${location.pathname}${location.search}`,
+        });
       });
     });
   }, [location.pathname, location.search]);

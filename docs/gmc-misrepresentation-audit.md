@@ -1,6 +1,6 @@
 # Google Merchant Center — Misrepresentation Audit
 
-**Account:** The Kashmir Weaver (`5822844259`)  
+**Account:** The Kashmir Weaver (`5825882191`)  
 **Primary domain:** https://thekashmirweaver.shop  
 **Issue:** Misrepresentation — prevents all products from showing in **India**  
 **Audit date:** 2026-07-17  
@@ -260,4 +260,4 @@ Official policy: [Misrepresentation](https://support.google.com/merchants/answer
 - https://thekashmirweaver.shop/privacy  
 - https://thekashmirweaver.shop/terms  
 - https://thekashmirweaver.shop/faq  
-- Merchant Center diagnostics: `merchants.google.com/mc/products/diagnostics/accountissues?a=5822844259`
+- Merchant Center diagnostics: `merchants.google.com/mc/products/diagnostics/accountissues?a=5825882191`

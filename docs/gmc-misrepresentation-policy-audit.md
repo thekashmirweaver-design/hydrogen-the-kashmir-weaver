@@ -1,7 +1,7 @@
 # Misrepresentation policy audit — where we are wrong
 
 **Policy:** [Google Merchant Center — Misrepresentation](https://support.google.com/merchants/answer/6150127)  
-**Account:** `5822844259` · **Store:** `70yuey-sr.myshopify.com` · **Live:** https://thekashmirweaver.shop  
+**Account:** `5825882191` · **Store:** `70yuey-sr.myshopify.com` · **Live:** https://thekashmirweaver.shop  
 **Audited:** 2026-07-17 via Shopify CLI + Merchant Center API (`user-merchant-data-mcp`) + live crawl  
 **Codebase:** `main` @ `435432c` (cancellation page removed — **Oxygen not redeployed**; live still serves `/cancellation`)
 

@@ -158,6 +158,7 @@ export async function loader(args: Route.LoaderArgs) {
   return {
     ...deferredData,
     ...criticalData,
+    googleSiteVerification: env.PUBLIC_GOOGLE_SITE_VERIFICATION?.trim() || null,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
     publicStoreUrl: resolveStoreUrl(
       env.PUBLIC_STORE_URL,
@@ -260,7 +261,7 @@ function loadDeferredData({context, request}: Route.LoaderArgs) {
   };
 }
 
-function AppStyles({nonce}: {nonce: string}) {
+function AppStyles({nonce}: {nonce?: string}) {
   // Keep in sync with HomeView hero + SiteHeader chrome so mobile async CSS
   // does not CLS when the full Tailwind bundle applies.
   const criticalCss = `
@@ -347,6 +348,7 @@ function SecondaryFonts() {
 
 export function Layout({children}: {children?: React.ReactNode}) {
   const nonce = useNonce();
+  const data = useRouteLoaderData<RootLoader>('root');
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -360,6 +362,12 @@ export function Layout({children}: {children?: React.ReactNode}) {
           name="p:domain_verify"
           content="cd185cc54ba7583aaa8909b821744b15"
         />
+        {data?.googleSiteVerification ? (
+          <meta
+            name="google-site-verification"
+            content={data.googleSiteVerification}
+          />
+        ) : null}
         <Meta />
         <Links />
         <AppStyles nonce={nonce} />

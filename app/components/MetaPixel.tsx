@@ -11,6 +11,7 @@ import type {
   ComponentizableCartLine,
 } from '@shopify/hydrogen/storefront-api-types';
 import type {RootLoader} from '~/root';
+import {canTrackForCategory} from '~/lib/tracking-consent';
 
 /** Meta Pixel — Events Manager. Public client ID (same class as GA measurement ID). */
 export const META_PIXEL_ID = '1724382275473712';
@@ -222,7 +223,10 @@ function loadFbq(pixelId: string): Promise<void> {
 
 function scheduleFbqLoad(pixelId: string) {
   const run = () => {
-    void loadFbq(pixelId);
+    void canTrackForCategory('marketing').then((allowed) => {
+      if (!allowed) return;
+      return loadFbq(pixelId);
+    });
   };
 
   // Prefer first interaction so Lighthouse (and ad blockers during audits)
@@ -266,6 +270,7 @@ async function sendMetaEvent(
   eventId?: string,
 ): Promise<void> {
   if (!shouldSendToMeta(pixelId)) return;
+  if (!(await canTrackForCategory('marketing'))) return;
   if (name === 'AddToCart' && shouldSkipDuplicateAddToCart(params)) return;
   await loadFbq(pixelId);
   if (typeof window.fbq !== 'function') return;
@@ -318,6 +323,51 @@ function addToCartFromAnalyticsPayload(
   );
 }
 
+function publishCartDiffToMeta(
+  pixelId: string,
+  cart: TrackableCart,
+  prevCart: TrackableCart,
+  shopCurrency?: string,
+): void {
+  const currency = cartCurrency(cart, shopCurrency || 'USD');
+  const previousLines = cartLines(prevCart);
+  const currentLines = cartLines(cart);
+  const prevById = new Map(previousLines.map((line) => [line.id, line]));
+  const currentById = new Map(currentLines.map((line) => [line.id, line]));
+
+  for (const [id, prevLine] of prevById) {
+    const nextLine = currentById.get(id);
+    if (!nextLine) continue;
+    if (prevLine.quantity < nextLine.quantity) {
+      addToCartFromLine(
+        pixelId,
+        nextLine,
+        currency,
+        prevLine.quantity,
+        nextLine.id
+          ? `atc_${gidTail(nextLine.id)}_${nextLine.quantity}`
+          : undefined,
+      );
+    }
+  }
+
+  for (const [id, line] of currentById) {
+    if (prevById.has(id)) continue;
+    addToCartFromLine(
+      pixelId,
+      line,
+      currency,
+      0,
+      id ? `atc_${gidTail(id)}_${line.quantity}` : undefined,
+    );
+  }
+}
+
+function cartSnapshotKey(cart: TrackableCart): string | null {
+  if (!cart?.id || !cart.updatedAt) return null;
+  return `${cart.id}:${cart.updatedAt}`;
+}
+
 /**
  * Fire InitiateCheckout when the shopper leaves for Shopify checkout / Buy Now.
  */
@@ -346,10 +396,10 @@ export function trackMetaInitiateCheckoutItems(
 ): void {
   const id = pixelId?.trim() || META_PIXEL_ID;
   if (!shouldSendToMeta(id) || !items.length) return;
-  const content_ids = items.map((i) => gidTail(i.item_id)).filter(Boolean);
-  if (!content_ids.length) return;
+  const contentIds = items.map((i) => gidTail(i.item_id)).filter(Boolean);
+  if (!contentIds.length) return;
   void sendMetaEvent(id, 'InitiateCheckout', {
-    content_ids,
+    content_ids: contentIds,
     content_type: 'product',
     content_name: items[0]?.item_name,
     content_category: items[0]?.item_category,
@@ -367,8 +417,8 @@ export function trackMetaInitiateCheckoutItems(
 }
 
 /**
- * Fire AddToCart from PDP / bag actions. Same host gate as InitiateCheckout —
- * do not wait on Customer Privacy `canTrack()` (that race was dropping ATC).
+ * Fire AddToCart from PDP / bag actions. Same host gate as InitiateCheckout.
+ * Consent is checked at dispatch time.
  */
 export function trackMetaAddToCart(
   items: Array<{
@@ -384,11 +434,11 @@ export function trackMetaAddToCart(
 ): void {
   const id = pixelId?.trim() || META_PIXEL_ID;
   if (!shouldSendToMeta(id) || !items.length) return;
-  const content_ids = items.map((i) => gidTail(i.item_id)).filter(Boolean);
-  if (!content_ids.length) return;
-  const num_items = items.reduce((sum, i) => sum + (i.quantity ?? 1), 0);
+  const contentIds = items.map((i) => gidTail(i.item_id)).filter(Boolean);
+  if (!contentIds.length) return;
+  const numItems = items.reduce((sum, i) => sum + (i.quantity ?? 1), 0);
   void sendMetaEvent(id, 'AddToCart', {
-    content_ids,
+    content_ids: contentIds,
     content_type: 'product',
     content_name: items[0]?.item_name,
     content_category: items[0]?.item_category,
@@ -396,7 +446,7 @@ export function trackMetaAddToCart(
     value:
       value ??
       items.reduce((sum, i) => sum + (i.price ?? 0) * (i.quantity ?? 1), 0),
-    num_items,
+    num_items: numItems,
     contents: items
       .map((i) => ({
         id: gidTail(i.item_id),
@@ -420,7 +470,9 @@ export function MetaPixel(): null {
   const location = useLocation();
   const isFirstPath = useRef(true);
   const bootstrapped = useRef(false);
-  const {subscribe, register} = useAnalytics();
+  const lastCartKey = useRef<string | null>(null);
+  const lastSettledCart = useRef<TrackableCart>(null);
+  const {subscribe, register, cart, shop} = useAnalytics();
   const {ready} = register('Meta Pixel');
 
   useEffect(() => {
@@ -435,7 +487,7 @@ export function MetaPixel(): null {
       return;
     }
 
-    // Host gate only — do not require canTrack (consent race dropped ViewContent).
+    // Host + consent gates are handled in sendMetaEvent.
     subscribe('product_viewed', (payload: ProductViewPayload) => {
       const params = productsToMeta(payload);
       if (!params) return;
@@ -445,9 +497,12 @@ export function MetaPixel(): null {
     subscribe('cart_viewed', (payload: CartViewPayload) => {
       const params = cartToMeta(payload.cart, payload.shop?.currency);
       if (!params) return;
-      void loadFbq(pixelId).then(() => {
-        if (!shouldSendToMeta(pixelId) || typeof window.fbq !== 'function') return;
-        window.fbq('trackCustom', 'ViewCart', params);
+      void canTrackForCategory('marketing').then((allowed) => {
+        if (!allowed) return;
+        return loadFbq(pixelId).then(() => {
+          if (!shouldSendToMeta(pixelId) || typeof window.fbq !== 'function') return;
+          window.fbq('trackCustom', 'ViewCart', params);
+        });
       });
     });
 
@@ -464,11 +519,28 @@ export function MetaPixel(): null {
       isFirstPath.current = false;
       return;
     }
-    void loadFbq(pixelId).then(() => {
-      if (typeof window.fbq !== 'function') return;
-      window.fbq('track', 'PageView');
+    void canTrackForCategory('marketing').then((allowed) => {
+      if (!allowed) return;
+      return loadFbq(pixelId).then(() => {
+        if (typeof window.fbq !== 'function') return;
+        window.fbq('track', 'PageView');
+      });
     });
   }, [location.pathname, location.search, pixelId]);
+
+  useEffect(() => {
+    if (!shouldSendToMeta(pixelId)) return;
+    const key = cartSnapshotKey(cart);
+    if (!key) return;
+    if (lastCartKey.current === key) return;
+    lastCartKey.current = key;
+
+    const previous = lastSettledCart.current;
+    if (previous?.updatedAt && previous.updatedAt !== cart?.updatedAt) {
+      publishCartDiffToMeta(pixelId, cart, previous, shop?.currency);
+    }
+    lastSettledCart.current = cart;
+  }, [cart, pixelId, shop?.currency]);
 
   return null;
 }
