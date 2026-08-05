@@ -412,3 +412,67 @@ export function itemListLd(options: {
     })),
   };
 }
+
+export function bookLd(options: {
+  name: string;
+  description?: string;
+  url: string;
+  storeUrl: string;
+  inLanguage?: string;
+}) {
+  const storeUrl = resolveStoreUrl(options.storeUrl);
+  const url = absoluteUrl(options.url, storeUrl);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Book',
+    '@id': `${url}#book`,
+    name: options.name,
+    description: options.description,
+    url,
+    inLanguage: options.inLanguage ?? 'en',
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: storeUrl,
+    },
+  };
+}
+
+export function bookChapterLd(options: {
+  title: string;
+  description?: string;
+  url: string;
+  storeUrl: string;
+  bookName?: string;
+  bookUrl?: string;
+}) {
+  const storeUrl = resolveStoreUrl(options.storeUrl);
+  const ld: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: options.title,
+    description: options.description,
+    url: absoluteUrl(options.url, storeUrl),
+    inLanguage: 'en',
+    author: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      logo: {
+        '@type': 'ImageObject',
+        url: absoluteUrl('/assets/brand-mark.png', storeUrl),
+      },
+    },
+  };
+  if (options.bookName && options.bookUrl) {
+    ld.isPartOf = {
+      '@type': 'Book',
+      name: options.bookName,
+      url: absoluteUrl(options.bookUrl, storeUrl),
+    };
+  }
+  return ld;
+}

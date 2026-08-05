@@ -1,0 +1,471 @@
+{
+  "title": "The Kashmir Weaver Research Handbook",
+  "subtitle": "Volume I – Foundations of Authentic Pashmina",
+  "edition": "Draft Research Edition 0.5",
+  "sections": [
+    {
+      "slug": "preface",
+      "kind": "preface",
+      "number": null,
+      "title": "Preface",
+      "subtitle": "",
+      "order": 0
+    },
+    {
+      "slug": "chapter-1",
+      "kind": "chapter",
+      "number": 1,
+      "title": "What is Pashmina?",
+      "subtitle": "",
+      "order": 1
+    },
+    {
+      "slug": "chapter-3",
+      "kind": "chapter",
+      "number": 3,
+      "title": "The Geography of Pashmina",
+      "subtitle": "",
+      "order": 2
+    },
+    {
+      "slug": "chapter-11",
+      "kind": "chapter",
+      "number": 11,
+      "title": "The Changthangi Goat",
+      "subtitle": "",
+      "order": 3
+    },
+    {
+      "slug": "chapter-21",
+      "kind": "chapter",
+      "number": 21,
+      "title": "The Science of Pashmina",
+      "subtitle": "",
+      "order": 4
+    },
+    {
+      "slug": "chapter-22",
+      "kind": "chapter",
+      "number": 22,
+      "title": "Why Kashmir?",
+      "subtitle": "",
+      "order": 5
+    },
+    {
+      "slug": "chapter-2",
+      "kind": "chapter",
+      "number": 2,
+      "title": "The Historical Journey of Pashmina",
+      "subtitle": "",
+      "order": 6
+    },
+    {
+      "slug": "chapter-10",
+      "kind": "chapter",
+      "number": 10,
+      "title": "The Rivers, Roads and Caravans of Pashmina",
+      "subtitle": "",
+      "order": 7
+    },
+    {
+      "slug": "chapter-19",
+      "kind": "chapter",
+      "number": 19,
+      "title": "Pashmina and the Royal Courts",
+      "subtitle": "",
+      "order": 8
+    },
+    {
+      "slug": "chapter-20",
+      "kind": "chapter",
+      "number": 20,
+      "title": "A Timeline of Pashmina",
+      "subtitle": "",
+      "order": 9
+    },
+    {
+      "slug": "chapter-31",
+      "kind": "chapter",
+      "number": 31,
+      "title": "When Kashmir Changed World Fashion",
+      "subtitle": "",
+      "order": 10
+    },
+    {
+      "slug": "chapter-4",
+      "kind": "chapter",
+      "number": 4,
+      "title": "The Journey from Fibre to Shawl",
+      "subtitle": "",
+      "order": 11
+    },
+    {
+      "slug": "chapter-5",
+      "kind": "chapter",
+      "number": 5,
+      "title": "Hand Weaving",
+      "subtitle": "",
+      "order": 12
+    },
+    {
+      "slug": "chapter-6",
+      "kind": "chapter",
+      "number": 6,
+      "title": "Kani Weaving",
+      "subtitle": "",
+      "order": 13
+    },
+    {
+      "slug": "chapter-7",
+      "kind": "chapter",
+      "number": 7,
+      "title": "Sozni Embroidery",
+      "subtitle": "",
+      "order": 14
+    },
+    {
+      "slug": "chapter-23",
+      "kind": "chapter",
+      "number": 23,
+      "title": "The Journey of a Shawl",
+      "subtitle": "",
+      "order": 15
+    },
+    {
+      "slug": "chapter-27",
+      "kind": "chapter",
+      "number": 27,
+      "title": "Kani Shawls",
+      "subtitle": "",
+      "order": 16
+    },
+    {
+      "slug": "chapter-28",
+      "kind": "chapter",
+      "number": 28,
+      "title": "Sozni Embroidery",
+      "subtitle": "",
+      "order": 17
+    },
+    {
+      "slug": "chapter-14",
+      "kind": "chapter",
+      "number": 14,
+      "title": "The People Behind the Shawl",
+      "subtitle": "",
+      "order": 18
+    },
+    {
+      "slug": "chapter-15",
+      "kind": "chapter",
+      "number": 15,
+      "title": "Pashmina in the Culture of Kashmir",
+      "subtitle": "",
+      "order": 19
+    },
+    {
+      "slug": "chapter-24",
+      "kind": "chapter",
+      "number": 24,
+      "title": "The Artisan’s Mind",
+      "subtitle": "",
+      "order": 20
+    },
+    {
+      "slug": "chapter-25",
+      "kind": "chapter",
+      "number": 25,
+      "title": "The Unsung Masters",
+      "subtitle": "",
+      "order": 21
+    },
+    {
+      "slug": "chapter-16",
+      "kind": "chapter",
+      "number": 16,
+      "title": "The Philosophy of Luxury",
+      "subtitle": "",
+      "order": 22
+    },
+    {
+      "slug": "chapter-18",
+      "kind": "chapter",
+      "number": 18,
+      "title": "The Language of Motifs",
+      "subtitle": "",
+      "order": 23
+    },
+    {
+      "slug": "chapter-30",
+      "kind": "chapter",
+      "number": 30,
+      "title": "The Colours of Kashmir",
+      "subtitle": "",
+      "order": 24
+    },
+    {
+      "slug": "chapter-8",
+      "kind": "chapter",
+      "number": 8,
+      "title": "Authenticity and Geographical Indication (GI)",
+      "subtitle": "",
+      "order": 25
+    },
+    {
+      "slug": "chapter-9",
+      "kind": "chapter",
+      "number": 9,
+      "title": "The Pashmina Certification Centre",
+      "subtitle": "",
+      "order": 26
+    },
+    {
+      "slug": "chapter-12",
+      "kind": "chapter",
+      "number": 12,
+      "title": "How to Identify Authentic Pashmina",
+      "subtitle": "",
+      "order": 27
+    },
+    {
+      "slug": "chapter-13",
+      "kind": "chapter",
+      "number": 13,
+      "title": "Caring for a Pashmina Shawl",
+      "subtitle": "",
+      "order": 28
+    },
+    {
+      "slug": "chapter-26",
+      "kind": "chapter",
+      "number": 26,
+      "title": "Museums, Collectors, and Heirlooms",
+      "subtitle": "",
+      "order": 29
+    },
+    {
+      "slug": "chapter-29",
+      "kind": "chapter",
+      "number": 29,
+      "title": "Recognising Excellence",
+      "subtitle": "",
+      "order": 30
+    },
+    {
+      "slug": "chapter-32",
+      "kind": "chapter",
+      "number": 32,
+      "title": "Preserving a Living Heritage",
+      "subtitle": "",
+      "order": 31
+    },
+    {
+      "slug": "chapter-33",
+      "kind": "chapter",
+      "number": 33,
+      "title": "Legendary Shawls That Changed History",
+      "subtitle": "",
+      "order": 32
+    },
+    {
+      "slug": "chapter-34",
+      "kind": "chapter",
+      "number": 34,
+      "title": "The Great Museums and Their Kashmiri Collections",
+      "subtitle": "",
+      "order": 33
+    },
+    {
+      "slug": "chapter-35",
+      "kind": "chapter",
+      "number": 35,
+      "title": "Building a Collector’s Eye",
+      "subtitle": "",
+      "order": 34
+    },
+    {
+      "slug": "chapter-36",
+      "kind": "chapter",
+      "number": 36,
+      "title": "Caring for a Pashmina",
+      "subtitle": "",
+      "order": 35
+    },
+    {
+      "slug": "chapter-17",
+      "kind": "chapter",
+      "number": 17,
+      "title": "The Future of Pashmina",
+      "subtitle": "",
+      "order": 36
+    },
+    {
+      "slug": "chapter-39",
+      "kind": "chapter",
+      "number": 39,
+      "title": "Pashmina in the Twenty-First Century",
+      "subtitle": "",
+      "order": 37
+    },
+    {
+      "slug": "chapter-40",
+      "kind": "chapter",
+      "number": 40,
+      "title": "Epilogue",
+      "subtitle": "",
+      "order": 38
+    },
+    {
+      "slug": "chapter-37",
+      "kind": "chapter",
+      "number": 37,
+      "title": "The Complete Glossary of Pashmina",
+      "subtitle": "",
+      "order": 39
+    },
+    {
+      "slug": "chapter-38",
+      "kind": "chapter",
+      "number": 38,
+      "title": "Research Sources and Annotated Bibliography",
+      "subtitle": "",
+      "order": 40
+    },
+    {
+      "slug": "masters-of-kashmir",
+      "kind": "part",
+      "number": null,
+      "title": "The Masters of Kashmir",
+      "subtitle": "",
+      "order": 41
+    },
+    {
+      "slug": "soul-of-kashmir",
+      "kind": "part",
+      "number": null,
+      "title": "The Soul of Kashmir",
+      "subtitle": "",
+      "order": 42
+    },
+    {
+      "slug": "soul-1",
+      "kind": "soul",
+      "number": 1,
+      "title": "A Winter in Changthang",
+      "subtitle": "",
+      "order": 43
+    },
+    {
+      "slug": "soul-2",
+      "kind": "soul",
+      "number": 2,
+      "title": "Spring and the Gift of Fibre",
+      "subtitle": "",
+      "order": 44
+    },
+    {
+      "slug": "soul-3",
+      "kind": "soul",
+      "number": 3,
+      "title": "The Journey to Kashmir",
+      "subtitle": "",
+      "order": 45
+    },
+    {
+      "slug": "soul-4",
+      "kind": "soul",
+      "number": 4,
+      "title": "Preparing the Fibre",
+      "subtitle": "",
+      "order": 46
+    },
+    {
+      "slug": "soul-5",
+      "kind": "soul",
+      "number": 5,
+      "title": "The Spinner’s Wheel",
+      "subtitle": "",
+      "order": 47
+    },
+    {
+      "slug": "soul-6",
+      "kind": "soul",
+      "number": 6,
+      "title": "The Loom",
+      "subtitle": "",
+      "order": 48
+    },
+    {
+      "slug": "soul-7",
+      "kind": "soul",
+      "number": 7,
+      "title": "Decoration",
+      "subtitle": "",
+      "order": 49
+    },
+    {
+      "slug": "soul-8",
+      "kind": "soul",
+      "number": 8,
+      "title": "Finishing",
+      "subtitle": "",
+      "order": 50
+    },
+    {
+      "slug": "soul-9",
+      "kind": "soul",
+      "number": 9,
+      "title": "Across Continents",
+      "subtitle": "",
+      "order": 51
+    },
+    {
+      "slug": "soul-10",
+      "kind": "soul",
+      "number": 10,
+      "title": "A New Story Begins",
+      "subtitle": "",
+      "order": 52
+    },
+    {
+      "slug": "acknowledgements",
+      "kind": "acknowledgements",
+      "number": null,
+      "title": "Acknowledgements",
+      "subtitle": "",
+      "order": 53
+    },
+    {
+      "slug": "appendix-a",
+      "kind": "appendix",
+      "number": null,
+      "title": "A Chronological History of Kashmiri Pashmina",
+      "subtitle": "",
+      "order": 54
+    },
+    {
+      "slug": "appendix-b",
+      "kind": "appendix",
+      "number": null,
+      "title": "Masterpieces in World Museums",
+      "subtitle": "",
+      "order": 55
+    },
+    {
+      "slug": "appendix-c",
+      "kind": "appendix",
+      "number": null,
+      "title": "The Great Trade Routes of Pashmina",
+      "subtitle": "",
+      "order": 56
+    },
+    {
+      "slug": "appendix-d",
+      "kind": "appendix",
+      "number": null,
+      "title": "How to Identify an Authentic Kashmiri Pashmina",
+      "subtitle": "",
+      "order": 57
+    }
+  ]
+}

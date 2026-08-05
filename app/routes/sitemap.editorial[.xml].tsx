@@ -2,6 +2,7 @@ import type {Route} from './+types/sitemap.editorial[.xml]';
 import type {Storefront} from '@shopify/hydrogen';
 import {getJournalOptions} from '~/lib/catalog-options';
 import {listAllJournalPosts} from '~/controllers';
+import {bookSections} from '~/lib/book/registry';
 import type {JournalPost} from '~/models/static/journal';
 import {xmlEscape} from '~/lib/xml';
 
@@ -22,6 +23,7 @@ const EDITORIAL_PATHS = [
   '/care-guide',
   '/shade-cards',
   '/concierge',
+  '/book',
   '/terms',
   '/privacy',
   '/shipping',
@@ -195,7 +197,10 @@ export async function loader({request, context}: Route.LoaderArgs) {
   const journalEntries = journalPosts.map((post) =>
     journalEntry(post, baseUrl, locales),
   );
-  const entries = [...staticEntries, ...journalEntries];
+  const bookEntries = bookSections.map((section) =>
+    staticEntry(`/book/${section.slug}`, baseUrl, lastmod, locales),
+  );
+  const entries = [...staticEntries, ...bookEntries, ...journalEntries];
 
   const urls = entries
     .map((entry) =>

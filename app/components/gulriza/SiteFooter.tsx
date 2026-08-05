@@ -4,13 +4,14 @@ import { BrandLockup } from "~/components/gulriza/BrandLockup";
 import {PaymentMethods} from "~/components/gulriza/PaymentMethods";
 import type {ShopSettings} from "~/lib/shop-settings";
 
-const OUR_WORLD_PATHS = ["/about", "/heritage", "/craft", "/journal"] as const;
+const OUR_WORLD_PATHS = ["/about", "/heritage", "/craft", "/journal", "/book"] as const;
 
 const OUR_WORLD_LINKS = [
   { to: "/about", label: "About" },
   { to: "/heritage", label: "Heritage" },
   { to: "/craft", label: "Craft" },
   { to: "/journal", label: "Journal" },
+  { to: "/book", label: "The Book" },
 ] as const;
 
 const GOOGLE_REVIEW_URL =
@@ -49,6 +50,12 @@ export function SiteFooter({shopSettings}: {shopSettings?: ShopSettings}) {
           OUR_WORLD_PATHS.includes(item.to as (typeof OUR_WORLD_PATHS)[number]),
         )
       : [...OUR_WORLD_LINKS];
+
+  // The research handbook link always ships, even when the merchant-managed
+  // footer menu is in use.
+  if (!ourWorldLinks.some((link) => link.to === "/book")) {
+    ourWorldLinks.push({ to: "/book", label: "The Book" });
+  }
 
   return (
     <footer className="mt-32 pt-20" style={{ background: "var(--background)" }}>

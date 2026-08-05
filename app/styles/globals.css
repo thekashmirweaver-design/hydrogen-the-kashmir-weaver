@@ -368,6 +368,123 @@
     }
   }
 
+  /*
+   * Book article body — markdown rendered from the research handbook.
+   * Same editorial voice as the journal, with a plain first paragraph
+   * (no drop cap) and support for pipe tables and thematic breaks.
+   */
+  .book-article-body {
+    font-family: var(--font-body);
+    font-size: var(--text-xl);
+    line-height: 1.7;
+    color: color-mix(in srgb, var(--foreground) 90%, transparent);
+    font-weight: 400;
+  }
+
+  .book-article-body p + p {
+    margin-top: 2rem;
+  }
+
+  .book-article-body h2 {
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    line-height: var(--tw-leading, var(--text-3xl--line-height));
+    font-weight: 400;
+    color: var(--foreground);
+    letter-spacing: -0.01em;
+  }
+
+  .book-article-body h3 {
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    line-height: var(--tw-leading, var(--text-2xl--line-height));
+    font-weight: 400;
+    color: var(--foreground);
+    letter-spacing: -0.01em;
+  }
+
+  .book-article-body h2 + p,
+  .book-article-body h3 + p,
+  .book-article-body h2 + ul,
+  .book-article-body h3 + ul,
+  .book-article-body h2 + ol,
+  .book-article-body h3 + ol {
+    margin-top: 1rem;
+  }
+
+  .book-article-body ul,
+  .book-article-body ol {
+    margin: 2rem 0;
+    padding-left: 1.5rem;
+    list-style-position: outside;
+  }
+
+  .book-article-body ul {
+    list-style-type: disc;
+  }
+
+  .book-article-body ol {
+    list-style-type: decimal;
+  }
+
+  .book-article-body li {
+    display: list-item;
+    margin: 0.5rem 0;
+  }
+
+  .book-article-body li::marker {
+    color: var(--muted-foreground);
+  }
+
+  .book-article-body strong {
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
+  .book-article-body em {
+    font-style: italic;
+  }
+
+  .book-article-body blockquote {
+    margin: 2.5rem 0;
+    border-left: 1px solid var(--accent);
+    padding: 0 1.5rem;
+    font-style: italic;
+    color: var(--foreground);
+  }
+
+  .book-article-body hr {
+    margin: 3rem 0;
+    border: 0;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .book-article-body table {
+    margin: 2.5rem 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-base);
+    line-height: 1.5;
+  }
+
+  .book-article-body th,
+  .book-article-body td {
+    padding: 0.6rem 0.9rem 0.6rem 0;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .book-article-body th {
+    font-family: var(--font-body);
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
   .btn-secondary {
     background-color: var(--surface-2);
     border: 1px solid var(--hairline);
