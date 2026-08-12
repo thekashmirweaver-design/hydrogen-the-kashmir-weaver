@@ -97,7 +97,7 @@ export async function getHomePage(
 ): Promise<HomePageViewModel> {
   // Prefer the caller-supplied snapshot (menu catalog on `/`) for collection
   // metadata — preview tiles are fetched per collection so multi-membership
-  // products (e.g. homepage-featured + checker) still appear under their weave.
+  // products (e.g. homepage-featured + reversible) still appear under their weave.
   const snapshot =
     catalog ??
     (options

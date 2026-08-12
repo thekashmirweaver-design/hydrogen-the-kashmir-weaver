@@ -6,7 +6,10 @@ import {withDummyTestProduct} from './static/dummy-product';
 import {PRODUCT_LIST_PAGE_SIZE} from '~/lib/catalog-constants';
 import type {PaginatedProducts} from '~/lib/catalog-pagination';
 import {DEFAULT_FEATURED_COLLECTION_HANDLE} from '~/lib/featured-collection';
-import {loadHomepageFeatured} from '~/lib/homepage-featured';
+import {
+  loadHomepageFeatured,
+  pickCollectionsByHandles,
+} from '~/lib/homepage-featured';
 import {toListingProducts} from '~/lib/listing-product';
 import {excludeUnavailableFromListing} from '~/lib/product-inventory';
 import {
@@ -479,15 +482,23 @@ export async function getCatalogMenuSnapshot(
     ),
     1,
   );
+  let navCollections = snapshot.collections.filter(
+    (collection) =>
+      !isHomepageFeaturedCollection(
+        collection.handle,
+        DEFAULT_FEATURED_COLLECTION_HANDLE,
+      ),
+  );
+  if (options?.storefront) {
+    const {collectionHandles} = await loadHomepageFeatured(options.storefront);
+    navCollections = pickCollectionsByHandles(
+      navCollections,
+      collectionHandles,
+    );
+  }
   return {
     products,
-    collections: snapshot.collections.filter(
-      (collection) =>
-        !isHomepageFeaturedCollection(
-          collection.handle,
-          DEFAULT_FEATURED_COLLECTION_HANDLE,
-        ),
-    ),
+    collections: navCollections,
     featuredProducts: [],
   };
 }
