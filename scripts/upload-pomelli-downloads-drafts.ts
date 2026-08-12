@@ -1,8 +1,9 @@
 /**
- * Upload all Downloads pomelli products as DRAFT from catalog JSON.
+ * Upload catalog products as DRAFT from JSON.
  *
  * Usage:
  *   npx tsx scripts/upload-pomelli-downloads-drafts.ts [--dry-run] [--only 1,2,8]
+ *   npx tsx scripts/upload-pomelli-downloads-drafts.ts --catalog scripts/data/whatsapp-batch-catalog.json
  */
 import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import {basename, dirname, extname, join, resolve} from 'node:path';
@@ -17,6 +18,14 @@ const HS = '621420';
 const CATEGORY_ID = 'gid://shopify/TaxonomyCategory/aa-2-26';
 const LOCATION_ID = 'gid://shopify/Location/92787245271';
 const STOREFRONT = 'https://thekashmirweaver.shop';
+const FX = 95.31;
+const SELL_MULTIPLIER = 1.85;
+
+const WEAVE_BY_CATEGORY: Record<string, string> = {
+  Sozni: 'Hand-embroidered sozni',
+  Kani: 'Kani (twill-tapestry)',
+  Reversible: 'Reversible double-face',
+};
 
 const COLOR_PATTERN_TYPE = 'shopify--color-pattern';
 const PATTERN_SOLID = 'gid://shopify/TaxonomyValue/2874';
@@ -105,7 +114,13 @@ type CatalogItem = {
   storyHint: string;
   images: string[];
   notes: string[];
+  requestMoreImages?: boolean;
+  vendor?: string;
 };
+
+function weaveForItem(item: CatalogItem): string {
+  return WEAVE_BY_CATEGORY[item.category] ?? SHARED_CUSTOM.weave;
+}
 
 function loadEnvFile() {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -347,7 +362,7 @@ async function createProduct(
         handle: item.handle,
         descriptionHtml: item.descriptionHtml,
         productType: item.productType,
-        vendor: VENDOR,
+        vendor: item.vendor ?? VENDOR,
         status: 'DRAFT',
         tags: item.tags,
         category: CATEGORY_ID,
@@ -582,7 +597,14 @@ async function setMetafields(
     {ownerId: productGid, namespace: 'custom', key: 'care', type: 'single_line_text_field', value: SHARED_CUSTOM.care},
     {ownerId: productGid, namespace: 'custom', key: 'material', type: 'single_line_text_field', value: SHARED_CUSTOM.material},
     {ownerId: productGid, namespace: 'custom', key: 'origin', type: 'single_line_text_field', value: SHARED_CUSTOM.origin},
-    {ownerId: productGid, namespace: 'custom', key: 'weave', type: 'single_line_text_field', value: SHARED_CUSTOM.weave},
+    {ownerId: productGid, namespace: 'custom', key: 'weave', type: 'single_line_text_field', value: weaveForItem(item)},
+    {
+      ownerId: productGid,
+      namespace: 'custom',
+      key: 'request_more_images',
+      type: 'boolean',
+      value: String(item.requestMoreImages !== false),
+    },
     {ownerId: productGid, namespace: 'custom', key: 'limited', type: 'boolean', value: SHARED_CUSTOM.limited},
     {ownerId: productGid, namespace: 'custom', key: 'featured_order', type: 'number_integer', value: SHARED_CUSTOM.featured_order},
     {ownerId: productGid, namespace: 'custom', key: 'show_colour_studio', type: 'boolean', value: SHARED_CUSTOM.show_colour_studio},
@@ -649,12 +671,17 @@ function parseArgs(argv: string[]) {
   if (idx !== -1 && argv[idx + 1]) {
     only = argv[idx + 1].split(',').map((s) => Number(s.trim()));
   }
-  return {dryRun, only};
+  let catalog: string | null = null;
+  const catIdx = argv.indexOf('--catalog');
+  if (catIdx !== -1 && argv[catIdx + 1]) {
+    catalog = argv[catIdx + 1];
+  }
+  return {dryRun, only, catalog};
 }
 
 async function main() {
   loadEnvFile();
-  const {dryRun, only} = parseArgs(process.argv.slice(2));
+  const {dryRun, only, catalog: catalogArg} = parseArgs(process.argv.slice(2));
   const shop = process.env.PUBLIC_STORE_DOMAIN ?? '70yuey-sr.myshopify.com';
   let token =
     process.env.SHOPIFY_ADMIN_ACCESS_TOKEN ??
@@ -669,16 +696,26 @@ async function main() {
     process.exit(1);
   }
 
-  const catalogPath = resolve(
-    dirname(fileURLToPath(import.meta.url)),
-    'data/pomelli-downloads-catalog.json',
-  );
+  const catalogPath = catalogArg
+    ? resolve(process.cwd(), catalogArg)
+    : resolve(
+        dirname(fileURLToPath(import.meta.url)),
+        'data/pomelli-downloads-catalog.json',
+      );
   let catalog = JSON.parse(readFileSync(catalogPath, 'utf8')) as CatalogItem[];
   if (only) catalog = catalog.filter((c) => only.includes(c.index));
 
+  const isWhatsAppBatch = catalogPath.includes('whatsapp-batch');
+  const resultsBasename = isWhatsAppBatch
+    ? 'whatsapp-batch-upload-results.json'
+    : 'pomelli-downloads-upload-results.json';
+
   console.log(`\nStore: ${shop}`);
+  console.log(`Catalog: ${catalogPath}`);
   console.log(`Products: ${catalog.length}${dryRun ? ' (DRY RUN)' : ''}`);
-  console.log('Status: DRAFT | FX 96.51 | sell=floor(2.5×cost/10)×10\n');
+  console.log(
+    `Status: DRAFT | FX ${FX} | sell=floor(${SELL_MULTIPLIER}×cost/10)×10\n`,
+  );
 
   const collectionCache = new Map<string, string>();
   for (const handle of [...new Set(catalog.map((c) => c.collection))]) {
@@ -817,7 +854,8 @@ async function main() {
 
   const outPath = resolve(
     dirname(fileURLToPath(import.meta.url)),
-    '../pomelli-downloads-upload-results.json',
+    '..',
+    resultsBasename,
   );
   writeFileSync(outPath, JSON.stringify(results, null, 2));
   const created = results.filter((r) => r.status === 'created').length;

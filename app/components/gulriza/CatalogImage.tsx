@@ -75,6 +75,8 @@ export function CatalogImage({
   const fetchPriority =
     fetchPriorityProp ?? (priority ? 'high' : undefined);
   const showSkeleton = showSkeletonProp ?? !priority;
+  const useLayoutWrapper =
+    Boolean(wrapperClassName?.trim()) || wrapperStyle != null;
   const [loaded, setLoaded] = useState(priority);
   const imgRef = useRef<HTMLImageElement>(null);
   // Sync decode for LCP candidates so paint isn't deferred behind the event loop.
@@ -149,14 +151,14 @@ export function CatalogImage({
     />
   );
 
-  if (!showSkeleton) return inner;
+  if (!showSkeleton && !useLayoutWrapper) return inner;
 
   return (
     <span
-      className={`relative block h-full w-full ${wrapperClassName}`.trim()}
+      className={`relative block ${useLayoutWrapper ? '' : 'h-full w-full'} ${wrapperClassName}`.trim()}
       style={wrapperStyle}
     >
-      {!loaded ? (
+      {showSkeleton && !loaded ? (
         <span
           className="image-skeleton absolute inset-0"
           aria-hidden

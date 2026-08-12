@@ -1,5 +1,5 @@
 import {Link, useFetcher, useRouteLoaderData, type FetcherWithComponents} from 'react-router';
-import {lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties} from 'react';
 import {createPortal} from 'react-dom';
 import {
   ChevronLeft,
@@ -21,7 +21,6 @@ import {
   trackMetaInitiateCheckoutItems,
 } from '~/components/MetaPixel';
 import type {RootLoader} from '~/root';
-import {Accordion} from '~/components/gulriza/Accordion';
 import {ProductTile} from '~/components/gulriza/ProductTile';
 import {CatalogImage} from '~/components/gulriza/CatalogImage';
 import {HorizontalScrollCue} from '~/components/gulriza/HorizontalScrollCue';
@@ -32,7 +31,7 @@ import {ProductOptionPicker} from '~/components/gulriza/ProductOptionPicker';
 import {QuantityStepper} from '~/components/gulriza/QuantityStepper';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {LegalRichHtml} from '~/components/gulriza/LegalRichHtml';
-import type {Product, ProductVariant} from '~/models/types';
+import type {Product, ProductImage, ProductVariant} from '~/models/types';
 import {useFormatPrice} from '~/lib/currency-store';
 import {useDisplayCurrency} from '~/contexts/display-currency-context';
 import {CHECKOUT_CURRENCY} from '~/lib/display-currencies';
@@ -78,6 +77,26 @@ function isShopifyMerchandiseId(id?: string): boolean {
 function toMerchandiseGid(id: string): string {
   if (id.startsWith('gid://shopify/ProductVariant/')) return id;
   return `gid://shopify/ProductVariant/${id}`;
+}
+
+/** Main PDP gallery — height-limited so tall portraits scale up without cropping. */
+const GALLERY_MAX_HEIGHT = 'min(85dvh, 960px)';
+
+function mainGalleryWrapperStyle(
+  image: ProductImage | undefined,
+): CSSProperties {
+  const base: CSSProperties = {
+    height: GALLERY_MAX_HEIGHT,
+    maxWidth: '100%',
+    width: 'auto',
+  };
+  if (!image?.width || !image?.height) {
+    return {...base, aspectRatio: '4 / 5'};
+  }
+  return {
+    ...base,
+    aspectRatio: `${image.width} / ${image.height}`,
+  };
 }
 
 export function ProductView({
@@ -291,6 +310,10 @@ export function ProductView({
 
   const imgCount = displayImages.length;
   const activeImage = displayImages[imgIdx] ?? displayImages[0];
+  const mainGalleryWrapper = useMemo(
+    () => mainGalleryWrapperStyle(activeImage),
+    [activeImage],
+  );
   const selectImage = useCallback((i: number) => {
     setImgIdx(i);
     setZoomed(false);
@@ -524,7 +547,7 @@ export function ProductView({
               >
                 <div
                   key={imgIdx}
-                  className="gallery-image-fade relative overflow-hidden"
+                  className="gallery-image-fade relative mx-auto w-fit max-w-full overflow-hidden"
                 >
                   <CatalogImage
                     image={activeImage!}
@@ -566,7 +589,7 @@ export function ProductView({
                         : undefined
                     }
                     onMouseLeave={() => setMainPanning(false)}
-                    className="h-full w-full max-h-[min(75dvh,720px)] object-contain"
+                    className="h-full w-full object-contain"
                     style={{
                       transformOrigin: `${mainZoomOrigin.x}% ${mainZoomOrigin.y}%`,
                       transform: mainZoomed ? 'scale(2.5)' : 'scale(1)',
@@ -576,15 +599,8 @@ export function ProductView({
                         ? 'none'
                         : 'transform 450ms cubic-bezier(0.22, 1, 0.36, 1)',
                     }}
-                    wrapperClassName="relative mx-auto w-auto max-h-[min(75dvh,720px)] max-w-full"
-                    wrapperStyle={
-                      activeImage?.width && activeImage?.height
-                        ? {
-                            aspectRatio: `${activeImage.width} / ${activeImage.height}`,
-                            maxHeight: 'min(75dvh, 720px)',
-                          }
-                        : {aspectRatio: '4 / 5', maxHeight: 'min(75dvh, 720px)'}
-                    }
+                    wrapperClassName="relative mx-auto max-w-full"
+                    wrapperStyle={mainGalleryWrapper}
                     loading="eager"
                     priority
                     sizes="(min-width: 1024px) 55vw, 100vw"
@@ -671,7 +687,10 @@ export function ProductView({
                   </div>
 
                   <div className="hidden w-16 shrink-0 md:col-start-1 md:row-start-1 md:block lg:w-[4.5rem]">
-                    <div className="flex max-h-[min(75dvh,720px)] flex-col gap-1.5 overflow-y-auto overscroll-contain">
+                    <div
+                      className="flex flex-col gap-1.5 overflow-y-auto overscroll-contain"
+                      style={{maxHeight: GALLERY_MAX_HEIGHT}}
+                    >
                       {displayImages.map((img, i) => (
                         <button
                           key={img.src}
@@ -809,15 +828,6 @@ export function ProductView({
                 </Link>
               </p>
             </div>
-
-            <div className="mt-8">
-              <Accordion title="Description" defaultOpen>
-                <LegalRichHtml
-                  html={product.description}
-                  className="text-sm"
-                />
-              </Accordion>
-            </div>
           </div>
         </div>
 
@@ -826,6 +836,16 @@ export function ProductView({
           className="mt-12 space-y-12 border-t pt-10"
           style={{borderColor: 'var(--border)'}}
         >
+          {product.description ? (
+            <section>
+              <Eyebrow className="block">Description</Eyebrow>
+              <LegalRichHtml
+                html={product.description}
+                className="mt-6 text-sm"
+              />
+            </section>
+          ) : null}
+
           <section>
             <Eyebrow className="block">Product Details</Eyebrow>
             <dl className="mt-6 space-y-4 text-sm leading-relaxed">
