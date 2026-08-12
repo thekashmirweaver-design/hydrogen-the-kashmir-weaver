@@ -1,16 +1,14 @@
-import {Link, useLocation, useNavigate, useNavigation, useFetchers, type FetcherWithComponents} from "react-router";
+import {Link, useLocation} from "react-router";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Search, ShoppingBag, Menu, X, ChevronDown, Check, Globe, ArrowRight } from "lucide-react";
-import { CartForm, useAnalytics } from "@shopify/hydrogen";
-import { useLocalization } from "~/contexts/localization-context";
-import type { ShopCurrencyOption } from "~/lib/localization";
-import { marketHref } from "~/lib/market-url";
+import { useAnalytics } from "@shopify/hydrogen";
+import { useDisplayCurrency } from "~/contexts/display-currency-context";
+import type { DisplayCurrencyOption } from "~/lib/display-currencies";
+import { CHECKOUT_CURRENCY } from "~/lib/display-currencies";
 import { Marquee } from "~/components/gulriza/Marquee";
 import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
 import { useCartDrawer } from "~/contexts/cart-drawer-context";
-import type { CartApiQueryFragment } from "storefrontapi.generated";
-import { syncLiveCartCache } from "~/lib/use-live-cart";
 import { ShopifyAccount } from "~/components/gulriza/ShopifyAccount";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
 import type {ShopSettings, NavItem} from "~/lib/shop-settings";
@@ -143,13 +141,10 @@ export function SiteHeader({
 }) {
   const {publish} = useAnalytics();
   const {cartQuantity, open: openCart} = useCartDrawer();
-  const {selectedCurrency} = useLocalization();
   const {collections} = useCatalog();
-  const {pathname, search} = useLocation();
-  const marketTo = useCallback(
-    (path: string) => marketHref(path, search, selectedCurrency.countryCode),
-    [search, selectedCurrency.countryCode],
-  );
+  const {pathname} = useLocation();
+  // Market is session-backed — nav links stay clean (no `?country=`).
+  const marketTo = useCallback((path: string) => path, []);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -164,7 +159,7 @@ export function SiteHeader({
 
   const collectionNavLinks = useMemo<NavItem[]>(
     () => [
-      {to: "/collections", label: "All"},
+      {to: "/collections/all", label: "All"},
       ...collections.map((c) => ({
         to: `/collections/${c.handle}`,
         label: c.name,
@@ -489,10 +484,9 @@ export function SiteHeader({
                                 <ul className="mb-3 flex flex-col gap-0.5 pb-2">
                                   {collectionNavLinks.map((link, index) => {
                                     const isActive =
-                                      link.to === "/collections"
-                                        ? pathname === "/collections"
-                                        : pathname === link.to ||
-                                          pathname.startsWith(`${link.to}/`);
+                                      pathname === link.to ||
+                                      (link.to !== "/collections/all" &&
+                                        pathname.startsWith(`${link.to}/`));
                                     return (
                                       <li
                                         key={link.to}
@@ -700,9 +694,9 @@ function CollectionsNavDropdown({
         <ul className="flex flex-col gap-0.5 p-1.5">
           {links.map((link, index) => {
             const isActive =
-              link.to === "/collections"
-                ? pathname === "/collections"
-                : pathname === link.to || pathname.startsWith(`${link.to}/`);
+              pathname === link.to ||
+              (link.to !== "/collections/all" &&
+                pathname.startsWith(`${link.to}/`));
             return (
               <li
                 key={link.to}
@@ -732,6 +726,7 @@ function CollectionsNavDropdown({
   );
 }
 
+
 function CurrencyDropdown({
   compact = false,
   variant = "default",
@@ -740,15 +735,16 @@ function CurrencyDropdown({
   /** `tile` = square labeled control for the mobile menu preferences row */
   variant?: "default" | "tile";
 }) {
-  const {currencies, selectedCurrency} = useLocalization();
-  const {pathname, search} = useLocation();
-  const navigate = useNavigate();
-  const navigation = useNavigation();
-  const fetchers = useFetchers();
+  const {
+    currencies,
+    displayCurrency,
+    setDisplayCurrency,
+    checkoutCurrency,
+    ratesReady,
+  } = useDisplayCurrency();
   const isLgUp = useIsLgUp();
   const [open, setOpen] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
-  const [pendingMarketCountry, setPendingMarketCountry] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const wrapRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -756,77 +752,8 @@ function CurrencyDropdown({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sheetClosingRef = useRef(false);
 
-  const pendingCurrency = useMemo(() => {
-    if (!pendingMarketCountry) return null;
-    return (
-      currencies.find((c) => c.countryCode === pendingMarketCountry) ?? null
-    );
-  }, [pendingMarketCountry, currencies]);
-
-  const pendingFetcher = useMemo(() => {
-    if (!pendingMarketCountry) return null;
-    return (
-      fetchers.find((f) => f.key === `market-${pendingMarketCountry}`) ?? null
-    );
-  }, [fetchers, pendingMarketCountry]);
-
-  const isSwitching = pendingFetcher != null && pendingFetcher.state !== "idle";
-  const displayCode =
-    isSwitching && pendingCurrency
-      ? pendingCurrency.code
-      : selectedCurrency.code;
-  const activeCountryCode = selectedCurrency.countryCode;
-  const isUpdating =
-    isSwitching ||
-    navigation.state !== "idle" ||
-    fetchers.some(
-      (f) => f.key?.startsWith("market-") && f.state !== "idle",
-    );
-
-  const handledMarketSwitchRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const urlCountry = new URLSearchParams(search).get("country")?.toUpperCase() ?? null;
-
-    for (const fetcher of fetchers) {
-      if (!fetcher.key?.startsWith("market-")) continue;
-      if (fetcher.state !== "idle" || !fetcher.data) continue;
-
-      const targetCountry = fetcher.key.slice("market-".length);
-      const data = fetcher.data as MarketCartActionData;
-      const cart = data.cart;
-      const handledKey = `${targetCountry}:${cart?.buyerIdentity?.countryCode ?? "none"}`;
-      if (handledMarketSwitchRef.current === handledKey) continue;
-
-      if (data.errors?.length) {
-        handledMarketSwitchRef.current = handledKey;
-        setPendingMarketCountry((current) =>
-          current === targetCountry ? null : current,
-        );
-        continue;
-      }
-
-      const identityMatched = cart?.buyerIdentity?.countryCode === targetCountry;
-      const hasPrices = Boolean(cart?.cost?.subtotalAmount?.currencyCode);
-      if (!identityMatched && !hasPrices) continue;
-
-      handledMarketSwitchRef.current = handledKey;
-      if (cart) syncLiveCartCache(cart as CartApiQueryFragment);
-
-      if (urlCountry !== targetCountry) {
-        navigate(marketHref(pathname, search, targetCountry), {
-          replace: true,
-          preventScrollReset: true,
-        });
-      }
-
-      setPendingMarketCountry((current) =>
-        current === targetCountry ? null : current,
-      );
-      setOpen(false);
-      setSheetVisible(false);
-    }
-  }, [fetchers, navigate, pathname, search]);
+  const displayCode = displayCurrency.code;
+  const {pathname} = useLocation();
 
   const requestClose = useCallback(() => {
     if (sheetClosingRef.current) return;
@@ -847,7 +774,6 @@ function CurrencyDropdown({
     setOpen(false);
   }, [pathname]);
 
-  // Mobile sheet: scroll lock, entrance animation, Escape.
   useEffect(() => {
     if (!open || isLgUp) return;
 
@@ -870,7 +796,6 @@ function CurrencyDropdown({
     };
   }, [open, isLgUp, requestClose]);
 
-  // Desktop popover: click outside + Escape.
   useEffect(() => {
     if (!open || !isLgUp) return;
 
@@ -907,14 +832,19 @@ function CurrencyDropdown({
   const q = query.trim().toLowerCase();
   const results = q
     ? currencies.filter((c) =>
-        [c.code, c.symbol, c.name].some((field) => field.toLowerCase().includes(q)),
+        [c.code, c.symbol, c.name].some((field) =>
+          field.toLowerCase().includes(q),
+        ),
       )
     : currencies;
 
-  const handleSelect = (_code: string, countryCode: string) => {
-    if (isUpdating) return;
-    setPendingMarketCountry(countryCode);
-    // Keep picker mounted until the CartForm POST completes — closing unmounts the form.
+  const handleSelect = (code: string) => {
+    setDisplayCurrency(code);
+    if (isLgUp) {
+      setOpen(false);
+    } else {
+      requestClose();
+    }
   };
 
   const pickerPanel = (
@@ -924,11 +854,9 @@ function CurrencyDropdown({
       inputRef={inputRef}
       results={results}
       displayCode={displayCode}
-      activeCountryCode={activeCountryCode}
-      pathname={pathname}
-      search={search}
+      checkoutCurrency={checkoutCurrency}
+      ratesReady={ratesReady}
       onSelect={handleSelect}
-      marketSwitchBusy={isUpdating}
       listClassName={isLgUp ? "max-h-[60vh]" : "max-h-none flex-1 min-h-0"}
     />
   );
@@ -940,19 +868,17 @@ function CurrencyDropdown({
             <button
               type="button"
               aria-label="Close currency picker"
-              className="fixed inset-0 z-[80] transition-opacity duration-300 ease-out motion-reduce:transition-none"
-              style={{
-                background: "var(--backdrop-soft)",
-                opacity: sheetVisible ? 1 : 0,
-              }}
+              className="fixed inset-0 z-[70] bg-black/40 transition-opacity duration-200"
+              style={{opacity: sheetVisible ? 1 : 0}}
               onClick={requestClose}
             />
             <div
               ref={sheetRef}
               role="dialog"
               aria-modal="true"
-              aria-label="Select currency"
-              className="fixed inset-x-0 bottom-0 z-[81] flex max-h-[min(85dvh,640px)] flex-col rounded-t-2xl border-t shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none lg:hidden"
+              aria-label="Select display currency"
+              tabIndex={-1}
+              className="fixed inset-x-0 bottom-0 z-[80] flex max-h-[85dvh] flex-col rounded-t-2xl border-t outline-none transition-transform duration-200 ease-out"
               style={{
                 background: "var(--surface)",
                 borderColor: "var(--border)",
@@ -960,95 +886,94 @@ function CurrencyDropdown({
                 transform: sheetVisible ? "translateY(0)" : "translateY(100%)",
               }}
             >
-              <div
-                className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3"
+              <div className="flex items-center justify-between gap-3 border-b px-4 py-3"
                 style={{borderColor: "var(--border)"}}
               >
-                <div className="min-w-0">
-                  <p className="text-[0.65rem] uppercase tracking-[0.25em] text-muted-foreground">
-                    Currency
-                  </p>
-                  <p className="font-display text-lg tracking-wide">{displayCode}</p>
-                </div>
+                <p className="text-xs font-medium tracking-[0.14em] uppercase">
+                  Display currency
+                </p>
                 <button
                   type="button"
                   aria-label="Close"
                   onClick={requestClose}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition hover:text-accent"
+                  className="flex h-10 w-10 items-center justify-center text-foreground/70"
                 >
-                  <X className="h-5 w-5" strokeWidth={1} />
+                  <X className="h-4 w-4" strokeWidth={1.25} />
                 </button>
               </div>
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden py-2">
-                {pickerPanel}
-              </div>
+              {pickerPanel}
             </div>
           </>,
           document.body,
         )
       : null;
 
-  const isTile = variant === "tile";
-
-  return (
-    <>
-      <div ref={wrapRef} className={`relative ${isTile ? "w-full" : ""}`}>
+  if (variant === "tile") {
+    return (
+      <>
         <button
           ref={triggerRef}
           type="button"
-          aria-haspopup="listbox"
+          aria-haspopup="dialog"
           aria-expanded={open}
-          aria-label={`Select currency, current ${displayCode}`}
-          onClick={() => (open ? (isLgUp ? setOpen(false) : requestClose()) : handleOpen())}
-          className={
-            isTile
-              ? "flex aspect-square w-full min-h-[5.5rem] flex-col items-center justify-center gap-2 border touch-manipulation transition active:opacity-80 focus:outline-none"
-              : `flex items-center justify-center gap-1 px-1 text-[0.65rem] uppercase tracking-[0.15em] text-foreground/90 transition hover:text-accent focus:outline-none min-[480px]:gap-1.5 min-[480px]:px-1.5 min-[480px]:text-xs min-[480px]:tracking-[0.25em] lg:justify-start ${
-                  compact
-                    ? "h-10 w-10 min-w-10 min-[480px]:w-auto"
-                    : "h-11 w-11 min-w-11 min-[480px]:w-auto"
-                }`
-          }
-          style={
-            isTile
-              ? {
-                  borderColor: "var(--border)",
-                  background: "var(--surface)",
-                  color: "var(--foreground)",
-                  opacity: isUpdating ? 0.65 : 1,
-                }
-              : {opacity: isUpdating ? 0.65 : 1}
-          }
+          aria-label={`Display currency, current ${displayCode}`}
+          onClick={() => (open ? requestClose() : handleOpen())}
+          className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-lg border text-center transition hover:border-accent"
+          style={{borderColor: "var(--border)", background: "var(--surface-2)"}}
         >
-          {isTile ? (
-            <>
-              <Globe className="h-5 w-5 shrink-0" strokeWidth={1.25} aria-hidden />
-              <span className="tracked text-[0.6rem] text-muted-foreground">Currency</span>
-              <span className="text-[0.7rem] font-medium uppercase tracking-[0.14em]">
-                {displayCode}
-              </span>
-            </>
-          ) : (
-            <>
-              <Globe className="h-3.5 w-3.5 shrink-0" strokeWidth={1} aria-hidden />
-              <span className="hidden min-[480px]:inline">{displayCode}</span>
-              <ChevronDown
-                className="hidden h-3 w-3 shrink-0 transition-transform min-[480px]:block min-[480px]:h-3.5 min-[480px]:w-3.5"
-                strokeWidth={1}
-                style={{transform: open ? "rotate(180deg)" : undefined}}
-              />
-            </>
-          )}
+          <Globe className="h-4 w-4 opacity-70" strokeWidth={1.25} />
+          <p className="font-display text-lg tracking-wide">{displayCode}</p>
+          <p className="text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
+            Display
+          </p>
+        </button>
+        {mobileSheet}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div ref={wrapRef} className="relative">
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-haspopup={isLgUp ? "listbox" : "dialog"}
+          aria-expanded={open}
+          aria-label={`Select display currency, current ${displayCode}`}
+          onClick={() => {
+            if (open) {
+              if (isLgUp) setOpen(false);
+              else requestClose();
+            } else {
+              handleOpen();
+            }
+          }}
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs tracking-[0.12em] text-foreground/80 transition hover:text-accent ${
+            compact ? "" : ""
+          }`}
+        >
+          <Globe className="h-3.5 w-3.5 opacity-70" strokeWidth={1.25} />
+          <span className="hidden min-[480px]:inline">{displayCode}</span>
+          <ChevronDown
+            className="h-3 w-3 opacity-50 transition-transform"
+            style={{transform: open ? "rotate(180deg)" : undefined}}
+            strokeWidth={1.5}
+          />
         </button>
 
         {isLgUp && (
           <div
-            className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-72 max-w-[calc(100vw-2rem)] rounded-xl border py-2 shadow-2xl transition-all duration-300 ease-out origin-top-right"
+            role="dialog"
+            aria-label="Display currency"
+            className="absolute right-0 top-[calc(100%+0.55rem)] z-50 w-72 overflow-hidden rounded-xl border shadow-[0_18px_50px_rgb(var(--shadow-rgb)/0.22)] transition-[opacity,transform,visibility] duration-200 origin-top-right"
             style={{
               background: "var(--surface)",
               borderColor: "var(--border)",
               opacity: open ? 1 : 0,
-              transform: open ? "scale(1) translateY(0)" : "scale(0.95) translateY(-8px)",
+              transform: open
+                ? "scale(1) translateY(0)"
+                : "scale(0.95) translateY(-8px)",
               pointerEvents: open ? "auto" : "none",
               visibility: open ? "visible" : "hidden",
             }}
@@ -1068,27 +993,35 @@ function CurrencyPickerPanel({
   inputRef,
   results,
   displayCode,
-  activeCountryCode,
-  pathname,
-  search,
+  checkoutCurrency,
+  ratesReady,
   onSelect,
-  marketSwitchBusy = false,
   listClassName,
 }: {
   query: string;
   setQuery: (value: string) => void;
   inputRef: RefObject<HTMLInputElement>;
-  results: ShopCurrencyOption[];
+  results: DisplayCurrencyOption[];
   displayCode: string;
-  activeCountryCode: string;
-  pathname: string;
-  search: string;
-  onSelect: (code: string, countryCode: string) => void;
-  marketSwitchBusy?: boolean;
+  checkoutCurrency: string;
+  ratesReady: boolean;
+  onSelect: (code: string) => void;
   listClassName?: string;
 }) {
   return (
     <>
+      <p
+        className="mx-2 mb-2 rounded-md border px-3 py-2 text-[0.65rem] leading-relaxed tracking-wide"
+        style={{
+          borderColor: "var(--border)",
+          background: "var(--surface-2)",
+          color: "var(--muted-foreground)",
+        }}
+      >
+        Approximate display only. Cart and checkout are charged in{" "}
+        <span className="text-foreground">{checkoutCurrency}</span>.
+        {!ratesReady ? " Loading live rates…" : ""}
+      </p>
       <div
         className="mx-2 mb-2 flex items-center gap-2 rounded-md border px-3 pb-2 pt-2"
         style={{borderColor: "var(--border)", background: "var(--background)"}}
@@ -1123,16 +1056,16 @@ function CurrencyPickerPanel({
         <ul
           id="currency-listbox"
           role="listbox"
-          aria-label="Currency"
+          aria-label="Display currency"
           className={`overflow-y-auto overscroll-contain px-2 pb-1 ${listClassName ?? "max-h-[60vh]"}`}
         >
           {results.map((c) => (
             <CurrencyOption
               key={c.code}
               option={c}
-              active={c.countryCode === activeCountryCode}
-              disabled={marketSwitchBusy}
-              onSelect={() => onSelect(c.code, c.countryCode)}
+              active={c.code === displayCode}
+              disabled={!ratesReady && c.code !== checkoutCurrency}
+              onSelect={() => onSelect(c.code)}
             />
           ))}
         </ul>
@@ -1141,97 +1074,54 @@ function CurrencyPickerPanel({
   );
 }
 
-type MarketCartActionData = {
-  cart?: CartApiQueryFragment | null;
-  errors?: Array<{message?: string}>;
-};
-
 function CurrencyOption({
   option,
   active,
   disabled = false,
   onSelect,
 }: {
-  option: ShopCurrencyOption;
+  option: DisplayCurrencyOption;
   active: boolean;
   disabled?: boolean;
   onSelect: () => void;
 }) {
   return (
     <li role="option" aria-selected={active}>
-      <CartForm
-        fetcherKey={`market-${option.countryCode}`}
-        route="/cart"
-        action={CartForm.ACTIONS.BuyerIdentityUpdate}
-        inputs={{
-          buyerIdentity: {
-            countryCode: option.countryCode,
-          },
+      <button
+        type="button"
+        disabled={active || disabled}
+        onClick={onSelect}
+        className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left transition-all duration-200 hover:bg-[var(--surface-2)] focus:bg-[var(--surface-2)] focus:outline-none disabled:opacity-50 lg:py-2.5"
+        style={{
+          color: active ? "var(--accent)" : "var(--foreground)",
+          backgroundColor: active ? "var(--surface-2)" : "transparent",
         }}
       >
-        {(fetcher) => (
-          <>
-            <input type="hidden" name="marketCurrencyCode" value={option.code} />
-            <CurrencyOptionButton
-              option={option}
-              active={active}
-              disabled={disabled}
-              onSelect={onSelect}
-              fetcher={fetcher}
-            />
-          </>
+        <span className="w-5 shrink-0 text-center text-sm font-light">
+          {option.symbol}
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col leading-tight">
+          <span
+            className="text-xs font-medium tracking-[0.1em]"
+            style={{color: active ? "var(--accent)" : "var(--foreground)"}}
+          >
+            {option.code}
+          </span>
+          <span
+            className="truncate text-[0.7rem]"
+            style={{
+              color: active ? "var(--accent)" : "var(--muted-foreground)",
+              opacity: active ? 0.8 : 1,
+            }}
+          >
+            {option.name}
+            {option.code === CHECKOUT_CURRENCY ? " · checkout" : ""}
+          </span>
+        </span>
+        {active && (
+          <Check className="h-4 w-4 shrink-0 text-accent" strokeWidth={1.5} />
         )}
-      </CartForm>
+      </button>
     </li>
-  );
-}
-
-function CurrencyOptionButton({
-  option,
-  active,
-  disabled = false,
-  onSelect,
-  fetcher,
-}: {
-  option: ShopCurrencyOption;
-  active: boolean;
-  disabled?: boolean;
-  onSelect: () => void;
-  fetcher: FetcherWithComponents<MarketCartActionData>;
-}) {
-  return (
-    <button
-      type="submit"
-      disabled={disabled || active || fetcher.state !== "idle"}
-      onClick={() => {
-        if (active) return;
-        onSelect();
-      }}
-      className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left transition-all duration-200 hover:bg-[var(--surface-2)] focus:bg-[var(--surface-2)] focus:outline-none disabled:opacity-50 lg:py-2.5"
-      style={{
-        color: active ? "var(--accent)" : "var(--foreground)",
-        backgroundColor: active ? "var(--surface-2)" : "transparent",
-      }}
-    >
-      <span className="w-5 shrink-0 text-center text-sm font-light">{option.symbol}</span>
-      <span className="flex min-w-0 flex-1 flex-col leading-tight">
-        <span
-          className="text-xs font-medium tracking-[0.1em]"
-          style={{ color: active ? "var(--accent)" : "var(--foreground)" }}
-        >
-          {option.code}
-        </span>
-        <span
-          className="truncate text-[0.7rem]"
-          style={{
-            color: active ? "var(--accent)" : "var(--muted-foreground)",
-            opacity: active ? 0.8 : 1,
-          }}
-        >
-          {option.name}
-        </span>
-      </span>
-      {active && <Check className="h-4 w-4 shrink-0 text-accent" strokeWidth={1.5} />}
-    </button>
   );
 }

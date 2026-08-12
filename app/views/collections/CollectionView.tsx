@@ -11,6 +11,7 @@ import {ProductCatalog} from '~/components/gulriza/ProductCatalog';
 import {CollectionHeroBanner} from '~/components/gulriza/CollectionHeroBanner';
 import {TrustStrip} from '~/components/gulriza/TrustStrip';
 import type {CatalogPageInfo, ProductListScope} from '~/lib/catalog-pagination';
+import {isSolidsCollectionHandle} from '~/lib/solid-family-order';
 import type {Collection, Product} from '~/models/types';
 
 export function CollectionView({
@@ -61,7 +62,9 @@ export function CollectionView({
         products={products}
         pageInfo={pageInfo}
         listSource={listSource}
-        filters={['price']}
+        filters={['price', 'color']}
+        sortKeys={['newest', 'price-asc', 'price-desc']}
+        familyDiverseOrder={isSolidsCollectionHandle(collection.handle)}
         emptyMessage="No pieces in this collection yet."
       />
 

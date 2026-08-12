@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { ShoppingBag, ArrowRight, X } from "lucide-react";
 import type { CartApiQueryFragment } from "storefrontapi.generated";
 import type { RootLoader } from "~/root";
-import { useFormatPrice } from "~/lib/currency-store";
+import { useCheckoutFormatPrice } from "~/lib/currency-store";
 import { CartLineItem } from "~/components/gulriza/CartLineItem";
 import { CartPromoForms } from "~/components/gulriza/CartPromoForms";
 import { CartTotals } from "~/components/gulriza/CartTotals";
@@ -31,7 +31,7 @@ export function CartDrawer({
   const metaPixelId = root?.metaPixelId;
   const lines = cart?.lines?.nodes ?? [];
   const count = cart?.totalQuantity ?? 0;
-  const formatPrice = useFormatPrice();
+  const formatPrice = useCheckoutFormatPrice();
   const promotion = getCartPromotionSummary(cart);
   const displayMoney =
     promotion.hasAdjustments && promotion.total

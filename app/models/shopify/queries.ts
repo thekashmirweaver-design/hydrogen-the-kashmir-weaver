@@ -337,6 +337,36 @@ export const FEATURED_LISTING_PRODUCTS_QUERY = `#graphql
   ${CATALOG_MENU_PRODUCT_FRAGMENT}
 ` as const;
 
+/**
+ * Newest products in a collection for homepage Signature Collections tiles.
+ * Prefer this over filtering the catalog by primary `collectionSlug` — products
+ * often belong to multiple collections (e.g. homepage-featured + weave), and
+ * Storefront returns an arbitrary first collection as the primary slug.
+ */
+export const COLLECTION_PREVIEW_PRODUCTS_QUERY = `#graphql
+  query CollectionPreviewProducts(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+    $first: Int!
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      handle
+      title
+      products(first: $first, sortKey: CREATED, reverse: true) {
+        edges {
+          node {
+            ...CatalogMenuProduct
+          }
+        }
+      }
+    }
+  }
+  ${CATALOG_MONEY_FRAGMENT}
+  ${CATALOG_IMAGE_FRAGMENT}
+  ${CATALOG_MENU_PRODUCT_FRAGMENT}
+` as const;
+
 export const PRODUCT_BY_HANDLE_QUERY = `#graphql
   query CatalogProductByHandle(
     $country: CountryCode

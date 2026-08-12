@@ -72,7 +72,7 @@ export const DUMMY_TEST_PRODUCT: Product = {
   stock: 'in',
   limited: true,
   stockQty: 1,
-  productType: 'Pashmina Shawl',
+  department: 'Pashmina Shawl',
   vendor: 'The Kashmir Weaver',
   tags: ['test', 'dummy', 'solid-pashmina', 'sozni', 'limited-edition'],
   seo: {

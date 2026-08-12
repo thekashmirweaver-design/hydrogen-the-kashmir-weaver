@@ -48,6 +48,20 @@ export function resolveContact(override?: ContactOverride): ContactInfo {
 export const WHATSAPP_MESSAGE =
   "Hi, I'm browsing The Kashmir Weaver collection and would love some assistance.";
 
+export function requestPriceWhatsappMessage(
+  productTitle: string,
+  absoluteProductUrl: string,
+) {
+  return `Hi, I'd like the price for "${productTitle}". ${absoluteProductUrl}`;
+}
+
+export function requestMoreImagesWhatsappMessage(
+  productTitle: string,
+  absoluteProductUrl: string,
+) {
+  return `Hi, I'd like more images of "${productTitle}". ${absoluteProductUrl}`;
+}
+
 export const CONTACT_HREFS = {
   email: contactMailtoHref(CONTACT.email),
   phone: contactTelHref(CONTACT.phone)!,

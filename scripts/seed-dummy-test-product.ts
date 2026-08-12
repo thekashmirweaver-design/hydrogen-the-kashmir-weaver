@@ -385,7 +385,7 @@ async function createProduct(product: Product): Promise<string> {
         title: product.name,
         handle: product.handle,
         descriptionHtml: `<p>${product.description}</p>`,
-        productType: product.productType ?? 'Pashmina Shawl',
+        productType: product.department ?? 'Pashmina Shawl',
         vendor: product.vendor ?? 'The Kashmir Weaver',
         tags: product.tags,
         productOptions,

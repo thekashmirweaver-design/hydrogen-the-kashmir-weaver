@@ -1,5 +1,4 @@
 import type {Route} from './+types/sitemap.editorial[.xml]';
-import type {Storefront} from '@shopify/hydrogen';
 import {getJournalOptions} from '~/lib/catalog-options';
 import {listAllJournalPosts} from '~/controllers';
 import {bookSections} from '~/lib/book/registry';
@@ -35,92 +34,15 @@ const EDITORIAL_PATHS = [
   '/policies/privacy-policy',
 ];
 
-type HreflangAlternate = {
-  hreflang: string;
-  href: string;
-};
-
 type SitemapEntry = {
   loc: string;
   lastmod: string;
-  alternates: HreflangAlternate[];
   image?: {url: string};
 };
 
-const HREFLANG_QUERY = `#graphql
-  query SitemapHreflang($country: CountryCode, $language: LanguageCode)
-  @inContext(country: $country, language: $language) {
-    localization {
-      availableCountries {
-        isoCode
-      }
-    }
-  }
-` as const;
-
-type HreflangQueryResult = {
-  localization?: {
-    availableCountries?: Array<{isoCode?: string | null} | null> | null;
-  } | null;
-};
-
-/**
- * The Kashmir Weaver is English-only content, so every supported Shopify
- * country ships under an `en-XX` hreflang (region-only targeting). When
- * the storefront eventually ships translated locales, this is the single
- * place to inject `de-XX`, `fr-XX`, etc.
- *
- * `x-default` points to the canonical URL with no market parameter — the
- * version users land on when no locale matches.
- */
-async function loadMarketLocales(
-  storefront: Storefront,
-): Promise<string[]> {
-  try {
-    const data = await storefront.query<HreflangQueryResult>(HREFLANG_QUERY, {
-      variables: {language: 'EN', country: 'US'},
-      cache: storefront.CacheLong(),
-    });
-    const countries =
-      data.localization?.availableCountries
-        ?.map((c) => c?.isoCode?.trim().toUpperCase())
-        .filter((cc): cc is string => !!cc) ?? [];
-    return Array.from(new Set(countries)).sort();
-  } catch {
-    return ['US'];
-  }
-}
-
-/**
- * Build per-URL hreflang alternates. `pathname` is always the canonical
- * (no `?country=`) form; the function returns one entry per supported
- * country, each appending `?country=XX`, plus an `x-default` pointing
- * at the canonical itself.
- */
-function buildAlternates(
-  pathname: string,
-  baseUrl: string,
-  locales: string[],
-): HreflangAlternate[] {
-  const canonical = `${baseUrl}${pathname}`;
-  const variants: HreflangAlternate[] = locales.map((cc) => ({
-    hreflang: `en-${cc}`,
-    href: `${canonical}?country=${cc}`,
-  }));
-  variants.push({hreflang: 'x-default', href: canonical});
-  return variants;
-}
-
 function entryToXml(entry: SitemapEntry, priority: string): string {
   const parts: string[] = [`    <loc>${xmlEscape(entry.loc)}</loc>`];
-  for (const alt of entry.alternates) {
-    parts.push(
-      `    <xhtml:link rel="alternate" hreflang="${xmlEscape(
-        alt.hreflang,
-      )}" href="${xmlEscape(alt.href)}" />`,
-    );
-  }
-  parts.push(`    <lastmod>${entry.lastmod}</lastmod>`);
+  parts.push(`    <lastmod>${xmlEscape(entry.lastmod)}</lastmod>`);
   parts.push(`    <changefreq>weekly</changefreq>`);
   parts.push(`    <priority>${priority}</priority>`);
   if (entry.image) {
@@ -139,11 +61,7 @@ function priorityFor(pathname: string): string {
   return '0.7';
 }
 
-function journalEntry(
-  post: JournalPost,
-  baseUrl: string,
-  locales: string[],
-): SitemapEntry {
+function journalEntry(post: JournalPost, baseUrl: string): SitemapEntry {
   // Each journal post carries its own publication date — surface it as
   // <lastmod> so Google can prioritise recently-updated articles. If the
   // stored date isn't a clean YYYY-MM-DD, fall back to today so we never
@@ -158,7 +76,6 @@ function journalEntry(
   return {
     loc: `${baseUrl}${pathname}`,
     lastmod,
-    alternates: buildAlternates(pathname, baseUrl, locales),
     image: {
       url: imageSrc,
     },
@@ -169,12 +86,10 @@ function staticEntry(
   pathname: string,
   baseUrl: string,
   lastmod: string,
-  locales: string[],
 ): SitemapEntry {
   return {
     loc: `${baseUrl}${pathname}`,
     lastmod,
-    alternates: buildAlternates(pathname, baseUrl, locales),
   };
 }
 
@@ -186,19 +101,18 @@ export async function loader({request, context}: Route.LoaderArgs) {
   const lastmod = new Date().toISOString().split('T')[0];
 
   const journalOptions = getJournalOptions(context);
-  const [journalPosts, locales] = await Promise.all([
-    listAllJournalPosts(journalOptions),
-    loadMarketLocales(context.storefront),
-  ]);
+  const journalPosts = await listAllJournalPosts(journalOptions);
 
+  // English-only storefront: one URL per page. Market/currency is session-
+  // backed (optional one-shot `?country=`), not a distinct indexable URL.
   const staticEntries = EDITORIAL_PATHS.map((pathname) =>
-    staticEntry(pathname, baseUrl, lastmod, locales),
+    staticEntry(pathname, baseUrl, lastmod),
   );
   const journalEntries = journalPosts.map((post) =>
-    journalEntry(post, baseUrl, locales),
+    journalEntry(post, baseUrl),
   );
   const bookEntries = bookSections.map((section) =>
-    staticEntry(`/book/${section.slug}`, baseUrl, lastmod, locales),
+    staticEntry(`/book/${section.slug}`, baseUrl, lastmod),
   );
   const entries = [...staticEntries, ...bookEntries, ...journalEntries];
 
@@ -209,7 +123,7 @@ export async function loader({request, context}: Route.LoaderArgs) {
     .join('\n');
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${urls}
 </urlset>`;
 

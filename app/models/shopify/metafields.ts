@@ -13,6 +13,8 @@ export const PRODUCT_METAFIELDS = {
   returnsCare: 'returns_care',
   shadePalette: 'shade_palette',
   showColourStudio: 'show_colour_studio',
+  requestPrice: 'request_price',
+  requestMoreImages: 'request_more_images',
 } as const;
 
 export const COLLECTION_METAFIELDS = {

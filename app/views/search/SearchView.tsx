@@ -71,9 +71,9 @@ export function SearchView({
           Results for &ldquo;{term}&rdquo;
         </p>
       )}
-      <div ref={gridRef} className="mt-12 grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-3">
+      <div ref={gridRef} className="mt-12 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-8 sm:gap-y-12 lg:grid-cols-4">
         {products.map((product) => (
-          <ProductTile key={product.handle} product={product} />
+          <ProductTile key={product.handle} product={product} sizes="(min-width: 1024px) 25vw, 50vw" />
         ))}
       </div>
       {products.length > 0 && (hasNextPage || hasPreviousPage) && (

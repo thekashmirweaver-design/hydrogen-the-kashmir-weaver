@@ -85,7 +85,11 @@ export type Product = {
   stock: "in" | "out";
   limited?: boolean;
   stockQty?: number;
-  productType?: string;
+  /**
+   * Storefront “department” — sourced from Shopify’s native Product type
+   * (`productType` / `product_type`). Admin still labels the field “Product type”.
+   */
+  department?: string;
   vendor?: string;
   tags?: string[];
   seo?: { title?: string; description?: string };
@@ -96,10 +100,19 @@ export type Product = {
   reviews?: {rating: number; count: number};
   /** Solid pashmina shade palette (from Shopify metafield or static catalog). */
   shades?: Shade[];
+  /**
+   * Listing-friendly colour facets (option values + optional hex).
+   * Populated for catalog tiles; omitted on slim menu snapshots when unused.
+   */
+  colors?: Array<{name: string; hex?: string}>;
   /** PDP uses local recolor canvas (image set 0) instead of Shopify gallery. */
   solidRecolor?: boolean;
   /** Whether the colour studio / Try Colours button is shown on the PDP. */
   showColourStudio?: boolean;
+  /** When true, hide storefront prices and ATC; shoppers request price via WhatsApp. */
+  requestPrice?: boolean;
+  /** When true, PDP shows a WhatsApp CTA to request more product images. */
+  requestMoreImages?: boolean;
 };
 
 export type CatalogSnapshot = {

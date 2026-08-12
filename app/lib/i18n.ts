@@ -63,7 +63,10 @@ export function persistBuyerMarket(
 
 /**
  * Resolve buyer locale for Storefront API `@inContext(country, language)`.
- * Priority: URL `?country=` (when aligned with session) → session → default US/EN.
+ * Priority: URL `?country=` (one-shot deep link) → session → default US/EN.
+ *
+ * Everyday browsing uses session only; the client strips `?country=` after
+ * apply so the param does not linger on shareable/canonical URLs.
  *
  * Browser Accept-Language is intentionally ignored for market/country so the
  * storefront always opens in USD unless the buyer chooses another currency.
@@ -78,26 +81,20 @@ export function getI18nFromRequest(
     url.searchParams.get('language')?.toUpperCase() ??
     url.searchParams.get('locale')?.split('-')[0]?.toUpperCase();
 
+  // Deep link / campaign: `?country=` wins once, then session owns the market.
   if (countryParam && isCountryCode(countryParam)) {
-    const sessionCurrency = getPersistedMarketCurrency(session);
-    const sessionCountry = session?.get(SESSION_COUNTRY_KEY)?.toUpperCase();
-    const urlDiffersFromSession =
-      sessionCurrency &&
-      sessionCountry &&
-      isCountryCode(sessionCountry) &&
-      sessionCountry !== countryParam;
-
-    if (!urlDiffersFromSession) {
-      const i18n: I18nBase = {
-        country: countryParam,
-        language:
-          languageParam && isLanguageCode(languageParam)
-            ? languageParam
-            : DEFAULT_I18N.language,
-      };
-      persistBuyerMarket(session, i18n.country, i18n.language);
-      return i18n;
-    }
+    // Clear stored currency on explicit market deep-link so the destination
+    // country's native currency can win (even if country was already set).
+    session?.unset(SESSION_CURRENCY_KEY);
+    const i18n: I18nBase = {
+      country: countryParam,
+      language:
+        languageParam && isLanguageCode(languageParam)
+          ? languageParam
+          : DEFAULT_I18N.language,
+    };
+    persistBuyerMarket(session, i18n.country, i18n.language);
+    return i18n;
   }
 
   const sessionCountry = session?.get(SESSION_COUNTRY_KEY)?.toUpperCase();
@@ -116,18 +113,6 @@ export function getI18nFromRequest(
       i18n.language,
       session?.get(SESSION_CURRENCY_KEY) ?? undefined,
     );
-    return i18n;
-  }
-
-  if (countryParam && isCountryCode(countryParam)) {
-    const i18n: I18nBase = {
-      country: countryParam,
-      language:
-        languageParam && isLanguageCode(languageParam)
-          ? languageParam
-          : DEFAULT_I18N.language,
-    };
-    persistBuyerMarket(session, i18n.country, i18n.language);
     return i18n;
   }
 

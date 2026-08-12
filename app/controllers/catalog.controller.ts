@@ -4,6 +4,7 @@ import type {CatalogSnapshot, Collection, Product} from '~/models/types';
 import {
   loadHomepageFeatured,
   pickCollectionsByHandles,
+  resolveCollectionPreviewCount,
 } from '~/lib/homepage-featured';
 import {toListingProducts} from '~/lib/listing-product';
 import {resolveCatalogSnapshot} from '~/lib/shared-catalog';
@@ -94,14 +95,15 @@ export async function getHomePage(
   featured?: Awaited<ReturnType<typeof loadHomepageFeatured>>,
   catalog?: CatalogSnapshot,
 ): Promise<HomePageViewModel> {
-  // Prefer the caller-supplied snapshot (menu catalog on `/`) — never force a
-  // full PDP catalog fetch just to render a few collection preview tiles.
+  // Prefer the caller-supplied snapshot (menu catalog on `/`) for collection
+  // metadata — preview tiles are fetched per collection so multi-membership
+  // products (e.g. homepage-featured + checker) still appear under their weave.
   const snapshot =
     catalog ??
     (options
       ? await CatalogRepository.getCatalogMenuSnapshot(options)
       : await resolveCatalogSnapshot(options, catalog));
-  const {products, collections} = snapshot;
+  const {collections} = snapshot;
   const featuredProducts = toListingProducts(
     await CatalogRepository.listFeaturedCollectionProducts(
       options,
@@ -112,15 +114,23 @@ export async function getHomePage(
   const featuredCollections = pickCollectionsByHandles(
     collections,
     featured?.collectionHandles ?? [],
-    {limit: featured?.collectionCount ?? 2},
+    {limit: featured?.collectionCount},
   );
-  const previewCount = featured?.collectionPreviewCount ?? 3;
+  const previewCount = resolveCollectionPreviewCount(
+    featured?.collectionPreviewCount,
+  );
   const previewProducts = toListingProducts(
-    featuredCollections.flatMap((collection) =>
-      products
-        .filter((product) => product.collectionSlug === collection.handle)
-        .slice(0, previewCount),
-    ),
+    (
+      await Promise.all(
+        featuredCollections.map((collection) =>
+          CatalogRepository.listCollectionPreviewProducts(
+            collection.handle,
+            previewCount,
+            options,
+          ),
+        ),
+      )
+    ).flat(),
   );
   return {
     products: previewProducts,
@@ -158,7 +168,9 @@ export async function getProductPage(
           p.handle !== product.handle &&
           p.collectionSlug === product.collectionSlug,
       )
-      .slice(0, 3),
+      .slice()
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+      .slice(0, 4),
   );
 
   const url = `/products/${handle}`;

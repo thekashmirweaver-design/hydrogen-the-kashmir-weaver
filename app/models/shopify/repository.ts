@@ -24,6 +24,7 @@ import {
   ALL_PRODUCTS_QUERY_NO_INVENTORY,
   COLLECTION_BY_HANDLE_QUERY,
   COLLECTION_BY_HANDLE_QUERY_NO_INVENTORY,
+  COLLECTION_PREVIEW_PRODUCTS_QUERY,
   FEATURED_LISTING_PRODUCTS_QUERY,
   FOOTER_MENU_HANDLE,
   HEADER_MENU_HANDLE,
@@ -233,6 +234,41 @@ export async function listFeaturedListingProducts(
   return (
     data.collection?.products.edges.map(({node}) => mapMenuProduct(node)) ?? []
   );
+}
+
+/** Newest menu-weight products in a collection (homepage weave previews). */
+export async function listCollectionPreviewProducts(
+  storefront: Storefront,
+  handle: string,
+  first = 4,
+): Promise<Product[]> {
+  type CollectionPreviewResult = {
+    collection?: {
+      handle: string;
+      title: string;
+      products: {edges: Array<{node: ShopifyMenuProductNode}>};
+    } | null;
+  };
+  const data = await storefront.query<CollectionPreviewResult>(
+    COLLECTION_PREVIEW_PRODUCTS_QUERY,
+    {
+      variables: {handle, first},
+      cache: productCache(storefront),
+    },
+  );
+  const collection = data.collection;
+  if (!collection) return [];
+
+  return collection.products.edges.map(({node}) => {
+    const product = mapMenuProduct(node);
+    // Force the queried collection — Storefront's first membership may be
+    // homepage-featured (or another shared collection), which breaks home tiles.
+    return {
+      ...product,
+      collectionSlug: collection.handle,
+      collectionName: collection.title,
+    };
+  });
 }
 
 export async function listMenuProducts(

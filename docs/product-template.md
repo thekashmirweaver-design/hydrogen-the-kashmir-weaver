@@ -129,7 +129,7 @@ to compare product code <strong>{CODE}</strong> with the selected code.</em></p>
 
 | Field | Required | Example | Source |
 |-------|----------|---------|--------|
-| `product_type` | no | `Plain` | Shopify product type |
+| `department` | no | `pashmina` | Shopify native **Product type** (`product_type` / `productType`). Admin still shows “Product type”; the storefront model calls it `department`. |
 | `vendor` | no | `The Kashmir Weaver` | |
 | `tags` | no | `["pashmina", "plain", "solid", "cream"]` | Free-form strings |
 | `material` | yes | `100% pure pashmina cashmere` | `custom.material` metafield |
@@ -137,7 +137,7 @@ to compare product code <strong>{CODE}</strong> with the selected code.</em></p>
 | `weave` | yes | `Plain hand-woven` | `custom.weave` metafield |
 | `care` | no | `Dry clean only. Store flat in a cool, dry place.` | `custom.care` metafield |
 
-**Observed product types:** `Plain`, `Pashmina Shawl`, `Bridal Pashmina Shawl`, `Kani Pashmina Shawl`, `Pashmina Stole`, `Reversible Pashmina Shawl`, `Pashmina Scarf`
+**Department (Shopify Product type):** Prefer a short department value such as `pashmina` or `carpet`. Legacy catalog values also include `Plain`, `Pashmina Shawl`, `Bridal Pashmina Shawl`, `Kani Pashmina Shawl`, `Pashmina Stole`, `Reversible Pashmina Shawl`, `Pashmina Scarf`. Do **not** create a parallel `custom.product_type` metafield — use the native Product type field.
 
 **Observed tags:** `pashmina`, `plain`, `solid`, `jamawar-embroidery`, `sozni`, `floral`, `zardozi`, `limited`, `paisley`, `jamawar`, `bridal`, `archive`, `naturally-dyed`, `kani-pashmina`, `kani`, `buta`, `stole`, `reversible-pashmina`, `reversible`, `double-face`, `scarf`, `jacquard`, `solid-pashmina`
 
@@ -193,7 +193,7 @@ Shade palette is defined in `app/models/static/shades.ts` and `palette.txt` in o
     "title": "Handwoven Luxury Solid Cream Yellow Cashmere Pashmina Shawl",
     "body_html": "<p>Experience the timeless beauty of our <strong>Cream Yellow Cashmere Pashmina</strong>...</p>",
     "vendor": "The Kashmir Weaver",
-    "product_type": "Plain",
+    "product_type": "pashmina",
     "status": "unlisted",
     "tags": ["pashmina", "plain", "solid", "cream-yellow"],
     "metafields_global_title_tag": "Handwoven Luxury Solid Cream Yellow Cashmere Pashmina Shawl",

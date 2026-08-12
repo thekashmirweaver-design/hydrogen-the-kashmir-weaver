@@ -15,11 +15,25 @@ export type HomepageFeatured = {
   featuredCount: number | null;
   bestSellingCount: number;
   newestCount: number;
-  /** Max collections in the homepage Signature Collections section (order from collectionHandles). */
+  /** Max collections in the homepage Signature Collections section (order from collectionHandles). Omit to show all picked handles. */
   collectionCount?: number;
   /** Product tiles shown under each homepage collection. */
   collectionPreviewCount: number;
 };
+
+/** Default product tiles under each homepage Signature Collection. */
+export const DEFAULT_COLLECTION_PREVIEW_COUNT = 4;
+
+/** Parse metafield preview count; missing/invalid falls back to default. */
+export function resolveCollectionPreviewCount(
+  value: number | string | null | undefined,
+): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n) || n <= 0) {
+    return DEFAULT_COLLECTION_PREVIEW_COUNT;
+  }
+  return Math.floor(n);
+}
 
 /** Resolve metafield featuredCount: positive int caps; null/0/"all" = uncapped. */
 export function resolveFeaturedCount(
@@ -101,7 +115,9 @@ export async function loadHomepageFeatured(
       newestCount: parsed?.newestCount ?? 8,
       featuredCount: resolveFeaturedCount(parsed?.featuredCount),
       collectionCount: parsed?.collectionCount,
-      collectionPreviewCount: parsed?.collectionPreviewCount ?? 3,
+      collectionPreviewCount: resolveCollectionPreviewCount(
+        parsed?.collectionPreviewCount,
+      ),
     };
   } catch {
     return {
@@ -110,7 +126,7 @@ export async function loadHomepageFeatured(
       bestSellingCount: 8,
       newestCount: 8,
       featuredCount: null,
-      collectionPreviewCount: 3,
+      collectionPreviewCount: DEFAULT_COLLECTION_PREVIEW_COUNT,
     };
   }
 }

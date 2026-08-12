@@ -13,6 +13,7 @@ import type {ShopSettings} from '~/lib/shop-settings';
 import type {LocalizationSnapshot} from '~/lib/localization';
 import {CatalogProvider} from '~/contexts/catalog-context';
 import {LocalizationProvider} from '~/contexts/localization-context';
+import {DisplayCurrencyProvider} from '~/contexts/display-currency-context';
 import {CartDrawerProvider} from '~/contexts/cart-drawer-context';
 import {SiteHeader} from '~/components/gulriza/SiteHeader';
 import {SiteFooter} from '~/components/gulriza/SiteFooter';
@@ -167,29 +168,31 @@ export function PageLayout({
 
   return (
     <LocalizationProvider localization={localization}>
-      <CartDrawerProvider cart={cart}>
-        <ScrollToTop />
-        <CatalogProvider catalog={resolvedCatalog}>
-          {chromeReady ? (
-            <Suspense fallback={null}>
-              <WebMcpTools />
-            </Suspense>
-          ) : null}
-          <ChromeHeader
-            shopSettings={shopSettings}
-            publicStoreDomain={publicStoreDomain}
-            publicAccessToken={publicAccessToken}
-            customerAccessToken={customerAccessToken}
-          />
-          <RouteTransitionOutlet routeKey={routeKey}>{children}</RouteTransitionOutlet>
-          {chromeReady ? (
-            <Suspense fallback={null}>
-              <FabSpeedDial />
-            </Suspense>
-          ) : null}
-          <SiteFooter shopSettings={shopSettings} />
-        </CatalogProvider>
-      </CartDrawerProvider>
+      <DisplayCurrencyProvider>
+        <CartDrawerProvider cart={cart}>
+          <ScrollToTop />
+          <CatalogProvider catalog={resolvedCatalog}>
+            {chromeReady ? (
+              <Suspense fallback={null}>
+                <WebMcpTools />
+              </Suspense>
+            ) : null}
+            <ChromeHeader
+              shopSettings={shopSettings}
+              publicStoreDomain={publicStoreDomain}
+              publicAccessToken={publicAccessToken}
+              customerAccessToken={customerAccessToken}
+            />
+            <RouteTransitionOutlet routeKey={routeKey}>{children}</RouteTransitionOutlet>
+            {chromeReady ? (
+              <Suspense fallback={null}>
+                <FabSpeedDial />
+              </Suspense>
+            ) : null}
+            <SiteFooter shopSettings={shopSettings} />
+          </CatalogProvider>
+        </CartDrawerProvider>
+      </DisplayCurrencyProvider>
     </LocalizationProvider>
   );
 }

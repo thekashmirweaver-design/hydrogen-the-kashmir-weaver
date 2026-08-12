@@ -3,9 +3,8 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import {Eyebrow, Hairline} from '~/components/gulriza/Eyebrow';
-import {CollectionStoryMobile} from '~/components/gulriza/CollectionStoryMobile';
-import {CollectionHeroBanner} from '~/components/gulriza/CollectionHeroBanner';
-import {FeaturedProducts} from '~/components/gulriza/FeaturedProducts';
+// Featured Pieces carousel — kept for journal articles; commented out on home.
+// import {FeaturedProducts} from '~/components/gulriza/FeaturedProducts';
 import {HeroDeliveryLine} from '~/components/gulriza/HeroDeliveryLine';
 import {Reveal} from '~/components/gulriza/Reveal';
 import {OriginMap} from '~/components/gulriza/OriginMap';
@@ -13,7 +12,9 @@ import {ProductTile} from '~/components/gulriza/ProductTile';
 import {ScrollIndicator} from '~/components/gulriza/ScrollIndicator';
 import {TrustStrip} from '~/components/gulriza/TrustStrip';
 import {EditorialImage, HeroPicture} from '~/components/gulriza/CatalogImage';
+import {DEFAULT_COLLECTION_PREVIEW_COUNT} from '~/lib/homepage-featured';
 import {heroDark, heroLight, type HeroImageSet} from '~/lib/hero-image-urls';
+import {isSolidsCollectionHandle} from '~/lib/solid-family-order';
 import {useTheme} from '~/lib/theme';
 import type {Collection, Product} from '~/models/types';
 
@@ -44,11 +45,11 @@ function localHeroSet(url?: string): HeroImageSet | null {
 
 export function HomeView({
   products,
-  featuredProducts,
+  featuredProducts: _featuredProducts,
   featuredCollections,
   heroImageUrl,
   heroAlt,
-  collectionPreviewCount = 3,
+  collectionPreviewCount = DEFAULT_COLLECTION_PREVIEW_COUNT,
 }: {
   products: Product[];
   collections?: Collection[];
@@ -65,7 +66,8 @@ export function HomeView({
     <div>
       <Hero heroImageUrl={heroImageUrl} heroAlt={heroAlt} />
       <TrustStrip />
-      <FeaturedProducts products={featuredProducts} />
+      {/* Featured Pieces — temporarily hidden on the homepage */}
+      {/* <FeaturedProducts products={featuredProducts} /> */}
       <SignatureCollections
         collections={featuredCollections}
         products={products}
@@ -218,43 +220,10 @@ function Hero({
   );
 }
 
-function ExploreCollectionCta({
-  handle,
-  name,
-  onPhoto = false,
-}: {
-  handle: string;
-  name: string;
-  onPhoto?: boolean;
-}) {
-  return (
-    <Link
-      to={`/collections/${handle}`}
-      prefetch="intent"
-      className={
-        onPhoto
-          ? 'mt-8 inline-flex min-h-11 w-max items-center gap-3 rounded-full border px-5 py-3 text-[0.65rem] font-medium tracking-widest uppercase transition-all duration-300 hover:opacity-90 active:opacity-80 md:mt-10 md:text-xs'
-          : 'mt-8 inline-flex min-h-11 w-max items-center gap-3 rounded-full border border-accent/40 bg-accent/5 px-5 py-3 text-[0.65rem] font-medium tracking-widest text-accent uppercase transition-all duration-300 hover:bg-accent/10 active:opacity-80 md:mt-10 md:text-xs'
-      }
-      style={
-        onPhoto
-          ? {
-              borderColor: 'color-mix(in srgb, var(--on-photo-accent) 55%, transparent)',
-              color: 'var(--on-photo-accent)',
-              background: 'rgb(var(--photo-scrim-rgb) / 0.32)',
-            }
-          : undefined
-      }
-    >
-      Shop {name} <ArrowRight className="h-3.5 w-3.5" />
-    </Link>
-  );
-}
-
 function SignatureCollections({
   collections,
   products,
-  previewCount = 3,
+  previewCount = DEFAULT_COLLECTION_PREVIEW_COUNT,
 }: {
   collections: Collection[];
   products: Product[];
@@ -279,9 +248,19 @@ function SignatureCollections({
 
       <div className="mt-24 flex flex-col gap-32 md:gap-40">
         {collections.map((c, i) => {
-          const previewProducts = products
-            .filter((p) => p.collectionSlug === c.handle)
-            .slice(0, previewCount);
+          // Solids arrive already family-diversified from the loader — keep that
+          // order. Other weaves still show newest-first.
+          const inCollection = products.filter(
+            (p) => p.collectionSlug === c.handle,
+          );
+          const previewProducts = isSolidsCollectionHandle(c.handle)
+            ? inCollection.slice(0, previewCount)
+            : inCollection
+                .slice()
+                .sort(
+                  (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
+                )
+                .slice(0, previewCount);
           const nameParts = c.name.split(' ');
           const firstName = nameParts[0];
           const restName = nameParts.slice(1).join(' ');
@@ -293,46 +272,41 @@ function SignatureCollections({
                   <Hairline />
                 </div>
               )}
-              <Reveal className="relative w-full">
-                <CollectionHeroBanner hero={c.hero} zoomOnHover>
-                  <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1600px] px-6 pb-10 md:px-10 md:pb-16">
-                    <Eyebrow>{c.tagline}</Eyebrow>
-                    <h3
-                      className="font-display mt-4 text-3xl leading-[1.1] text-[var(--on-photo-fg)] sm:text-4xl md:mt-6 md:text-5xl"
-                      style={{fontWeight: 400}}
-                    >
-                      {firstName}{' '}
-                      {restName ? (
-                        <span style={{fontStyle: 'italic'}}>{restName}</span>
-                      ) : null}
-                    </h3>
-                    <p className="mt-6 hidden max-w-xl text-base leading-relaxed text-[var(--on-photo-muted)] md:block">
-                      {c.story}
-                    </p>
-                    <div className="hidden md:block">
-                      <ExploreCollectionCta handle={c.handle} name={c.name} onPhoto />
-                    </div>
-                  </div>
-                </CollectionHeroBanner>
 
-                <div className="mx-auto max-w-[1600px] px-6 pt-8 md:hidden">
-                  <CollectionStoryMobile text={c.story} />
-                  <ExploreCollectionCta handle={c.handle} name={c.name} />
-                </div>
-              </Reveal>
-
-              <div className="mx-auto mt-20 max-w-[1600px] px-6 md:px-10">
-                <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 md:gap-x-8 lg:grid-cols-3">
+              <div className="mx-auto max-w-[1600px] px-6 md:px-10">
+                <Reveal>
+                  <Eyebrow>Shop by Category</Eyebrow>
+                  <h3
+                    className="font-display mt-4 text-2xl leading-[1.1] sm:text-3xl md:text-4xl"
+                    style={{fontWeight: 400}}
+                  >
+                    {firstName}{' '}
+                    {restName ? (
+                      <span style={{fontStyle: 'italic'}}>{restName}</span>
+                    ) : null}
+                  </h3>
+                </Reveal>
+                <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:gap-x-8 md:gap-y-12 lg:grid-cols-4">
                   {previewProducts.map((p, j) => (
                     <Reveal key={p.handle} delay={j * 120}>
                       <ProductTile
                         product={p}
                         priority={false}
-                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        sizes="(min-width: 1024px) 25vw, 50vw"
                       />
                     </Reveal>
                   ))}
                 </div>
+                <Reveal className="mt-12 flex justify-center md:mt-16">
+                  <Link
+                    to={`/collections/${c.handle}`}
+                    prefetch="intent"
+                    className="tracked inline-flex w-full items-center justify-center gap-3 px-10 py-4 font-medium transition hover:opacity-90 sm:w-auto"
+                    style={{background: 'var(--accent)', color: 'var(--background)'}}
+                  >
+                    View all <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+                  </Link>
+                </Reveal>
               </div>
             </div>
           );

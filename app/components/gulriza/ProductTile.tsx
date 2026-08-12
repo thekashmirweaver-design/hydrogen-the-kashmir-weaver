@@ -227,7 +227,7 @@ export function ProductTile({
         >
           {product.name}
         </Link>
-        {priceBlock}
+        {product.requestPrice ? null : priceBlock}
       </div>
     </article>
   );

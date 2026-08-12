@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { Check, ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import type { Product } from "~/models/types";
 import { useCatalog } from "~/contexts/catalog-context";
 import { ProductTile } from "~/components/gulriza/ProductTile";
@@ -8,10 +8,15 @@ import { useLocalization } from "~/contexts/localization-context";
 import type { ShopCurrencyOption } from "~/lib/localization";
 import { useFocusTrap } from "~/hooks/use-focus-trap";
 import { lockScroll, unlockScroll } from "~/lib/scroll-lock";
-import { ShadeDropdown } from "~/components/gulriza/ShadeDropdown";
-import { collectShadesFromProducts, getDefaultSolidShadeCode } from "~/lib/solid-product";
+import { ShadeSwatch } from "~/components/gulriza/ShadeSwatch";
+import {
+  collectColorsFromProducts,
+  productMatchesColors,
+  type CatalogColor,
+} from "~/lib/catalog-colors";
 import type { CatalogPageInfo, CatalogFilters, ProductListScope, SortKey } from "~/lib/catalog-pagination";
 import { DEFAULT_CATALOG_SORT, productMatchesCollections } from "~/lib/catalog-pagination";
+import { orderProductsBySolidFamily } from "~/lib/solid-family-order";
 import { usePagePagination } from "~/hooks/use-page-pagination";
 import { PagePagination } from "~/components/gulriza/PagePagination";
 
@@ -21,15 +26,20 @@ type Filters = {
   collections: Set<string>;
   priceMin: number;
   priceMax: number;
-  colorCode: string;
+  colors: Set<string>;
 };
 
-const SORT_OPTIONS: { id: SortKey; label: string }[] = [
-  { id: "featured", label: "Featured" },
+const ALL_SORT_OPTIONS: { id: SortKey; label: string }[] = [
   { id: "newest", label: "Newest" },
-  { id: "price-asc", label: "Price — Low to High" },
-  { id: "price-desc", label: "Price — High to Low" },
-  { id: "best-selling", label: "Best Selling" },
+  { id: "price-asc", label: "Low to High" },
+  { id: "price-desc", label: "High to Low" },
+];
+
+/** Default catalog sorts (shop + collections). */
+const DEFAULT_SORT_KEYS: SortKey[] = [
+  "newest",
+  "price-asc",
+  "price-desc",
 ];
 
 export function ProductCatalog({
@@ -37,24 +47,42 @@ export function ProductCatalog({
   pageInfo,
   listSource,
   filters: enabled = ["collection", "price"],
+  sortKeys = DEFAULT_SORT_KEYS,
   resultsLabel = "pieces",
   emptyMessage,
   id,
+  familyDiverseOrder = false,
 }: {
   products: Product[];
   pageInfo?: CatalogPageInfo;
   listSource?: ProductListScope;
   /** Which filter facets to show. Pass [] to hide sidebar entirely (sort-only). */
   filters?: FilterKey[];
+  /** Sort methods exposed in the dropdown. */
+  sortKeys?: SortKey[];
   resultsLabel?: string;
   /** Override empty grid copy (e.g. collection pages with no filters). */
   emptyMessage?: string;
   /** Anchor id for in-page navigation (e.g. collection page section nav). */
   id?: string;
+  /**
+   * After primary sort/filters, re-order so adjacent tiles prefer different
+   * solid colour families (Solids collection only).
+   */
+  familyDiverseOrder?: boolean;
 }) {
   const { collections } = useCatalog();
   const paginationEnabled = Boolean(listSource && pageInfo);
-  const [sort, setSort] = useState<SortKey>(DEFAULT_CATALOG_SORT);
+  const sortOptions = useMemo(
+    () =>
+      ALL_SORT_OPTIONS.filter((option) => sortKeys.includes(option.id)),
+    [sortKeys],
+  );
+  const defaultSort =
+    sortKeys.includes(DEFAULT_CATALOG_SORT)
+      ? DEFAULT_CATALOG_SORT
+      : (sortKeys[0] ?? DEFAULT_CATALOG_SORT);
+  const [sort, setSort] = useState<SortKey>(defaultSort);
   const [priceMinFilter, setPriceMinFilter] = useState<number | undefined>();
   const [priceMaxFilter, setPriceMaxFilter] = useState<number | undefined>();
   const [collectionFilter, setCollectionFilter] = useState<string[]>([]);
@@ -92,26 +120,26 @@ export function ProductCatalog({
     return { min, max };
   }, [products]);
 
-  const availableShades = useMemo(
-    () => (enabled.includes("color") ? collectShadesFromProducts(products) : []),
-    [enabled, products],
-  );
-  const defaultColorCode = useMemo(
-    () => getDefaultSolidShadeCode(availableShades),
-    [availableShades],
+  const availableColors = useMemo(
+    () =>
+      enabled.includes("color")
+        ? collectColorsFromProducts([...initialProducts, ...products])
+        : [],
+    [enabled, initialProducts, products],
   );
 
   const initial: Filters = {
     collections: new Set(),
     priceMin: priceBounds.min,
     priceMax: priceBounds.max,
-    colorCode: defaultColorCode,
+    colors: new Set(),
   };
 
-  const showColorFilter = enabled.includes("color") && availableShades.length > 0;
+  const showColorFilter = enabled.includes("color") && availableColors.length > 0;
 
   const [filters, setFilters] = useState<Filters>(initial);
   const [drawer, setDrawer] = useState(false);
+  const [colorQuery, setColorQuery] = useState("");
   const drawerRef = useRef<HTMLDivElement>(null);
   useFocusTrap(drawer, drawerRef);
 
@@ -160,55 +188,146 @@ export function ProductCatalog({
           p.price.amount >= resolvedFilters.priceMin &&
           p.price.amount <= resolvedFilters.priceMax,
       );
+    if (showColorFilter && resolvedFilters.colors.size) {
+      list = list.filter((p) =>
+        productMatchesColors(p, [...resolvedFilters.colors]),
+      );
+    }
 
     if (!paginationEnabled) {
       if (sort === "price-asc") list.sort((a, b) => a.price.amount - b.price.amount);
       else if (sort === "price-desc") list.sort((a, b) => b.price.amount - a.price.amount);
       else if (sort === "newest")
         list.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-      else if (sort === "best-selling")
-        list.sort((a, b) => {
-          const score = (p: Product) =>
-            (p.tags?.some((t) => /best-?sell/i.test(t)) ? 2 : 0) +
-            (p.limited ? 1 : 0);
-          return score(b) - score(a);
-        });
+    }
+    // Paginated Solids already arrive family-diversified from the API — only
+    // re-run after client-only filters (or non-paginated catalogs) so "load
+    // more" does not reshuffle tiles already on screen.
+    const colorFilterActive =
+      showColorFilter && resolvedFilters.colors.size > 0;
+    if (familyDiverseOrder && (!paginationEnabled || colorFilterActive)) {
+      return orderProductsBySolidFamily(list);
     }
     return list;
-  }, [enabled, resolvedFilters, sort, products, paginationEnabled]);
+  }, [enabled, resolvedFilters, sort, products, paginationEnabled, showColorFilter, familyDiverseOrder]);
 
-  const toggle = (key: "collections", value: string) => {
+  const toggle = (key: "collections" | "colors", value: string) => {
     setFilters((f) => {
       const next = { ...f, [key]: new Set(f[key]) } as Filters;
       const s = next[key] as Set<string>;
       if (s.has(value)) s.delete(value);
       else s.add(value);
-      if (paginationEnabled) {
+      if (key === "collections" && paginationEnabled) {
         setCollectionFilter([...s]);
       }
       return next;
     });
   };
 
+  const priceActive =
+    enabled.includes("price") &&
+    (resolvedFilters.priceMin !== priceBounds.min ||
+      resolvedFilters.priceMax !== priceBounds.max);
+
   const activeCount =
     (enabled.includes("collection") ? resolvedFilters.collections.size : 0) +
-    (enabled.includes("price") &&
-    (resolvedFilters.priceMin !== priceBounds.min ||
-      resolvedFilters.priceMax !== priceBounds.max)
-      ? 1
-      : 0) +
-    (showColorFilter && resolvedFilters.colorCode !== defaultColorCode ? 1 : 0);
+    (priceActive ? 1 : 0) +
+    (showColorFilter ? resolvedFilters.colors.size : 0);
 
   const reset = () => {
     setFilters(initial);
-    if (paginationEnabled) setCollectionFilter([]);
+    setColorQuery("");
+    if (paginationEnabled) {
+      setCollectionFilter([]);
+      setPriceMinFilter(undefined);
+      setPriceMaxFilter(undefined);
+    }
   };
 
+  const resetPrice = () => {
+    setFilters((f) => ({
+      ...f,
+      priceMin: priceBounds.min,
+      priceMax: priceBounds.max,
+    }));
+    if (paginationEnabled) {
+      setPriceMinFilter(undefined);
+      setPriceMaxFilter(undefined);
+    }
+  };
+
+  const orderedColors = useMemo(() => {
+    const q = colorQuery.trim().toLowerCase();
+    const list = q
+      ? availableColors.filter((c) => c.name.toLowerCase().includes(q))
+      : availableColors;
+    return [...list].sort((a, b) => {
+      const aOn = resolvedFilters.colors.has(a.name) ? 0 : 1;
+      const bOn = resolvedFilters.colors.has(b.name) ? 0 : 1;
+      if (aOn !== bOn) return aOn - bOn;
+      return a.name.localeCompare(b.name);
+    });
+  }, [availableColors, colorQuery, resolvedFilters.colors]);
+
+  const applyPrice = (lo: number, hi: number) => {
+    setFilters((f) => ({ ...f, priceMin: lo, priceMax: hi }));
+    if (priceFilterTimerRef.current) clearTimeout(priceFilterTimerRef.current);
+    priceFilterTimerRef.current = setTimeout(() => {
+      setPriceMinFilter(lo);
+      setPriceMaxFilter(hi);
+    }, 400);
+  };
+
+  const activePills: {
+    key: string;
+    label: string;
+    swatch?: string;
+    onRemove: () => void;
+  }[] = [];
+
+  if (enabled.includes("collection")) {
+    for (const handle of resolvedFilters.collections) {
+      const collection = collections.find((c) => c.handle === handle);
+      activePills.push({
+        key: `col-${handle}`,
+        label: collection?.name ?? handle,
+        onRemove: () => toggle("collections", handle),
+      });
+    }
+  }
+
+  if (priceActive) {
+    activePills.push({
+      key: "price",
+      label: `${selectedCurrency.symbol}${Math.round(resolvedFilters.priceMin)} – ${selectedCurrency.symbol}${Math.round(resolvedFilters.priceMax)}`,
+      onRemove: resetPrice,
+    });
+  }
+
+  if (showColorFilter) {
+    for (const name of resolvedFilters.colors) {
+      const color = availableColors.find((c) => c.name === name);
+      activePills.push({
+        key: `color-${name}`,
+        label: name,
+        swatch: color?.hex,
+        onRemove: () => toggle("colors", name),
+      });
+    }
+  }
+
   const FilterPanel = (
-    <div className="space-y-8">
+    <div className="divide-y divide-[var(--border)]">
       {enabled.includes("collection") && (
-        <FilterGroup title="Collections">
-          <div className="mt-3 space-y-1.5">
+        <FilterGroup
+          title="Collections"
+          count={
+            resolvedFilters.collections.size
+              ? resolvedFilters.collections.size
+              : undefined
+          }
+        >
+          <div className="mt-3 space-y-0.5">
             {collections.map((c) => (
               <CheckRow
                 key={c.handle}
@@ -222,7 +341,21 @@ export function ProductCatalog({
       )}
 
       {enabled.includes("price") && (
-        <FilterGroup title="Price">
+        <FilterGroup
+          title="Price"
+          count={priceActive ? 1 : undefined}
+          action={
+            priceActive ? (
+              <button
+                type="button"
+                onClick={resetPrice}
+                className="text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-accent"
+              >
+                Reset
+              </button>
+            ) : undefined
+          }
+        >
           <div className="mt-3">
             <PriceRange
               min={priceBounds.min}
@@ -230,31 +363,158 @@ export function ProductCatalog({
               valueMin={resolvedFilters.priceMin}
               valueMax={resolvedFilters.priceMax}
               currency={selectedCurrency}
-            onChange={(lo, hi) => {
-              setFilters((f) => ({ ...f, priceMin: lo, priceMax: hi }));
-              if (priceFilterTimerRef.current) clearTimeout(priceFilterTimerRef.current);
-              priceFilterTimerRef.current = setTimeout(() => {
-                setPriceMinFilter(lo);
-                setPriceMaxFilter(hi);
-              }, 400);
-            }}
+              onChange={applyPrice}
             />
           </div>
         </FilterGroup>
       )}
 
       {showColorFilter && (
-        <FilterGroup title="Colour">
-          <div className="mt-3">
-            <ShadeDropdown
-              shades={availableShades}
-              selectedCode={resolvedFilters.colorCode}
-              onSelect={(colorCode) => setFilters((f) => ({ ...f, colorCode }))}
-              showLabel={false}
-            />
+        <FilterGroup
+          title="Colour"
+          count={
+            resolvedFilters.colors.size
+              ? resolvedFilters.colors.size
+              : undefined
+          }
+          action={
+            resolvedFilters.colors.size ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters((f) => ({ ...f, colors: new Set() }))
+                }
+                className="text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-accent"
+              >
+                Clear
+              </button>
+            ) : undefined
+          }
+        >
+          {availableColors.length > 10 && (
+            <div
+              className="mt-3 flex items-center gap-2 border px-2.5 py-2 transition-colors focus-within:border-accent"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <Search
+                className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                strokeWidth={1.25}
+                aria-hidden
+              />
+              <input
+                type="search"
+                value={colorQuery}
+                onChange={(e) => setColorQuery(e.target.value)}
+                placeholder="Search colours"
+                aria-label="Search colours"
+                className="w-full min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+              />
+              {colorQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setColorQuery("")}
+                  aria-label="Clear colour search"
+                  className="text-muted-foreground transition-colors hover:text-accent"
+                >
+                  <X className="h-3.5 w-3.5" strokeWidth={1.25} />
+                </button>
+              ) : null}
+            </div>
+          )}
+          <div
+            className="mt-3 flex max-h-64 flex-wrap content-start gap-1.5 overflow-y-auto overscroll-contain pr-0.5 sm:max-h-80"
+            role="group"
+            aria-label="Filter by colour"
+          >
+            {orderedColors.length === 0 ? (
+              <p className="py-2 text-sm text-muted-foreground">
+                No colours match “{colorQuery.trim()}”.
+              </p>
+            ) : (
+              orderedColors.map((color) => (
+                <ColorChip
+                  key={color.name}
+                  color={color}
+                  checked={resolvedFilters.colors.has(color.name)}
+                  onChange={() => toggle("colors", color.name)}
+                />
+              ))
+            )}
           </div>
         </FilterGroup>
       )}
+    </div>
+  );
+
+  const filterHeader = (opts?: { showClose?: boolean; onClose?: () => void }) => (
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="tracked text-xs uppercase tracking-[0.2em] text-accent">
+            Filter
+          </span>
+          {activeCount > 0 ? (
+            <span
+              className="inline-flex h-5 min-w-5 items-center justify-center px-1.5 text-[0.65rem] tabular-nums"
+              style={{
+                background: "var(--accent)",
+                color: "var(--background)",
+              }}
+            >
+              {activeCount}
+            </span>
+          ) : null}
+        </div>
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          {filtered.length} {resultsLabel}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-3">
+        {activeCount > 0 ? (
+          <button
+            type="button"
+            onClick={reset}
+            className="text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-accent"
+          >
+            Clear all
+          </button>
+        ) : null}
+        {opts?.showClose ? (
+          <button
+            type="button"
+            onClick={opts.onClose}
+            aria-label="Close filters"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <X className="h-5 w-5" strokeWidth={1} />
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  const activeFilterPills = activePills.length > 0 && (
+    <div className="flex flex-wrap gap-1.5" aria-label="Active filters">
+      {activePills.map((pill) => (
+        <button
+          key={pill.key}
+          type="button"
+          onClick={pill.onRemove}
+          className="inline-flex min-h-8 max-w-full items-center gap-1.5 border px-2 py-1 text-[0.65rem] uppercase tracking-[0.12em] transition touch-manipulation hover:border-accent"
+          style={{
+            borderColor: "var(--border)",
+            color: "var(--foreground)",
+            background: "color-mix(in srgb, var(--accent) 8%, transparent)",
+          }}
+          aria-label={`Remove filter ${pill.label}`}
+        >
+          {pill.swatch ? (
+            <ShadeSwatch hex={pill.swatch} size="sm" label={pill.label} />
+          ) : null}
+          <span className="truncate">{pill.label}</span>
+          <X className="h-3 w-3 shrink-0 opacity-60" strokeWidth={1.5} />
+        </button>
+      ))}
     </div>
   );
 
@@ -274,33 +534,69 @@ export function ProductCatalog({
               className="tracked -my-2 inline-flex min-h-11 items-center gap-2 py-2 md:hidden"
             >
               <SlidersHorizontal className="h-4 w-4" strokeWidth={1} />
-              Filters {activeCount > 0 && `(${activeCount})`}
+              Filters
+              {activeCount > 0 ? (
+                <span
+                  className="inline-flex h-5 min-w-5 items-center justify-center px-1.5 text-[0.65rem] tabular-nums"
+                  style={{
+                    background: "var(--accent)",
+                    color: "var(--background)",
+                  }}
+                >
+                  {activeCount}
+                </span>
+              ) : null}
             </button>
           )}
+          <span className="hidden text-xs text-muted-foreground md:inline">
+            {filtered.length} {resultsLabel}
+          </span>
         </div>
         <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-muted-foreground">
           <span>Sort</span>
-          <SortDropdown value={sort} onChange={setSort} />
+          <SortDropdown
+            value={sort}
+            options={sortOptions}
+            onChange={setSort}
+          />
         </div>
       </div>
       <Hairline />
 
       {/* Body */}
       <div
-        className={showSidebar ? "mt-10 grid grid-cols-1 gap-12 md:grid-cols-[260px_1fr]" : "mt-10"}
+        className={
+          showSidebar
+            ? "mt-10 grid grid-cols-1 gap-10 md:grid-cols-[300px_1fr] lg:gap-12"
+            : "mt-10"
+        }
       >
         {showSidebar && (
-          <aside className="hidden md:block">
-            <div className="sticky top-32 rounded border p-6" style={{background: 'var(--surface)', borderColor: 'var(--border)'}}>
-              <div className="flex items-center justify-between">
-                <span className="tracked text-xs uppercase tracking-[0.2em] text-accent">Filter</span>
-                {activeCount > 0 && (
-                  <button onClick={reset} className="text-xs text-muted-foreground hover:text-accent transition-colors">
-                    Clear ({activeCount})
-                  </button>
-                )}
+          <aside className="hidden min-w-0 md:block">
+            <div
+              className="sticky top-28 flex max-h-[calc(100vh-8rem)] min-w-0 flex-col border"
+              style={{
+                background: "var(--surface)",
+                borderColor: "var(--border)",
+              }}
+            >
+              <div
+                className="shrink-0 border-b px-5 py-4"
+                style={{ borderColor: "var(--border)" }}
+              >
+                {filterHeader()}
               </div>
-              <div className="mt-6 space-y-8">{FilterPanel}</div>
+              {activeFilterPills ? (
+                <div
+                  className="shrink-0 border-b px-5 py-3"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  {activeFilterPills}
+                </div>
+              ) : null}
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-1">
+                {FilterPanel}
+              </div>
             </div>
           </aside>
         )}
@@ -317,12 +613,16 @@ export function ProductCatalog({
             </div>
           ) : (
             <>
-              <div ref={gridRef} className="grid grid-cols-1 gap-x-5 gap-y-12 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-16 lg:grid-cols-3">
+              <div
+                ref={gridRef}
+                className="grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-8 sm:gap-y-16 lg:grid-cols-4"
+              >
                 {filtered.map((p, index) => (
                   <ProductTile
                     key={p.handle}
                     product={p}
-                    priority={index < 3}
+                    priority={index < 4}
+                    sizes="(min-width: 1024px) 25vw, 50vw"
                   />
                 ))}
               </div>
@@ -345,7 +645,7 @@ export function ProductCatalog({
       {showSidebar && (
         <div
           className={`fixed inset-0 z-[60] transition-opacity duration-300 md:hidden ${
-            drawer ? 'opacity-100' : 'pointer-events-none opacity-0'
+            drawer ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
           <button
@@ -361,27 +661,39 @@ export function ProductCatalog({
             role="dialog"
             aria-modal="true"
             aria-label="Filters"
-            className={`absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col overflow-y-auto rounded-t-2xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] outline-none transition-transform duration-300 ${
-              drawer ? 'translate-y-0' : 'translate-y-full'
+            className={`absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col outline-none transition-transform duration-300 ${
+              drawer ? "translate-y-0" : "translate-y-full"
             }`}
-            style={{
-              background: "var(--background)",
-            }}
+            style={{ background: "var(--background)" }}
           >
-            <div className="mx-auto mb-4 h-1 w-10 shrink-0 rounded-full" style={{background: 'var(--border)'}} />
-            <div className="flex items-center justify-between pb-6">
-              <span className="tracked text-accent">Filter</span>
-              <button onClick={() => setDrawer(false)} aria-label="Close filters">
-                <X className="h-5 w-5" strokeWidth={1} />
+            <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full" style={{ background: "var(--border)" }} />
+            <div
+              className="shrink-0 border-b px-5 pb-4 pt-3"
+              style={{ borderColor: "var(--border)" }}
+            >
+              {filterHeader({ showClose: true, onClose: () => setDrawer(false) })}
+              {activeFilterPills ? (
+                <div className="mt-3">{activeFilterPills}</div>
+              ) : null}
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-1">
+              {FilterPanel}
+            </div>
+            <div
+              className="shrink-0 border-t px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+              style={{
+                borderColor: "var(--border)",
+                background: "var(--background)",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setDrawer(false)}
+                className="btn-secondary btn-secondary-accent tracked w-full py-4"
+              >
+                Show {filtered.length} {resultsLabel}
               </button>
             </div>
-            {FilterPanel}
-            <button
-              onClick={() => setDrawer(false)}
-              className="btn-secondary btn-secondary-accent tracked mt-10 w-full py-4"
-            >
-              Show {filtered.length} {resultsLabel}
-            </button>
           </div>
         </div>
       )}
@@ -389,11 +701,19 @@ export function ProductCatalog({
   );
 }
 
-function SortDropdown({ value, onChange }: { value: SortKey; onChange: (key: SortKey) => void }) {
+function SortDropdown({
+  value,
+  options,
+  onChange,
+}: {
+  value: SortKey;
+  options: { id: SortKey; label: string }[];
+  onChange: (key: SortKey) => void;
+}) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const selected = SORT_OPTIONS.find((o) => o.id === value) ?? SORT_OPTIONS[0];
+  const selected = options.find((o) => o.id === value) ?? options[0];
 
   useEffect(() => {
     if (!open) return;
@@ -413,6 +733,8 @@ function SortDropdown({ value, onChange }: { value: SortKey; onChange: (key: Sor
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
+
+  if (!selected) return null;
 
   return (
     <div ref={wrapRef} className="relative">
@@ -440,7 +762,7 @@ function SortDropdown({ value, onChange }: { value: SortKey; onChange: (key: Sor
           className="absolute right-0 top-[calc(100%+0.375rem)] z-50 min-w-full border py-1 shadow-2xl"
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}
         >
-          {SORT_OPTIONS.map((o) => {
+          {options.map((o) => {
             const active = o.id === value;
             return (
               <li key={o.id} role="option" aria-selected={active}>
@@ -465,10 +787,32 @@ function SortDropdown({ value, onChange }: { value: SortKey; onChange: (key: Sor
   );
 }
 
-function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
+function FilterGroup({
+  title,
+  count,
+  action,
+  children,
+}: {
+  title: string;
+  count?: number;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <div>
-      <div className="tracked text-xs uppercase tracking-[0.2em] text-foreground/70">{title}</div>
+    <div className="py-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="tracked text-xs uppercase tracking-[0.2em] text-foreground/70">
+            {title}
+          </div>
+          {typeof count === "number" ? (
+            <span className="text-[0.65rem] tabular-nums text-accent">
+              {count}
+            </span>
+          ) : null}
+        </div>
+        {action}
+      </div>
       {children}
     </div>
   );
@@ -484,19 +828,64 @@ function CheckRow({
   onChange: () => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 text-sm text-muted-foreground transition hover:text-accent">
+    <label
+      className="-mx-2 flex min-h-10 cursor-pointer items-center gap-3 px-2 text-sm transition hover:text-accent"
+      style={{ color: checked ? "var(--foreground)" : "var(--muted-foreground)" }}
+    >
       <span
-        className="grid h-4 w-4 place-items-center border"
+        className="grid h-4 w-4 shrink-0 place-items-center border transition-colors"
         style={{
           borderColor: checked ? "var(--accent)" : "var(--border)",
           background: checked ? "var(--accent)" : "transparent",
         }}
       >
-        {checked && <span className="h-1.5 w-1.5" style={{ background: "var(--background)" }} />}
+        {checked ? (
+          <Check className="h-2.5 w-2.5" strokeWidth={2.5} style={{ color: "var(--background)" }} />
+        ) : null}
       </span>
       <input type="checkbox" className="sr-only" checked={checked} onChange={onChange} />
-      <span style={{ color: checked ? "var(--foreground)" : undefined }}>{label}</span>
+      <span className="min-w-0 flex-1 leading-snug">{label}</span>
     </label>
+  );
+}
+
+function ColorChip({
+  color,
+  checked,
+  onChange,
+}: {
+  color: CatalogColor;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={checked}
+      onClick={onChange}
+      className="inline-flex min-h-9 items-center gap-2 border px-2.5 text-[0.65rem] uppercase tracking-[0.12em] transition touch-manipulation active:opacity-80"
+      style={{
+        borderColor: checked ? "var(--accent)" : "var(--border)",
+        color: checked ? "var(--accent)" : "var(--muted-foreground)",
+        backgroundColor: checked
+          ? "color-mix(in srgb, var(--accent) 12%, transparent)"
+          : "transparent",
+      }}
+    >
+      {color.hex ? (
+        <ShadeSwatch hex={color.hex} size="sm" label={color.name} />
+      ) : (
+        <span
+          className="inline-block h-3.5 w-3.5 shrink-0 rounded-full border"
+          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+          aria-hidden
+        />
+      )}
+      <span className="max-w-[9rem] truncate">{color.name}</span>
+      {checked ? (
+        <Check className="h-3 w-3 shrink-0" strokeWidth={1.75} aria-hidden />
+      ) : null}
+    </button>
   );
 }
 
@@ -515,116 +904,122 @@ function PriceRange({
   currency: ShopCurrencyOption;
   onChange: (lo: number, hi: number) => void;
 }) {
-  const step = 50;
+  const baseId = useId();
   const clamp = (n: number, lo: number, hi: number) => Math.min(Math.max(n, lo), hi);
-  const leftPct = ((valueMin - min) / (max - min)) * 100;
-  const rightPct = ((valueMax - min) / (max - min)) * 100;
+  const boundMin = Math.round(min);
+  const boundMax = Math.round(max);
 
   return (
-    <div className="pt-2">
-      <div className="relative mt-6 h-11">
-        <div
-          className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full"
-          style={{ background: "var(--border)" }}
-        />
-        <div
-          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
-          style={{
-            left: `${leftPct}%`,
-            right: `${100 - rightPct}%`,
-            background: "var(--accent)",
-          }}
-        />
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={valueMin}
-          onChange={(e) => {
-            const v = Math.min(Number(e.target.value), valueMax - step);
-            onChange(v, valueMax);
-          }}
-          className="range-thumb z-10"
-          aria-label="Minimum price"
-        />
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={valueMax}
-          onChange={(e) => {
-            const v = Math.max(Number(e.target.value), valueMin + step);
-            onChange(valueMin, v);
-          }}
-          className="range-thumb"
-          aria-label="Maximum price"
-        />
-      </div>
-      <div className="mt-6 flex items-center gap-3">
+    <fieldset className="m-0 w-full min-w-0 border-0 p-0">
+      <legend className="sr-only">
+        Price range in {currency.code}
+      </legend>
+      <div className="grid w-full min-w-0 grid-cols-2 gap-2">
         <PriceField
-          label="Minimum price"
+          id={`${baseId}-min`}
+          label="Min"
           value={valueMin}
           min={min}
           max={valueMax}
-          step={step}
           currency={currency}
+          placeholder={String(boundMin)}
           onCommit={(v) => onChange(clamp(v, min, valueMax), valueMax)}
         />
-        <span className="text-xs text-muted-foreground">—</span>
         <PriceField
-          label="Maximum price"
+          id={`${baseId}-max`}
+          label="Max"
           value={valueMax}
           min={valueMin}
           max={max}
-          step={step}
           currency={currency}
+          placeholder={String(boundMax)}
           onCommit={(v) => onChange(valueMin, clamp(v, valueMin, max))}
         />
       </div>
-    </div>
+    </fieldset>
   );
 }
 
 function PriceField({
+  id,
   label,
   value,
   min,
   max,
-  step,
   currency,
+  placeholder,
   onCommit,
 }: {
+  id: string;
   label: string;
   value: number;
   min: number;
   max: number;
-  step: number;
   currency: ShopCurrencyOption;
+  placeholder: string;
   onCommit: (value: number) => void;
 }) {
+  const [draft, setDraft] = useState(String(Math.round(value)));
+
+  useEffect(() => {
+    setDraft(String(Math.round(value)));
+  }, [value]);
+
+  const commit = () => {
+    if (draft.trim() === "") {
+      setDraft(String(Math.round(value)));
+      return;
+    }
+    const parsed = Number(draft);
+    if (!Number.isFinite(parsed)) {
+      setDraft(String(Math.round(value)));
+      return;
+    }
+    const next = Math.min(Math.max(Math.round(parsed), Math.round(min)), Math.round(max));
+    setDraft(String(next));
+    if (next !== Math.round(value)) {
+      onCommit(next);
+    }
+  };
+
   return (
-    <label
-      className="flex flex-1 items-center gap-1 border px-2.5 py-2 focus-within:border-accent"
-      style={{ borderColor: "var(--border)" }}
-    >
-      <span className="sr-only">{label}</span>
-      <span className="text-xs text-muted-foreground">{currency.symbol}</span>
-      <input
-        type="number"
-        inputMode="numeric"
-        min={min}
-        max={max}
-        step={step}
-        value={Math.round(value)}
-        aria-label={label}
-        onChange={(e) => {
-          if (e.target.value === "") return;
-          onCommit(Number(e.target.value));
-        }}
-        className="w-full bg-transparent text-base text-foreground focus:outline-none"
-      />
-    </label>
+    <div className="w-full min-w-0 space-y-1.5">
+      <label
+        htmlFor={id}
+        className="tracked block text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground"
+      >
+        {label}
+      </label>
+      <div
+        className="flex w-full min-w-0 items-center gap-1 overflow-hidden border px-2 py-2.5 transition-colors focus-within:border-accent"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <span
+          className="shrink-0 text-xs leading-none text-muted-foreground"
+          aria-hidden
+        >
+          {currency.symbol}
+        </span>
+        <input
+          id={id}
+          type="number"
+          inputMode="numeric"
+          min={min}
+          max={max}
+          step={1}
+          placeholder={placeholder}
+          value={draft}
+          aria-label={`${label} price (${currency.code})`}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            }
+          }}
+          className="w-full min-w-0 flex-1 bg-transparent text-base tabular-nums text-foreground placeholder:text-muted-foreground/50 [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+      </div>
+    </div>
   );
 }

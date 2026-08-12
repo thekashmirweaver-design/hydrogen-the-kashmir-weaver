@@ -9,6 +9,11 @@ import {DEFAULT_FEATURED_COLLECTION_HANDLE} from '~/lib/featured-collection';
 import {loadHomepageFeatured} from '~/lib/homepage-featured';
 import {toListingProducts} from '~/lib/listing-product';
 import {excludeUnavailableFromListing} from '~/lib/product-inventory';
+import {
+  isSolidsCollectionHandle,
+  orderProductsBySolidFamily,
+  solidsPreviewCandidateCount,
+} from '~/lib/solid-family-order';
 
 export type CatalogSource = 'shopify' | 'static';
 
@@ -211,6 +216,52 @@ export async function listFeaturedCollectionProducts(
   return count != null && count > 0 ? products.slice(0, count) : products;
 }
 
+function maybeOrderSolidsCollection(
+  handle: string,
+  products: Product[],
+  options?: {limit?: number},
+): Product[] {
+  if (!isSolidsCollectionHandle(handle) || products.length <= 1) {
+    return options?.limit != null ? products.slice(0, options.limit) : products;
+  }
+  return orderProductsBySolidFamily(products, options);
+}
+
+/** Newest products in a collection for homepage Signature Collections tiles. */
+export async function listCollectionPreviewProducts(
+  handle: string,
+  count = 4,
+  options?: CatalogOptions,
+): Promise<Product[]> {
+  const first = count > 0 ? count : 4;
+  const fetchCount = isSolidsCollectionHandle(handle)
+    ? solidsPreviewCandidateCount(first)
+    : first;
+
+  if (options?.storefront && !options.useStatic) {
+    try {
+      const products = await ShopifyRepository.listCollectionPreviewProducts(
+        options.storefront,
+        handle,
+        fetchCount,
+      );
+      return maybeOrderSolidsCollection(
+        handle,
+        excludeUnavailableFromListing(products),
+        {limit: first},
+      );
+    } catch (error) {
+      console.warn('[catalog] collection preview fetch failed', error);
+    }
+  }
+
+  const products = await listProductsByCollection(handle, options, {
+    sortKey: 'CREATED',
+    sortReverse: true,
+  });
+  return maybeOrderSolidsCollection(handle, products, {limit: first});
+}
+
 export async function listFeaturedProductsPage(
   options?: CatalogOptions,
   page?: {first?: number; after?: string | null},
@@ -257,6 +308,7 @@ export async function listCollectionProductsPage(
     );
     return {
       ...paginated,
+      products: maybeOrderSolidsCollection(handle, paginated.products),
       collection: StaticRepository.getCollection(handle),
     };
   }
@@ -268,9 +320,10 @@ export async function listCollectionProductsPage(
         handle,
         {first, after: page?.after, sortKey: options.sortKey, sortReverse: options.sortReverse, filters: options.filters},
       );
+      const products = excludeUnavailableFromListing(result.products);
       return {
         ...result,
-        products: excludeUnavailableFromListing(result.products),
+        products: maybeOrderSolidsCollection(handle, products),
       };
     } catch (error) {
       console.warn('[catalog] Shopify collection page fetch failed', error);
@@ -286,6 +339,7 @@ export async function listCollectionProductsPage(
   );
   return {
     ...paginated,
+    products: maybeOrderSolidsCollection(handle, paginated.products),
     collection: StaticRepository.getCollection(handle),
   };
 }

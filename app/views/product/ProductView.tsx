@@ -34,6 +34,8 @@ import {Reveal} from '~/components/gulriza/Reveal';
 import {LegalRichHtml} from '~/components/gulriza/LegalRichHtml';
 import type {Product, ProductVariant} from '~/models/types';
 import {useFormatPrice} from '~/lib/currency-store';
+import {useDisplayCurrency} from '~/contexts/display-currency-context';
+import {CHECKOUT_CURRENCY} from '~/lib/display-currencies';
 import {
   maxCartQuantity,
   showQuantitySelector,
@@ -51,6 +53,14 @@ import {getProductShades, getDefaultSolidShadeCode, isSolidProduct} from '~/lib/
 import {buildBuyNowShadeQuery, shadeCartAttributes} from '~/lib/shade-cart';
 import {toCartSelectedVariant} from '~/lib/cart-selected-variant';
 import {useCartDrawer} from '~/contexts/cart-drawer-context';
+import {
+  contactWhatsappHref,
+  requestMoreImagesWhatsappMessage,
+  requestPriceWhatsappMessage,
+  resolveContact,
+} from '~/lib/contact';
+import {absoluteUrl} from '~/lib/seo';
+import {ProductWhatsAppCta} from '~/components/gulriza/ProductWhatsAppCta';
 
 // Code-split the 750-line TryColoursModal. It only opens when the user
 // taps "Try colours" on a Solid product; the modal portals to document.body
@@ -79,6 +89,21 @@ export function ProductView({
 }) {
   const root = useRouteLoaderData<RootLoader>('root');
   const metaPixelId = root?.metaPixelId;
+  const inquirePrice = Boolean(product.requestPrice);
+  const inquireMoreImages = Boolean(product.requestMoreImages);
+  const contact = resolveContact(root?.shopSettings?.contact);
+  const absoluteProductUrl = absoluteUrl(
+    `/products/${product.handle}`,
+    root?.publicStoreUrl ?? '',
+  );
+  const requestPriceHref = contactWhatsappHref(
+    contact.whatsapp,
+    requestPriceWhatsappMessage(product.name, absoluteProductUrl),
+  );
+  const requestMoreImagesHref = contactWhatsappHref(
+    contact.whatsapp,
+    requestMoreImagesWhatsappMessage(product.name, absoluteProductUrl),
+  );
   const variants = product.variants ?? [];
   const initialVariant =
     variants.find((v) => v.id === product.variantId) ??
@@ -148,6 +173,10 @@ export function ProductView({
   const mainImgRef = useRef<HTMLDivElement>(null);
   const lightboxImgRef = useRef<HTMLDivElement>(null);
   const formatPrice = useFormatPrice();
+  const {displayCurrency, checkoutCurrency} = useDisplayCurrency();
+  const showDisplayFxNote =
+    displayCurrency.code !== CHECKOUT_CURRENCY &&
+    displayCurrency.code !== checkoutCurrency;
   const {open: openCartDrawer} = useCartDrawer();
   const addToBagFetcher = useFetcher({key: 'add-to-bag'});
   const wasAddingRef = useRef(false);
@@ -181,7 +210,7 @@ export function ProductView({
           {
             item_id: activeVariantId,
             item_name: product.name,
-            item_category: product.productType,
+            item_category: product.department,
             price: displayPrice.amount,
             quantity: qty,
           },
@@ -210,7 +239,7 @@ export function ProductView({
     canChooseQuantity,
     quantity,
     product.name,
-    product.productType,
+    product.department,
     displayPrice.amount,
     displayPrice.currencyCode,
     metaPixelId,
@@ -334,112 +363,118 @@ export function ProductView({
 
   // Shared purchase actions — reused on the PDP and inside the colour studio so
   // the cart wiring (fetcherKey, shade attributes, quantity) lives in one place.
-  const purchaseActions = soldOut ? (
-    <>
-      <button
-        disabled
-        className="btn-secondary w-full cursor-not-allowed py-3.5 tracked"
-      >
-        Sold Out
-      </button>
+  const purchaseActions =
+    inquirePrice && requestPriceHref ? (
+      <ProductWhatsAppCta href={requestPriceHref} label="Request price" />
+    ) : soldOut ? (
+      <>
+        <button
+          disabled
+          className="btn-secondary w-full cursor-not-allowed py-3.5 tracked"
+        >
+          Sold Out
+        </button>
+        <Link
+          to="/concierge"
+          className="btn-secondary btn-secondary-accent block w-full py-3.5 text-center tracked touch-manipulation"
+        >
+          Commission a Similar Piece
+        </Link>
+      </>
+    ) : isShopifyVariant ? (
+      <>
+        <CartForm
+          fetcherKey="add-to-bag"
+          route="/cart"
+          inputs={{
+            lines: [
+              {
+                merchandiseId: merchandiseGid!,
+                quantity: canChooseQuantity ? quantity : 1,
+                ...(selectedVariant
+                  ? {
+                      selectedVariant: toCartSelectedVariant(
+                        selectedVariant,
+                        product,
+                      ),
+                    }
+                  : {}),
+                ...(shadeLineAttributes.length
+                  ? {attributes: shadeLineAttributes}
+                  : {}),
+              },
+            ],
+          }}
+          action={CartForm.ACTIONS.LinesAdd}
+        >
+          {(fetcher: FetcherWithComponents<unknown>) => (
+            <button
+              type="submit"
+              disabled={fetcher.state !== 'idle'}
+              className="w-full py-3.5 tracked transition disabled:opacity-70"
+              style={{
+                background: 'var(--accent)',
+                color: 'var(--background)',
+              }}
+            >
+              Add to Bag
+            </button>
+          )}
+        </CartForm>
+        <Link
+          to={buyNowHref}
+          reloadDocument
+          onClick={() => {
+            if (!activeVariantId) return;
+            const items = [
+              {
+                item_id: activeVariantId.replace(
+                  /^gid:\/\/shopify\/ProductVariant\//,
+                  '',
+                ),
+                item_name: product.name,
+                item_variant: selectedVariant?.title,
+                item_brand: product.vendor,
+                item_category: product.department,
+                price: displayPrice.amount,
+                quantity: buyNowQuantity,
+              },
+            ];
+            trackBeginCheckoutItems(
+              items,
+              displayPrice.currencyCode,
+              displayPrice.amount * buyNowQuantity,
+            );
+            trackMetaInitiateCheckoutItems(
+              items,
+              displayPrice.currencyCode,
+              displayPrice.amount * buyNowQuantity,
+              metaPixelId,
+            );
+          }}
+          className="btn-secondary block w-full py-3.5 text-center tracked touch-manipulation"
+        >
+          Buy Now
+        </Link>
+      </>
+    ) : (
       <Link
         to="/concierge"
-        className="btn-secondary btn-secondary-accent block w-full py-3.5 text-center tracked touch-manipulation"
-      >
-        Commission a Similar Piece
-      </Link>
-    </>
-  ) : isShopifyVariant ? (
-    <>
-      <CartForm
-        fetcherKey="add-to-bag"
-        route="/cart"
-        inputs={{
-          lines: [
-            {
-              merchandiseId: merchandiseGid!,
-              quantity: canChooseQuantity ? quantity : 1,
-              ...(selectedVariant
-                ? {
-                    selectedVariant: toCartSelectedVariant(
-                      selectedVariant,
-                      product,
-                    ),
-                  }
-                : {}),
-              ...(shadeLineAttributes.length
-                ? {attributes: shadeLineAttributes}
-                : {}),
-            },
-          ],
+        className="block w-full py-3.5 text-center tracked transition hover:opacity-90"
+        style={{
+          background: 'var(--accent)',
+          color: 'var(--background)',
         }}
-        action={CartForm.ACTIONS.LinesAdd}
       >
-        {(fetcher: FetcherWithComponents<unknown>) => (
-          <button
-            type="submit"
-            disabled={fetcher.state !== 'idle'}
-            className="w-full py-3.5 tracked transition disabled:opacity-70"
-            style={{
-              background: 'var(--accent)',
-              color: 'var(--background)',
-            }}
-          >
-            Add to Bag
-          </button>
-        )}
-      </CartForm>
-      <Link
-        to={buyNowHref}
-        reloadDocument
-        onClick={() => {
-          if (!activeVariantId) return;
-          const items = [
-            {
-              item_id: activeVariantId.replace(
-                /^gid:\/\/shopify\/ProductVariant\//,
-                '',
-              ),
-              item_name: product.name,
-              item_variant: selectedVariant?.title,
-              item_brand: product.vendor,
-              item_category: product.productType,
-              price: displayPrice.amount,
-              quantity: buyNowQuantity,
-            },
-          ];
-          trackBeginCheckoutItems(
-            items,
-            displayPrice.currencyCode,
-            displayPrice.amount * buyNowQuantity,
-          );
-          trackMetaInitiateCheckoutItems(
-            items,
-            displayPrice.currencyCode,
-            displayPrice.amount * buyNowQuantity,
-            metaPixelId,
-          );
-        }}
-        className="btn-secondary block w-full py-3.5 text-center tracked touch-manipulation"
-      >
-        Buy Now
+        Inquire via Concierge
       </Link>
-    </>
-  ) : (
-    <Link
-      to="/concierge"
-      className="block w-full py-3.5 text-center tracked transition hover:opacity-90"
-      style={{
-        background: 'var(--accent)',
-        color: 'var(--background)',
-      }}
-    >
-      Inquire via Concierge
-    </Link>
-  );
+    );
+
+  const showMobileBuyBar =
+    inquirePrice || (!soldOut && isShopifyVariant);
 
   return (
-    <div className={!soldOut && isShopifyVariant ? 'pb-24 lg:pb-0' : undefined}>
+    <div className={showMobileBuyBar ? 'pb-24 lg:pb-0' : undefined}>
       {activeVariantId ? (
         <Analytics.ProductView
           data={{
@@ -453,7 +488,7 @@ export function ProductView({
                 variantTitle: selectedVariant?.title ?? '',
                 quantity: 1,
                 sku: selectedSku,
-                productType: product.productType,
+                productType: product.department,
               },
             ],
           }}
@@ -665,6 +700,15 @@ export function ProductView({
                 </>
               )}
             </div>
+            {inquireMoreImages && requestMoreImagesHref ? (
+              <div className="mt-5 flex justify-center md:mt-6">
+                <ProductWhatsAppCta
+                  href={requestMoreImagesHref}
+                  label="Request more images"
+                  variant="secondary"
+                />
+              </div>
+            ) : null}
           </div>
 
           {/* Purchase */}
@@ -682,16 +726,25 @@ export function ProductView({
                 {product.reviews.count === 1 ? 'review' : 'reviews'}
               </p>
             )}
-            <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              {onSale && (
-                <span className="text-base text-muted-foreground line-through">
-                  {formatPrice(displayCompareAtPrice!)}
-                </span>
-              )}
-              <span className="text-xl md:text-2xl font-normal tracking-normal">
-                {formatPrice(displayPrice)}
-              </span>
-            </div>
+            {!inquirePrice ? (
+              <div className="mt-3 flex flex-col gap-1">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  {onSale && (
+                    <span className="text-base text-muted-foreground line-through">
+                      {formatPrice(displayCompareAtPrice!)}
+                    </span>
+                  )}
+                  <span className="text-xl md:text-2xl font-normal tracking-normal">
+                    {formatPrice(displayPrice)}
+                  </span>
+                </div>
+                {showDisplayFxNote ? (
+                  <p className="text-[0.65rem] tracking-wide text-muted-foreground">
+                    Approximate {displayCurrency.code} · checkout in {checkoutCurrency}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             {fixedSizeLabel ? (
               <p className="mt-2 text-sm text-muted-foreground">{fixedSizeLabel}</p>
             ) : null}
@@ -732,7 +785,7 @@ export function ProductView({
                   }
                 />
               ))}
-              {canChooseQuantity ? (
+              {!inquirePrice && canChooseQuantity ? (
                 <QuantityStepper
                   quantity={quantity}
                   max={maxQuantity}
@@ -939,9 +992,9 @@ export function ProductView({
             More from {product.collectionName}
           </h2>
         </Reveal>
-        <div className="mt-16 grid grid-cols-1 gap-x-8 gap-y-20 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-16 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-8 sm:gap-y-20 lg:grid-cols-4">
           {relatedProducts.map((p) => (
-            <ProductTile key={p.handle} product={p} />
+            <ProductTile key={p.handle} product={p} sizes="(min-width: 1024px) 25vw, 50vw" />
           ))}
         </div>
         <Reveal>
@@ -960,7 +1013,7 @@ export function ProductView({
         </Reveal>
       </section>
 
-      {!soldOut && isShopifyVariant ? (
+      {showMobileBuyBar ? (
         <div
           className="fixed inset-x-0 bottom-0 z-40 border-t px-4 py-3 lg:hidden"
           style={{
@@ -969,89 +1022,102 @@ export function ProductView({
             paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
           }}
         >
-          <div className="flex items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{product.name}</p>
-              <p className="text-lg font-normal leading-tight tracking-normal">
-                {formatPrice(displayPrice)}
-              </p>
+          {inquirePrice && requestPriceHref ? (
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{product.name}</p>
+              </div>
+              <ProductWhatsAppCta
+                href={requestPriceHref}
+                label="Request price"
+                className="w-auto shrink-0 px-4 py-3.5 text-[0.7rem] uppercase tracking-[0.1em]"
+              />
             </div>
-            <div className="flex shrink-0 gap-2">
-              <CartForm
-                fetcherKey="add-to-bag"
-                route="/cart"
-                inputs={{
-                  lines: [
-                    {
-                      merchandiseId: merchandiseGid!,
-                      quantity: canChooseQuantity ? quantity : 1,
-                      ...(selectedVariant
-                        ? {
-                            selectedVariant: toCartSelectedVariant(
-                              selectedVariant,
-                              product,
-                            ),
-                          }
-                        : {}),
-                      ...(shadeLineAttributes.length
-                        ? {attributes: shadeLineAttributes}
-                        : {}),
-                    },
-                  ],
-                }}
-                action={CartForm.ACTIONS.LinesAdd}
-              >
-                {(fetcher: FetcherWithComponents<unknown>) => (
-                  <button
-                    type="submit"
-                    disabled={fetcher.state !== 'idle'}
-                    className="tracked px-4 py-3.5 text-[0.7rem] uppercase tracking-[0.1em] transition disabled:opacity-70 touch-manipulation"
-                    style={{
-                      background: 'var(--accent)',
-                      color: 'var(--background)',
-                    }}
-                  >
-                    Add to Bag
-                  </button>
-                )}
-              </CartForm>
-              <Link
-                to={buyNowHref}
-                reloadDocument
-                onClick={() => {
-                  if (!activeVariantId) return;
-                  const items = [
-                    {
-                      item_id: activeVariantId.replace(
-                        /^gid:\/\/shopify\/ProductVariant\//,
-                        '',
-                      ),
-                      item_name: product.name,
-                      item_variant: selectedVariant?.title,
-                      item_brand: product.vendor,
-                      item_category: product.productType,
-                      price: displayPrice.amount,
-                      quantity: buyNowQuantity,
-                    },
-                  ];
-                  trackBeginCheckoutItems(
-                    items,
-                    displayPrice.currencyCode,
-                    displayPrice.amount * buyNowQuantity,
-                  );
-                  trackMetaInitiateCheckoutItems(
-                    items,
-                    displayPrice.currencyCode,
-                    displayPrice.amount * buyNowQuantity,
-                    metaPixelId,
-                  );
-                }}
-                className="btn-secondary tracked px-4 py-3.5 text-center text-[0.7rem] uppercase tracking-[0.1em] touch-manipulation"
-              >
-                Buy Now
-              </Link>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{product.name}</p>
+                <p className="text-lg font-normal leading-tight tracking-normal">
+                  {formatPrice(displayPrice)}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <CartForm
+                  fetcherKey="add-to-bag"
+                  route="/cart"
+                  inputs={{
+                    lines: [
+                      {
+                        merchandiseId: merchandiseGid!,
+                        quantity: canChooseQuantity ? quantity : 1,
+                        ...(selectedVariant
+                          ? {
+                              selectedVariant: toCartSelectedVariant(
+                                selectedVariant,
+                                product,
+                              ),
+                            }
+                          : {}),
+                        ...(shadeLineAttributes.length
+                          ? {attributes: shadeLineAttributes}
+                          : {}),
+                      },
+                    ],
+                  }}
+                  action={CartForm.ACTIONS.LinesAdd}
+                >
+                  {(fetcher: FetcherWithComponents<unknown>) => (
+                    <button
+                      type="submit"
+                      disabled={fetcher.state !== 'idle'}
+                      className="tracked px-4 py-3.5 text-[0.7rem] uppercase tracking-[0.1em] transition disabled:opacity-70 touch-manipulation"
+                      style={{
+                        background: 'var(--accent)',
+                        color: 'var(--background)',
+                      }}
+                    >
+                      Add to Bag
+                    </button>
+                  )}
+                </CartForm>
+                <Link
+                  to={buyNowHref}
+                  reloadDocument
+                  onClick={() => {
+                    if (!activeVariantId) return;
+                    const items = [
+                      {
+                        item_id: activeVariantId.replace(
+                          /^gid:\/\/shopify\/ProductVariant\//,
+                          '',
+                        ),
+                        item_name: product.name,
+                        item_variant: selectedVariant?.title,
+                        item_brand: product.vendor,
+                        item_category: product.department,
+                        price: displayPrice.amount,
+                        quantity: buyNowQuantity,
+                      },
+                    ];
+                    trackBeginCheckoutItems(
+                      items,
+                      displayPrice.currencyCode,
+                      displayPrice.amount * buyNowQuantity,
+                    );
+                    trackMetaInitiateCheckoutItems(
+                      items,
+                      displayPrice.currencyCode,
+                      displayPrice.amount * buyNowQuantity,
+                      metaPixelId,
+                    );
+                  }}
+                  className="btn-secondary tracked px-4 py-3.5 text-center text-[0.7rem] uppercase tracking-[0.1em] touch-manipulation"
+                >
+                  Buy Now
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       ) : null}
 
@@ -1253,7 +1319,7 @@ export function ProductView({
             onSelectShade={setSelectedShadeCode}
             imageIdx={recolorImgIdx}
             onImageIdxChange={setRecolorImgIdx}
-            priceLabel={formatPrice(displayPrice)}
+            priceLabel={inquirePrice ? undefined : formatPrice(displayPrice)}
             purchaseControls={purchaseActions}
           />
         </Suspense>

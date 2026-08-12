@@ -112,9 +112,9 @@ Only when **`.com` should serve this storefront directly**:
 
 ## International / markets
 
-Markets use **`?country=` + session** for currency/pricing (`app/lib/i18n.ts`), not separate URLs per locale.
+Markets use **session** for currency/pricing (`app/lib/i18n.ts`), with optional one-shot **`?country=`** deep links that the client strips after apply.
 
-- **One URL per product/page** in the sitemap (no `/EN-US/products/...` prefixes).
+- **One URL per product/page** in the sitemap (no `/EN-US/products/...` prefixes, no `?country=` variants).
 - **No hreflang** until you ship truly different language/regional page copy at distinct URLs.
 - **Canonical tags** point to the path only (no `?country=` param), consolidating market variants.
 

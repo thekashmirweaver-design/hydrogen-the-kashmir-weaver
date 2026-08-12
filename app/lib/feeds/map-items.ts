@@ -110,7 +110,7 @@ export function mapProductToFeedItem(
   const categories = Array.from(
     new Set(
       [
-        ...(product.productType ? [product.productType] : []),
+        ...(product.department ? [product.department] : []),
         ...(product.tags ?? []),
         ...(product.collectionName ? [product.collectionName] : []),
       ].filter(Boolean),

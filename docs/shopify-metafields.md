@@ -15,8 +15,22 @@ Each definition must have **Storefront API access** enabled so the Storefront AP
 | `weave` | Weave | Single line text | Weave or embroidery technique |
 | `limited` | Limited edition | True or false | Marks one-of-a-kind or limited pieces |
 | `stock_qty` | Stock quantity | Integer | Display stock count; used with variant availability |
+| `request_price` | Request price | True or false | When true, storefront can prompt shoppers to request pricing |
+| `request_more_images` | Request more images | True or false | When true, storefront can prompt shoppers to request more images |
 
 **Owner:** Product
+
+## Department (Shopify Product type)
+
+Storefront **department** is Shopify’s native **Product type** field (`productType` / `product_type` on the product), not a custom metafield.
+
+| Storefront | Shopify Admin / API |
+| --- | --- |
+| `Product.department` | Product type (`productType`) |
+
+Admin still labels the field **Product type** (that label cannot be renamed via the API). The Hydrogen app maps it to `department` in `app/models/shopify/mappers.ts`. Typical values: `pashmina`, `carpet`.
+
+Do **not** add a parallel `custom.product_type` (or `custom.department`) metafield for this.
 
 ## Collection metafields
 
@@ -78,7 +92,7 @@ Single source of truth for customer-facing email, phone, and WhatsApp. Concierge
   "newestCount": 8,
   "collectionHandles": ["jamawar-embroidery", "kani-pashmina"],
   "collectionCount": 2,
-  "collectionPreviewCount": 3,
+  "collectionPreviewCount": 4,
   "heroImageUrl": "https://your-store.com/assets/hero-portrait.jpg",
   "heroAlt": "Hero image alt text"
 }
@@ -91,8 +105,8 @@ Single source of truth for customer-facing email, phone, and WhatsApp. Concierge
 | `bestSellingCount` | Max products in the **Best Selling** carousel |
 | `newestCount` | Max products in the **Newest Pieces** carousel |
 | `collectionHandles` | **Signature Collections** — collection handles in display order |
-| `collectionCount` | Max collections in **Signature Collections** (optional; defaults to all picked handles) |
-| `collectionPreviewCount` | Product tiles under each homepage collection |
+| `collectionCount` | Max collections in **Signature Collections** (optional; omit to show all picked handles) |
+| `collectionPreviewCount` | Product tiles under each homepage collection (default `4`) |
 | `heroImageUrl` / `heroAlt` | Homepage hero image |
 
 ### Homepage Featured collection

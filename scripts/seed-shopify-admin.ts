@@ -283,7 +283,10 @@ async function ensureMetafieldDefinitions() {
     {key: 'limited', name: 'Limited edition', type: 'boolean', owner: 'PRODUCT'},
     {key: 'stock_qty', name: 'Stock quantity', type: 'number_integer', owner: 'PRODUCT'},
     {key: 'show_colour_studio', name: 'Show colour studio', type: 'boolean', owner: 'PRODUCT'},
+    {key: 'request_price', name: 'Request price', type: 'boolean', owner: 'PRODUCT'},
+    {key: 'request_more_images', name: 'Request more images', type: 'boolean', owner: 'PRODUCT'},
     {key: 'care', name: 'Care instructions', type: 'single_line_text_field', owner: 'PRODUCT'},
+    // Department lives on Shopify’s native Product type (`productType`), not a custom metafield.
     {key: 'guarantees_delivery', name: 'Guarantees and delivery', type: 'json', owner: 'PRODUCT'},
     {key: 'returns_care', name: 'Returns and care', type: 'json', owner: 'PRODUCT'},
     {key: 'tagline', name: 'Tagline', type: 'single_line_text_field', owner: 'COLLECTION'},
@@ -312,6 +315,7 @@ async function ensureMetafieldDefinitions() {
             type: def.type,
             ownerType: def.owner,
             access: {storefront: 'PUBLIC_READ'},
+            ...(def.validations ? {validations: def.validations} : {}),
           },
         },
       );
@@ -346,7 +350,7 @@ async function setShopMetafields(shopId: string) {
         featuredCollectionHandle: DEFAULT_FEATURED_COLLECTION_HANDLE,
         collectionHandles: collectionHandles.filter((h) => h !== DEFAULT_FEATURED_COLLECTION_HANDLE).slice(0, 5),
         collectionCount: 5,
-        collectionPreviewCount: 3,
+        collectionPreviewCount: 4,
         bestSellingCount: 8,
         newestCount: 8,
         heroImageUrl: assetUrl('/assets/hero-portrait.jpg'),
@@ -533,6 +537,8 @@ function productMetafields(product: Product) {
     {namespace: 'custom', key: 'weave', type: 'single_line_text_field', value: product.weave},
     {namespace: 'custom', key: 'limited', type: 'boolean', value: String(!!product.limited)},
     {namespace: 'custom', key: 'show_colour_studio', type: 'boolean', value: String(!!product.showColourStudio)},
+    {namespace: 'custom', key: 'request_price', type: 'boolean', value: String(!!product.requestPrice)},
+    {namespace: 'custom', key: 'request_more_images', type: 'boolean', value: String(!!product.requestMoreImages)},
     {namespace: 'custom', key: 'stock_qty', type: 'number_integer', value: String(product.stockQty ?? 1)},
   ];
 }
@@ -597,7 +603,7 @@ async function seedProducts(collectionIds: Map<string, string>): Promise<Map<str
             title: product.name,
             handle: product.handle,
             descriptionHtml: `<p>${product.description}</p>`,
-            productType: product.productType ?? 'Pashmina',
+            productType: product.department ?? 'Pashmina',
             vendor: product.vendor ?? 'The Kashmir Weaver',
             tags: product.tags,
             productOptions: shopifySizeProductOptions(),

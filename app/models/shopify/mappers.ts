@@ -355,6 +355,10 @@ export function mapProduct(node: ShopifyProductNode): Product {
     node.title;
   const limited = parseBoolean(getMetafield(fields, PRODUCT_METAFIELDS.limited));
   const showColourStudio = parseBoolean(getMetafield(fields, PRODUCT_METAFIELDS.showColourStudio));
+  const requestPrice = parseBoolean(getMetafield(fields, PRODUCT_METAFIELDS.requestPrice));
+  const requestMoreImages = parseBoolean(
+    getMetafield(fields, PRODUCT_METAFIELDS.requestMoreImages),
+  );
   const stockQty = parseInteger(getMetafield(fields, PRODUCT_METAFIELDS.stockQty));
   const reviewRating = parseReviewRating(node.reviewRating?.value);
   const reviewCount = parseInteger(node.reviewCount?.value ?? undefined);
@@ -408,7 +412,7 @@ export function mapProduct(node: ShopifyProductNode): Product {
     stock: inStock ? 'in' : 'out',
     limited: limited ?? (stockQty === 1),
     stockQty,
-    productType: node.productType ?? undefined,
+    department: node.productType ?? undefined,
     vendor: node.vendor ?? undefined,
     tags: node.tags,
     seo: {
@@ -426,6 +430,8 @@ export function mapProduct(node: ShopifyProductNode): Product {
     shades,
     solidRecolor: solidRecolor || undefined,
     showColourStudio,
+    requestPrice,
+    requestMoreImages,
   };
 }
 

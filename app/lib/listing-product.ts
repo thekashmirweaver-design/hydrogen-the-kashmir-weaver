@@ -1,10 +1,14 @@
+import {extractProductColors} from '~/lib/catalog-colors';
 import type {Product} from '~/models/types';
 
 /**
  * Strip PDP-only fields before serializing products into SSR/stream payloads.
- * Listing tiles only need identity, price, stock, and a couple of images.
+ * Listing tiles keep identity, price, stock, colours, inquire flags, and a couple of images.
  */
 export function toListingProduct(product: Product, maxImages = 2): Product {
+  const colors =
+    product.colors ??
+    extractProductColors(product);
   return {
     id: product.id,
     variantId: product.variantId,
@@ -25,12 +29,15 @@ export function toListingProduct(product: Product, maxImages = 2): Product {
     stock: product.stock,
     limited: product.limited,
     stockQty: product.stockQty,
-    productType: product.productType,
+    department: product.department,
     vendor: product.vendor,
     tags: product.tags,
     createdAt: product.createdAt,
     publishedAt: product.publishedAt,
     reviews: product.reviews,
+    ...(colors.length ? {colors} : {}),
+    ...(product.requestPrice ? {requestPrice: true} : {}),
+    ...(product.requestMoreImages ? {requestMoreImages: true} : {}),
   };
 }
 

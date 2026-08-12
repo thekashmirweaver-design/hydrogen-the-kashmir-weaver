@@ -68,21 +68,34 @@ export const SEARCH_PRODUCTS_QUERY = `#graphql
         title
       }
     }
+    requestPrice: metafield(namespace: "custom", key: "request_price") {
+      value
+    }
   }
 ` as const;
 
 type SearchProductsQueryResult = {
   products: {
-    nodes: SearchProductFragment[];
+    nodes: Array<
+      SearchProductFragment & {
+        requestPrice?: {value?: string | null} | null;
+      }
+    >;
     pageInfo: CatalogPageInfo;
   };
 };
 
-export function mapSearchProductToProduct(node: SearchProductFragment): Product {
+export function mapSearchProductToProduct(
+  node: SearchProductFragment & {
+    requestPrice?: {value?: string | null} | null;
+  },
+): Product {
   const variant = node.selectedOrFirstAvailableVariant;
   const image = variant?.image;
   const priceAmount = Number(variant?.price?.amount ?? 0);
   const compareAmount = variant?.compareAtPrice?.amount;
+  const requestPrice =
+    node.requestPrice?.value === 'true' ? true : undefined;
 
   return {
     id: node.id.replace(/^gid:\/\/shopify\/Product\//, '') || node.handle,
@@ -125,6 +138,7 @@ export function mapSearchProductToProduct(node: SearchProductFragment): Product 
     vendor: node.vendor ?? undefined,
     createdAt: node.publishedAt ?? new Date().toISOString(),
     publishedAt: node.publishedAt ?? undefined,
+    ...(requestPrice ? {requestPrice} : {}),
   };
 }
 

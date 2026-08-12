@@ -17,6 +17,7 @@ import {
   ScrollRestoration,
   useRouteLoaderData,
   useLocation,
+  useNavigate,
 } from 'react-router';
 import type {Route} from './+types/root';
 import inter400Woff2 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
@@ -47,7 +48,7 @@ import {
 import {loadSharedCatalog, loadSharedCatalogMenu} from '~/lib/shared-catalog';
 import {needsFullCatalog} from '~/lib/catalog-routes';
 import {resolveStoreUrl} from '~/lib/seo';
-
+import {hasCountryParam, marketHref} from '~/lib/market-url';
 export type RootLoader = typeof loader;
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
@@ -428,6 +429,25 @@ function AnalyticsCartProvider({
   );
 }
 
+/**
+ * One-shot deep links (`?country=GB`) apply market via the loader, then
+ * strip the param so everyday URLs stay clean and session-owned.
+ */
+function StripMarketCountryParam() {
+  const {pathname, search} = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!hasCountryParam(search)) return;
+    navigate(marketHref(pathname, search), {
+      replace: true,
+      preventScrollReset: true,
+    });
+  }, [navigate, pathname, search]);
+
+  return null;
+}
+
 export default function App() {
   const data = useRouteLoaderData<RootLoader>('root');
   const location = useLocation();
@@ -444,6 +464,7 @@ export default function App() {
       consent={data.consent}
       marketCountry={data.localization.selectedCurrency.countryCode}
     >
+      <StripMarketCountryParam />
       <PageLayout
         routeKey={routeKey}
         cart={data.cart}

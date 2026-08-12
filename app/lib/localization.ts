@@ -127,17 +127,44 @@ export function buildCurrencyOptions(
   return Array.from(byCode.values()).sort((a, b) => a.code.localeCompare(b.code));
 }
 
+function findCountryCurrency(
+  countries: Array<AvailableCountry | null> | null | undefined,
+  selectedCountry: CountryCode,
+): ShopCurrencyOption | null {
+  const match = countries?.find(
+    (c) => c?.isoCode?.trim().toUpperCase() === selectedCountry,
+  );
+  const code = match?.currency?.isoCode?.trim();
+  if (!code || !match) return null;
+  return {
+    code,
+    symbol: match.currency?.symbol?.trim() || code,
+    name: match.currency?.name?.trim() || code,
+    // Keep the buyer market country (not the currency's preferred representative).
+    countryCode: selectedCountry,
+  };
+}
+
 function resolveSelectedCurrency(
   currencies: ShopCurrencyOption[],
   selectedCountry: CountryCode,
+  availableCountries: Array<AvailableCountry | null> | null | undefined,
   apiCurrencyCode?: string | null,
   sessionCurrencyCode?: string | null,
 ): ShopCurrencyOption {
+  const countryCurrency = findCountryCurrency(availableCountries, selectedCountry);
+
   const fromSession = sessionCurrencyCode?.trim().toUpperCase();
-  if (fromSession) {
+  if (fromSession && countryCurrency && fromSession === countryCurrency.code) {
     const bySession = currencies.find((c) => c.code === fromSession);
-    if (bySession) return bySession;
+    if (bySession) {
+      return {...bySession, countryCode: selectedCountry};
+    }
+    return countryCurrency;
   }
+
+  // Deep-link / session country: use that market's native currency from Shopify.
+  if (countryCurrency) return countryCurrency;
 
   const byCountry = currencies.find((c) => c.countryCode === selectedCountry);
   if (byCountry) return byCountry;
@@ -161,14 +188,23 @@ export async function loadLocalization(
   try {
     const data = await storefront.query<LocalizationQueryResult>(
       LOCALIZATION_QUERY,
-      {cache: storefront.CacheNone()},
+      {
+        // Explicit i18n — do not rely on implicit injection alone.
+        variables: {
+          country: storefront.i18n.country,
+          language: storefront.i18n.language,
+        },
+        cache: storefront.CacheNone(),
+      },
     );
 
-    const currencies = buildCurrencyOptions(data.localization?.availableCountries);
+    const availableCountries = data.localization?.availableCountries;
+    const currencies = buildCurrencyOptions(availableCountries);
     const apiCurrencyCode = data.localization?.country?.currency?.isoCode;
     const resolvedCurrency = resolveSelectedCurrency(
       currencies,
       selectedCountry,
+      availableCountries,
       apiCurrencyCode,
       sessionCurrencyCode,
     );

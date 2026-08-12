@@ -437,9 +437,11 @@ function ResultRow({
             {product.collectionName}
           </span>
         </span>
-        <span className="ml-auto shrink-0 pl-3 text-sm text-muted-foreground">
-          {formatPrice(product.price)}
-        </span>
+        {product.requestPrice ? null : (
+          <span className="ml-auto shrink-0 pl-3 text-sm text-muted-foreground">
+            {formatPrice(product.price)}
+          </span>
+        )}
       </Link>
     </li>
   );
