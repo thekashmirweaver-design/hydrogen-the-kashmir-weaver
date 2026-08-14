@@ -168,13 +168,13 @@ function Hero({
         />
       </div>
 
-      <div className="home-hero-copy absolute left-6 top-1/2 z-10 hidden -translate-y-1/2 flex-col items-center gap-3 md:flex lg:left-10 xl:left-16">
+      {/* <div className="home-hero-copy absolute left-6 top-1/2 z-10 hidden -translate-y-1/2 flex-col items-center gap-3 md:flex lg:left-10 xl:left-16">
         <span className="eyebrow">01</span>
         <span className="h-10 w-px home-hero-rail-rule" />
         <span className="tracked text-muted-foreground">02</span>
         <span className="tracked text-muted-foreground">03</span>
         <span className="tracked text-muted-foreground">04</span>
-      </div>
+      </div> */}
 
       <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-[1600px] items-center px-6 pb-44 pt-10 md:px-20 md:py-0 lg:px-28 xl:px-36">
         <div className="home-hero-copy mt-auto max-w-2xl md:-mt-32 lg:-mt-10">

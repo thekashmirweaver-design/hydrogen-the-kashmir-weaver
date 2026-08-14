@@ -79,23 +79,32 @@ function toMerchandiseGid(id: string): string {
   return `gid://shopify/ProductVariant/${id}`;
 }
 
-/** Main PDP gallery — height-limited so tall portraits scale up without cropping. */
+/** Cap gallery height; width follows the image aspect so tall 9:16 shots stay on-screen. */
 const GALLERY_MAX_HEIGHT = 'min(85dvh, 960px)';
+
+const GALLERY_SRCSET = {
+  intervals: 8,
+  startingWidth: 360,
+  incrementSize: 180,
+  placeholderWidth: 720,
+} as const;
 
 function mainGalleryWrapperStyle(
   image: ProductImage | undefined,
 ): CSSProperties {
-  const base: CSSProperties = {
-    height: GALLERY_MAX_HEIGHT,
-    maxWidth: '100%',
-    width: 'auto',
-  };
-  if (!image?.width || !image?.height) {
-    return {...base, aspectRatio: '4 / 5'};
-  }
+  const w = image?.width;
+  const h = image?.height;
+  const aspect = w && h ? `${w} / ${h}` : '4 / 5';
+  const widthFromMaxHeight =
+    w && h
+      ? `calc(${GALLERY_MAX_HEIGHT} * ${w} / ${h})`
+      : `calc(${GALLERY_MAX_HEIGHT} * 4 / 5)`;
   return {
-    ...base,
-    aspectRatio: `${image.width} / ${image.height}`,
+    width: `min(100%, ${widthFromMaxHeight})`,
+    maxWidth: '100%',
+    height: 'auto',
+    aspectRatio: aspect,
+    overflow: 'hidden',
   };
 }
 
@@ -542,12 +551,12 @@ export function ProductView({
           <div className="mx-auto w-full min-w-0 lg:mx-0">
             <div className="flex flex-col gap-2 md:grid md:grid-cols-[auto_minmax(0,1fr)] md:items-start md:gap-2">
               <div
-                className="group relative mx-auto w-fit max-w-full touch-pan-y select-none md:col-start-2 md:row-start-1"
+                className="group relative mx-auto w-full max-w-full touch-pan-y select-none md:col-start-2 md:row-start-1"
                 {...gallerySwipe}
               >
                 <div
                   key={imgIdx}
-                  className="gallery-image-fade relative mx-auto w-fit max-w-full overflow-hidden"
+                  className="gallery-image-fade relative mx-auto w-full max-w-full overflow-hidden"
                 >
                   <CatalogImage
                     image={activeImage!}
@@ -589,7 +598,7 @@ export function ProductView({
                         : undefined
                     }
                     onMouseLeave={() => setMainPanning(false)}
-                    className="h-full w-full object-contain"
+                    className="absolute inset-0 h-full w-full object-contain"
                     style={{
                       transformOrigin: `${mainZoomOrigin.x}% ${mainZoomOrigin.y}%`,
                       transform: mainZoomed ? 'scale(2.5)' : 'scale(1)',
@@ -599,8 +608,9 @@ export function ProductView({
                         ? 'none'
                         : 'transform 450ms cubic-bezier(0.22, 1, 0.36, 1)',
                     }}
-                    wrapperClassName="relative mx-auto max-w-full"
+                    wrapperClassName="relative mx-auto block w-full max-w-full"
                     wrapperStyle={mainGalleryWrapper}
+                    srcSetOptions={GALLERY_SRCSET}
                     loading="eager"
                     priority
                     sizes="(min-width: 1024px) 55vw, 100vw"
