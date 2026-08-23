@@ -13,10 +13,10 @@ type CatalogImageProps = {
   sizes?: string;
   /** Cap Shopify CDN srcset generation for listing tiles. */
   srcSetOptions?: {
-    intervals?: number;
-    startingWidth?: number;
-    incrementSize?: number;
-    placeholderWidth?: number;
+    intervals: number;
+    startingWidth: number;
+    incrementSize: number;
+    placeholderWidth: number;
   };
   style?: CSSProperties;
   onClick?: (e: MouseEvent) => void;
@@ -285,10 +285,10 @@ export function HeroPicture({
         height={height}
         loading={loading}
         decoding="sync"
-        // React 18 DOM: camelCase fetchPriority is not recognized.
-        fetchpriority={fetchPriority}
         className={className}
         style={style}
+        // React 18 DOM: camelCase fetchPriority is not recognized; cast to the HTML attribute name.
+        {...({fetchpriority: fetchPriority} as ImgHTMLAttributes<HTMLImageElement>)}
       />
     </picture>
   );

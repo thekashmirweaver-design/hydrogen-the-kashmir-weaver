@@ -115,7 +115,7 @@ export function CartDrawer({
       aria-modal="true"
       aria-label="Your bag"
       onClick={requestClose}
-      className="fixed inset-0 z-[100] flex items-end justify-center backdrop-blur-sm motion-reduce:transition-none md:items-stretch md:justify-end"
+      className="fixed inset-0 z-[100] flex items-end justify-center overflow-hidden backdrop-blur-sm motion-reduce:transition-none md:items-stretch md:justify-end"
       style={{
         background: "var(--backdrop)",
         opacity: backdropOpacity,
@@ -128,7 +128,7 @@ export function CartDrawer({
         ref={panelRef}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="flex h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)))] w-full flex-col rounded-t-2xl border-t outline-none shadow-2xl motion-reduce:transition-none md:ml-auto md:h-full md:max-h-none md:w-full md:max-w-md md:rounded-none md:border-l md:border-t-0"
+        className="flex h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)))] w-full flex-col overflow-x-hidden rounded-t-2xl border-t outline-none shadow-2xl motion-reduce:transition-none md:ml-auto md:h-full md:max-h-none md:w-full md:max-w-md md:rounded-none md:border-l md:border-t-0"
         style={{
           background: "var(--background)",
           borderColor: "var(--border)",
@@ -191,7 +191,7 @@ export function CartDrawer({
         ) : (
           <>
             {/* Scrollable line items */}
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5 sm:py-4 md:px-6 md:py-5">
+            <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 py-3 sm:px-5 sm:py-4 md:px-6 md:py-5">
               <ul className="flex flex-col">
                 {lines.map((line) => (
                   <li key={line.id}>

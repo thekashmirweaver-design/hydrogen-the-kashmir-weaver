@@ -23,6 +23,8 @@
     "seed:policies": "tsx scripts/seed-policies-content.ts",
     "fix:currency": "tsx scripts/fix-store-currency.ts",
     "publish:headless": "tsx scripts/publish-headless-catalog.ts",
+    "merchant:fix-links": "tsx scripts/fix-merchant-product-links.ts",
+    "merchant:fix-stragglers": "tsx scripts/fix-merchant-link-stragglers.ts",
     "auth:deploy-scopes": "npx @shopify/cli@latest app deploy --allow-updates --no-build",
     "storefront:push-scopes": "tsx scripts/push-storefront-scopes-from-toml.ts",
     "auth:store": "npx @shopify/cli@latest store auth -s 70yuey-sr.myshopify.com --scopes read_products,write_products,read_content,write_content,read_files,write_files,read_online_store_navigation,write_online_store_navigation,read_legal_policies,write_legal_policies,read_publications,write_publications,read_markets,write_markets,read_metaobjects,write_metaobjects,read_metaobject_definitions,write_pixels,read_pixels,read_customer_events,write_orders,read_orders",

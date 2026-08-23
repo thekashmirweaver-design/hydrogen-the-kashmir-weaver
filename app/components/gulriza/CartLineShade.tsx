@@ -20,10 +20,15 @@ export function CartLineShade({
   if (!label) return null;
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <span className="min-w-0 truncate">{label}</span>
+    <div className={`flex items-start gap-2 ${className}`}>
+      <span className="min-w-0 break-words">{label}</span>
       {parsed?.hex ? (
-        <ShadeSwatch hex={parsed.hex} size={swatchSize} label={label} />
+        <ShadeSwatch
+          hex={parsed.hex}
+          size={swatchSize}
+          label={label}
+          className="mt-0.5 shrink-0"
+        />
       ) : null}
     </div>
   );

@@ -1,5 +1,5 @@
 import {useLoaderData} from 'react-router';
-import type {Route} from './+types/heritage';
+import type {Route} from './+types/heritage._index';
 import {getHeritagePage} from '~/controllers';
 import {HeritageView} from '~/views/content/HeritageView';
 

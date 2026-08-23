@@ -37,7 +37,7 @@ loadEnv();
 const SHOP = process.env.PUBLIC_STORE_DOMAIN!;
 const ADMIN = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN!;
 const MERCHANT = process.env.MERCHANT_ID || '5825882191';
-const STORE = (process.env.PUBLIC_STORE_URL || 'https://thekashmirweaver.shop').replace(
+const STORE = (process.env.PUBLIC_STORE_URL || 'https://thekashmirweaver.com').replace(
   /\/$/,
   '',
 );

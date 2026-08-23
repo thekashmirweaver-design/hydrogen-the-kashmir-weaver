@@ -1,9 +1,9 @@
 /**
- * Fix Merchant Center url_does_not_match_homepage by setting product `link`
- * and `canonicalLink` to https://thekashmirweaver.shop/products/{handle}?variant={id}
+ * Fix Merchant Center product links → PUBLIC_STORE_URL (.com).
  *
- * Writes into each Shopify App API primary data source (supplemental alone does
- * not reliably attach link for Shopify-synced products).
+ * Writes link + canonicalLink into:
+ *   1. Shopify App API primary (per feed label)
+ *   2. "Hydrogen link overrides" supplemental (wins via defaultRule)
  *
  * Usage: npx tsx scripts/fix-merchant-product-links.ts
  */
@@ -26,7 +26,7 @@ loadEnv();
 const SHOP = process.env.PUBLIC_STORE_DOMAIN!;
 const STOREFRONT_TOKEN = process.env.PUBLIC_STOREFRONT_API_TOKEN!;
 const MERCHANT = process.env.MERCHANT_ID || '5825882191';
-const STORE = (process.env.PUBLIC_STORE_URL || 'https://thekashmirweaver.shop').replace(
+const STORE = (process.env.PUBLIC_STORE_URL || 'https://thekashmirweaver.com').replace(
   /\/$/,
   '',
 );
@@ -143,6 +143,75 @@ async function listShopifyAppApiSources(): Promise<Map<string, string>> {
   return byFeed;
 }
 
+async function findSupplementalId(): Promise<string | null> {
+  const listed = await api(
+    `https://merchantapi.googleapis.com/datasources/v1/accounts/${MERCHANT}/dataSources`,
+  );
+  for (const ds of listed.dataSources || []) {
+    if (
+      ds.supplementalProductDataSource &&
+      /hydrogen|override|link/i.test(String(ds.displayName || ''))
+    ) {
+      return String(ds.dataSourceId);
+    }
+  }
+  return null;
+}
+
+async function ensurePrimaryTakesSupplemental(
+  primaryId: string,
+  supplementalId: string,
+) {
+  const ds = await api(
+    `https://merchantapi.googleapis.com/datasources/v1/accounts/${MERCHANT}/dataSources/${primaryId}`,
+  );
+  const rule = ds.primaryProductDataSource?.defaultRule?.takeFromDataSources || [];
+  const orderOk =
+    rule.length > 0 &&
+    String(rule[0]?.supplementalDataSourceName || '').includes(supplementalId);
+  if (orderOk) return false;
+  await api(
+    `https://merchantapi.googleapis.com/datasources/v1/accounts/${MERCHANT}/dataSources/${primaryId}?updateMask=primaryProductDataSource.defaultRule`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({
+        primaryProductDataSource: {
+          defaultRule: {
+            takeFromDataSources: [
+              {
+                supplementalDataSourceName: `accounts/${MERCHANT}/dataSources/${supplementalId}`,
+              },
+              {self: true},
+            ],
+          },
+        },
+      }),
+    },
+  );
+  return true;
+}
+
+async function upsertLink(
+  dataSourceId: string,
+  offerId: string,
+  feedLabel: string,
+  contentLanguage: string,
+  productAttributes: Record<string, unknown>,
+) {
+  await api(
+    `https://merchantapi.googleapis.com/products/v1/accounts/${MERCHANT}/productInputs:insert?dataSource=accounts/${MERCHANT}/dataSources/${dataSourceId}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        offerId,
+        contentLanguage,
+        feedLabel,
+        productAttributes,
+      }),
+    },
+  );
+}
+
 async function listProducts(): Promise<McProduct[]> {
   const out: McProduct[] = [];
   let pageToken: string | undefined;
@@ -192,13 +261,23 @@ async function main() {
     console.log(`Shopify App API ${fl} → ${id}`);
   }
 
+  const supplementalId = await findSupplementalId();
+  console.log(`Supplemental → ${supplementalId || '(none)'}`);
+  if (supplementalId) {
+    for (const [, primaryId] of dsByFeed) {
+      const patched = await ensurePrimaryTakesSupplemental(primaryId, supplementalId);
+      if (patched) console.log(`Patched primary ${primaryId} to take supplemental first`);
+    }
+  }
+
   const products = await listProducts();
   console.log(`Products: ${products.length}`);
-  console.log(
-    `Already linked to .shop: ${
-      products.filter((p) => p.link?.includes('thekashmirweaver.shop')).length
-    }`,
+  const wrongLink = products.filter(
+    (p) =>
+      (p.link && !p.link.includes('thekashmirweaver.com')) ||
+      (p.canonicalLink && !p.canonicalLink.includes('thekashmirweaver.com')),
   );
+  console.log(`Wrong-domain links: ${wrongLink.length}`);
 
   const productIds = new Set<string>();
   for (const p of products) {
@@ -242,7 +321,7 @@ async function main() {
 
       const link = `${STORE}/products/${handle}?variant=${parts[3]}`;
       const canonicalLink = `${STORE}/products/${handle}`;
-      if (p.link === link) {
+      if (p.link === link && p.canonicalLink === canonicalLink) {
         skipped++;
         continue;
       }
@@ -281,18 +360,23 @@ async function main() {
         };
       }
 
-      const body = {
-        offerId: p.offerId,
-        contentLanguage: p.contentLanguage || 'en',
-        feedLabel: p.feedLabel,
-        productAttributes,
-      };
-
       try {
-        await api(
-          `https://merchantapi.googleapis.com/products/v1/accounts/${MERCHANT}/productInputs:insert?dataSource=accounts/${MERCHANT}/dataSources/${ds}`,
-          {method: 'POST', body: JSON.stringify(body)},
+        await upsertLink(
+          ds,
+          p.offerId,
+          p.feedLabel,
+          p.contentLanguage || 'en',
+          productAttributes,
         );
+        if (supplementalId) {
+          await upsertLink(
+            supplementalId,
+            p.offerId,
+            p.feedLabel,
+            p.contentLanguage || 'en',
+            productAttributes,
+          );
+        }
         ok++;
       } catch (e) {
         err++;
@@ -313,20 +397,31 @@ async function main() {
   console.log('Waiting 8s for processing…');
   await new Promise((r) => setTimeout(r, 8000));
 
-  const checks = products.slice(0, 5);
-  let linked = 0;
+  const checks = products.filter(
+    (p) =>
+      p.link?.includes('thekashmirweaver.shop') ||
+      p.canonicalLink?.includes('thekashmirweaver.shop'),
+  ).slice(0, 8);
+  if (!checks.length) checks.push(...products.slice(0, 5));
+
+  let shopLinks = 0;
   for (const p of checks) {
     const got = await api(
       `https://shoppingcontent.googleapis.com/content/v2.1/${MERCHANT}/products/${encodeURIComponent(p.id)}`,
     );
-    if (got.link?.includes('thekashmirweaver.shop')) linked++;
+    if (
+      got.link?.includes('thekashmirweaver.shop') ||
+      got.canonicalLink?.includes('thekashmirweaver.shop')
+    ) {
+      shopLinks++;
+    }
     console.log('verify', {
       offerId: got.offerId,
       link: got.link,
       canonicalLink: got.canonicalLink,
     });
   }
-  console.log(`Sample linked: ${linked}/${checks.length}`);
+  console.log(`Sample still .shop: ${shopLinks}/${checks.length}`);
 }
 
 main().catch((e) => {

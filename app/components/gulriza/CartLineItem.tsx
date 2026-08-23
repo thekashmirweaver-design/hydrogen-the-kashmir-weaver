@@ -45,7 +45,7 @@ export function CartLineItem({
     : 'relative aspect-[4/5] w-[5.5rem] shrink-0 overflow-hidden sm:w-[7.5rem]';
 
   const titleClass = isDrawer
-    ? 'font-display line-clamp-2 min-w-0 text-[0.95rem] leading-snug transition-colors hover:text-accent sm:text-base lg:text-lg'
+    ? 'font-display min-w-0 break-words text-[0.95rem] leading-snug transition-colors hover:text-accent sm:text-base lg:text-lg'
     : 'font-display line-clamp-3 min-w-0 text-base leading-snug transition-colors hover:text-accent sm:text-lg sm:leading-snug';
 
   const lineTotalAmount =
@@ -72,11 +72,11 @@ export function CartLineItem({
   );
 
   const metaClass = isDrawer
-    ? 'text-xs text-muted-foreground'
-    : 'text-sm text-muted-foreground';
+    ? 'break-words text-xs text-muted-foreground'
+    : 'break-words text-sm text-muted-foreground';
   const skuClass = isDrawer
-    ? 'text-[0.65rem] text-muted-foreground'
-    : 'text-xs text-muted-foreground';
+    ? 'break-all text-[0.65rem] text-muted-foreground'
+    : 'break-all text-xs text-muted-foreground';
   const hasShade = hasShadeCartAttributes(attributes);
   const colorLabel = hasShade
     ? null

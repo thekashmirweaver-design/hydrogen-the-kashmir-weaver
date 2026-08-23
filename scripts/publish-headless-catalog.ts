@@ -74,29 +74,27 @@ async function adminGraphql<T>(
 
 async function resolveHeadlessPublicationId(): Promise<string> {
   const data = await adminGraphql<{
-    catalogs: {nodes: Array<{id: string; title: string}>};
+    publications: {nodes: Array<{id: string; name: string}>};
   }>(`#graphql
-    query HeadlessCatalogs {
-      catalogs(first: 20) {
+    query HeadlessPublications {
+      publications(first: 25) {
         nodes {
           id
-          title
+          name
         }
       }
     }`);
 
-  const match = data.catalogs.nodes.find((c) =>
-    c.title.includes(HEADLESS_CHANNEL_NAME),
+  const match = data.publications.nodes.find(
+    (p) => p.name === HEADLESS_CHANNEL_NAME,
   );
   if (!match) {
     throw new Error(
-      `No AppCatalog found for "${HEADLESS_CHANNEL_NAME}". Check Sales channels in Admin.`,
+      `No publication found for "${HEADLESS_CHANNEL_NAME}". Check Sales channels in Admin.`,
     );
   }
 
-  // Publication GID shares the AppCatalog numeric suffix on Shopify
-  const numeric = match.id.split('/').pop();
-  return `gid://shopify/Publication/${numeric}`;
+  return match.id;
 }
 
 async function publishAll(publicationId: string) {

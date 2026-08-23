@@ -74,7 +74,8 @@ function buildOptimisticLineCost(
   quantity: number,
 ): OptimisticCartLine['cost'] {
   const unitAmount = Number(merchandise.price?.amount ?? 0);
-  const currencyCode = merchandise.price?.currencyCode ?? 'USD';
+  const currencyCode = (merchandise.price?.currencyCode ??
+    'USD') as OptimisticCartLine['cost']['totalAmount']['currencyCode'];
   const unit = {
     amount: String(unitAmount),
     currencyCode,

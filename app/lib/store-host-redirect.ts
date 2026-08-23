@@ -1,9 +1,11 @@
-const DEFAULT_PRIMARY_STORE_URL = 'https://thekashmirweaver.shop';
+const DEFAULT_PRIMARY_STORE_URL = 'https://thekashmirweaver.com';
 
 /** Hostnames that 301 to the primary storefront origin (same path + query). */
 const REDIRECT_TO_PRIMARY_HOSTS = new Set([
   'thekashmirweaver.in',
   'www.thekashmirweaver.in',
+  'thekashmirweaver.shop',
+  'www.thekashmirweaver.shop',
 ]);
 
 const OXYGEN_PREVIEW_HOST = /\.o2\.myshopify\.dev$/i;

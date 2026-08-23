@@ -72,7 +72,7 @@ export default function SearchPage() {
  * (adjust as needed)
  */
 const SEARCH_PRODUCT_FRAGMENT = `#graphql
-  fragment SearchProduct on Product {
+  fragment SearchPageProduct on Product {
     __typename
     handle
     id
@@ -186,7 +186,7 @@ export const SEARCH_QUERY = `#graphql
     ) {
       nodes {
         ...on Product {
-          ...SearchProduct
+          ...SearchPageProduct
         }
       }
       pageInfo {
