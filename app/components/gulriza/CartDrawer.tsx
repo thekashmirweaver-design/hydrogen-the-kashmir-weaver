@@ -211,7 +211,7 @@ export function CartDrawer({
               className="shrink-0 border-t px-4 pt-3 md:hidden"
               style={{
                 borderColor: "var(--border)",
-                paddingBottom: "calc(4.5rem, env(safe-area-inset-bottom))",
+                paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))",
               }}
             >
               {promotion.hasAdjustments && (
